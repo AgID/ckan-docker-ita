@@ -87,6 +87,18 @@ def _get_extra_value(dataset_dict, key):
     return None
 
 
+def _set_provenance_value(dataset_dict, text):
+    """`provenance` non e' nello schema di dcatapit: la chiave di primo livello
+    verrebbe scartata da package_create, quindi va scritta negli extras
+    (ckanext-dcat la rilegge da li' in serializzazione)."""
+    dataset_dict['provenance'] = text
+    for extra in dataset_dict.setdefault('extras', []):
+        if extra.get('key') == 'provenance':
+            extra['value'] = text
+            return
+    dataset_dict['extras'].append({'key': 'provenance', 'value': text})
+
+
 def _set_provenance(dataset_dict):
     if dataset_dict.get('provenance') or _get_extra_value(dataset_dict, 'provenance'):
         return
@@ -99,15 +111,15 @@ def _set_provenance(dataset_dict):
     cat_home = _get_extra_value(dataset_dict, 'source_catalog_homepage') or ''
     template = config.get('ckanext.dcatapit.provenance_template')
     if cat_title and cat_home and cat_title.lower() != 'portale dati aperti':
-        dataset_dict['provenance'] = (template or PROVENANCE_TEMPLATE).format(
+        _set_provenance_value(dataset_dict, (template or PROVENANCE_TEMPLATE).format(
             holder_name=holder,
             source_catalog_title=cat_title,
             source_catalog_homepage=cat_home.rstrip('/'),
             site_title=site_title,
-        )
+        ))
     else:
-        dataset_dict['provenance'] = PROVENANCE_TEMPLATE_NO_CATALOG.format(
-            holder_name=holder, site_title=site_title)
+        _set_provenance_value(dataset_dict, PROVENANCE_TEMPLATE_NO_CATALOG.format(
+            holder_name=holder, site_title=site_title))
 
 class ItalianDCATAPProfile(RDFProfile):
     '''
