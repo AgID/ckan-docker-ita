@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-09-28` — dct:provenance sui dataset harvestati (indicatore MQA "Origine")
+- `patches/ckanext-dcatapit/.../dcat/profiles.py`: a fine `parse_dataset` il profilo `it_dcat_ap` compila `provenance` quando manca, usando solo dati certi del dataset (ente titolare, catalogo d'origine). Se non bastano, il campo resta vuoto: nessun testo generico.
+- Copre l'indicatore MQA "Origine" (Riutilizzabilita', 0,25). Testo personalizzabile con `ckanext.dcatapit.provenance_template`.
+- Stessa regola implementata sullo stack CKAN 2.12 (`piersoft/ckan-docker-ita-212`) nell'estensione `ckanext-dcatita`; qui in-place perche' le estensioni sono vendorizzate in `patches/`.
+
 ## `2026-06-01`
 Pulizia e robustezza del setup Docker (versione demo):
 - **Nessun dominio hardcoded**: `ckan.oaipmh.base_url` e `ckanext.dcat.base_uri` sono derivati da `CKAN_SITE_URL`; aggiunta variabile opzionale `CKAN_OAIPMH_BASE_URL`. GeoNames parametrizzato via `GEONAMES_USERNAME`.

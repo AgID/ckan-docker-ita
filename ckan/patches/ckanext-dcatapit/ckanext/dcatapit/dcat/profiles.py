@@ -44,6 +44,71 @@ PREF_LANDING= config.get('ckanext.dcat.base_uri')
 log = logging.getLogger(__name__)
 
 
+
+# 28.09.26 PATCH MQA: composizione di dct:provenance per i dataset harvestati.
+# Stessa regola dell'estensione ckanext-dcatita sullo stack CKAN 2.12
+# (piersoft/ckan-docker-ita-212), qui in-place perche' le estensioni sono
+# vendorizzate in patches/.
+PROVENANCE_TEMPLATE = (
+    "Dataset pubblicato da {holder_name} nel catalogo {source_catalog_title} "
+    "({source_catalog_homepage}), acquisito da {site_title} tramite harvesting."
+)
+PROVENANCE_TEMPLATE_NO_CATALOG = (
+    "Dataset pubblicato da {holder_name}, acquisito da {site_title} tramite harvesting."
+)
+
+
+def _provenance_value(value, lang='it'):
+    """I campi multilingua possono essere dict {'it': ..., 'en': ...}."""
+    if isinstance(value, str):
+        text = value.strip()
+        if text.startswith('{') and text.endswith('}'):
+            try:
+                value = json.loads(text)
+            except ValueError:
+                return text
+        else:
+            return text
+    if isinstance(value, dict):
+        for key in (lang, 'it', 'en'):
+            if value.get(key):
+                return str(value[key])
+        for item in value.values():
+            if item:
+                return str(item)
+        return ''
+    return str(value or '')
+
+
+def _get_extra_value(dataset_dict, key):
+    for extra in dataset_dict.get('extras') or []:
+        if extra.get('key') == key:
+            return extra.get('value')
+    return None
+
+
+def _set_provenance(dataset_dict):
+    if dataset_dict.get('provenance') or _get_extra_value(dataset_dict, 'provenance'):
+        return
+    holder = _provenance_value(dataset_dict.get('holder_name')
+                               or _get_extra_value(dataset_dict, 'holder_name') or '')
+    site_title = config.get('ckan.site_title') or ''
+    if not holder or not site_title:
+        return
+    cat_title = _provenance_value(_get_extra_value(dataset_dict, 'source_catalog_title') or '')
+    cat_home = _get_extra_value(dataset_dict, 'source_catalog_homepage') or ''
+    template = config.get('ckanext.dcatapit.provenance_template')
+    if cat_title and cat_home and cat_title.lower() != 'portale dati aperti':
+        dataset_dict['provenance'] = (template or PROVENANCE_TEMPLATE).format(
+            holder_name=holder,
+            source_catalog_title=cat_title,
+            source_catalog_homepage=cat_home.rstrip('/'),
+            site_title=site_title,
+        )
+    else:
+        dataset_dict['provenance'] = PROVENANCE_TEMPLATE_NO_CATALOG.format(
+            holder_name=holder, site_title=site_title)
+
 class ItalianDCATAPProfile(RDFProfile):
     '''
     An RDF profile for the Italian DCAT-AP recommendation for data portals
@@ -578,6 +643,11 @@ class ItalianDCATAPProfile(RDFProfile):
                 dataset_dict.get('title', '---')
             )
             #dataset_dict['license_id'] = 'notspecified'
+
+        # 28.09.26 PATCH MQA: dct:provenance (indicatore "Origine", Riutilizzabilita', 0,25).
+        # Si compone solo da dati certi gia' presenti nel dataset harvestato (ente
+        # titolare, catalogo d'origine): se non bastano, il campo resta vuoto.
+        _set_provenance(dataset_dict)
 
         return dataset_dict
 
