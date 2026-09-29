@@ -40,9 +40,10 @@ config = toolkit.config
 
 DISTRIBUTION_LICENSE_FALLBACK_CONFIG = "ckanext.dcat.resource.inherit.license"
 PREF_LANDING= config.get('ckanext.dcat.base_uri')
-DISTRIBUTION_STATUS_COMPLETED = (
-       "http://publications.europa.eu/resource/authority/distribution-status/COMPLETED"
-   )
+# ADMS status vocabulary: e' quello richiesto dalle shape SHACL DCAT-AP 2.x usate dal
+# validatore di data.europa.eu (skos:inScheme <http://purl.org/adms/status/1.0>).
+# Il vocabolario EU distribution-status (DCAT-AP 3) genera violazioni su EDP.
+DISTRIBUTION_STATUS_COMPLETED = "http://purl.org/adms/status/Completed"
 
 class EuropeanDCATAPProfile(RDFProfile):
     """
