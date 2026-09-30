@@ -774,12 +774,11 @@ class ItalianDCATAPProfile(RDFProfile):
             if d.get('temporal_end'):
                 temporal_coverage_item.update({'temporal_end': d['temporal_end']})
             temp_cov.append(temporal_coverage_item)
-        elif d.get('holder_identifier'):
-         if 'm_inf' not in d.get('holder_identifier'): # non essendoci, setto dct:temporal con startDate il campo modified
-          if startemp == False:
-           if d.get('modified'):
-             temporal_coverage_item = {'temporal_start': d.get('modified')}
-             temp_cov.append(temporal_coverage_item)
+        # Rimossa la regola che, in assenza di copertura temporale, impostava
+        # dct:temporal/startDate = modified: era una forzatura (la data di modifica
+        # non e' il periodo coperto dai dati) e l'MQA di data.europa.eu non misura
+        # piu' questo indicatore. Senza temporal_start/temporal_coverage non si
+        # serializza alcun dct:temporal.
 
 
 
