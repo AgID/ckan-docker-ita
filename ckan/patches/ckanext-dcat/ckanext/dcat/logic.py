@@ -1,4 +1,5 @@
 from __future__ import division
+import logging
 import math
 
 from ckantoolkit import config
@@ -11,7 +12,25 @@ import ckanext.dcat.converters as converters
 from ckanext.dcat.processors import RDFSerializer
 from ckanext.dcat.utils import catalog_uri
 
+log = logging.getLogger(__name__)
+
 DATASETS_PER_PAGE = 100
+
+
+def _full_export_active():
+    """True se ckanext.dcat.full_export_until e' valorizzata e non ancora scaduta (UTC)."""
+    import datetime
+    until = config.get('ckanext.dcat.full_export_until')
+    if not until:
+        return False
+    try:
+        until_dt = dateutil_parse(str(until))
+    except (ValueError, OverflowError):
+        log.warning('[DCAT] ckanext.dcat.full_export_until non valida: %r', until)
+        return False
+    if until_dt.tzinfo is not None:
+        until_dt = until_dt.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+    return datetime.datetime.utcnow() < until_dt
 
 wrong_page_exception = toolkit.ValidationError(
     'Page param must be a positive integer starting in 1')
@@ -95,6 +114,16 @@ def _search_ckan_datasets(context, data_dict):
         raise wrong_page_exception
 
     modified_since = data_dict.get('modified_since')
+
+    # PATCH export completo una tantum: finche' la data/ora UTC in
+    # ckanext.dcat.full_export_until (env CKANEXT__DCAT__FULL_EXPORT_UNTIL,
+    # es. 2026-10-01T12:00) non e' passata, modified_since viene ignorato e il
+    # catalogo espone TUTTI i dataset. Serve a far riallineare data.europa.eu,
+    # che harvesta in modo incrementale. Scaduta la data torna tutto normale.
+    if modified_since and _full_export_active():
+        log.info('[DCAT] full export attivo: modified_since=%s ignorato', modified_since)
+        modified_since = None
+
     if modified_since:
         try:
             modified_since = dateutil_parse(modified_since).isoformat() + 'Z'
