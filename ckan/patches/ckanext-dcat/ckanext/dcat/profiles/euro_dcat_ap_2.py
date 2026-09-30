@@ -204,6 +204,21 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                 _datatype=datatype,
             )
 
+        # PATCH MQA: dcatap:applicableLegislation per i dataset che non ne hanno una
+        # (gli HVD hanno gia' il Regolamento di esecuzione 2023/138). Solo in
+        # serializzazione, nulla viene salvato nel DB; non sovrascrive valori esistenti.
+        #   - dataset DGA (accessRights RESTRICTED) -> Data Governance Act, Reg. 2022/868
+        #   - tutti gli altri                     -> Direttiva Open Data 2019/1024
+        if not any(self.g.objects(dataset_ref, DCATAP.applicableLegislation)):
+            _ar = str(self._get_dataset_value(dataset_dict, "access_rights") or "")
+            for _obj in self.g.objects(dataset_ref, DCT.accessRights):
+                _ar += " " + str(_obj)
+            if "RESTRICTED" in _ar.upper():
+                _leg = "http://data.europa.eu/eli/reg/2022/868/oj"
+            else:
+                _leg = "http://data.europa.eu/eli/dir/2019/1024/oj"
+            self.g.add((dataset_ref, DCATAP.applicableLegislation, URIRef(_leg)))
+
         # Temporal
         start = self._get_dataset_value(dataset_dict, "temporal_start")
         end = self._get_dataset_value(dataset_dict, "temporal_end")
