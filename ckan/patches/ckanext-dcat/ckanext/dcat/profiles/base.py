@@ -733,6 +733,15 @@ class RDFProfile(object):
         """
         value = self._get_dict_value(data_dict, key)
         if value:
+            # PATCH MQA: lo statement sostituisce ogni valore precedente dello stesso
+            # predicato. Con piu' profili in catena (es. euro_dcat_ap_2 + it_dcat_ap o
+            # dcat_ap_edp_mqa) graph_from_dataset gira piu' volte e ogni giro aggiungeva
+            # un nuovo BNode, oltre al Literal della lista items (non valido in DCAT-AP:
+            # il range e' dct:ProvenanceStatement / dct:RightsStatement).
+            for _old in list(self.g.objects(subject, predicate)):
+                self.g.remove((subject, predicate, _old))
+                if isinstance(_old, BNode) and not any(self.g.subjects(None, _old)):
+                    self.g.remove((_old, None, None))
             if isinstance(value, dict):
                 _objects = []
                 for lang in value:
