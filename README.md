@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > Stack CKAN **2.10.10** + PostgreSQL **16** + Solr **9** + Redis + NGINX, già
-> predisposto per le funzionalità open data italiane. Pensato per essere
+> predisposto per le funzionalità dei cataloghi open data italiani. Pensato per essere
 > provato in locale e poi spostato su un dominio reale cambiando una sola
 > variabile (`CKAN_SITE_URL`). Leggere il [CHANGELOG](CHANGELOG.md) per i
 > passaggi più delicati legati all'harvesting dei cataloghi federati.
@@ -199,4 +199,4 @@ Se non serve l'integrazione con OpenAIRE/`data.europa.eu`:
 - OAI-PMH: [tlmat-unican — ckanext-oai-pmh-server](https://github.com/tlmat-unican/ckanext-oai-pmh-server)
 - Immagini base CKAN: [ckan/ckan-docker-base](https://github.com/ckan/ckan-docker-base)
 
-- Progetto e personalizzazione a cura di @piersoft (Francesco Piero Paolicelli)
+- Progetto e personalizzazione a cura di @piersoft (Francesco Piero Paolicelli) per conto di AgID.
