@@ -60,7 +60,7 @@ RUN chmod 666 "${APP_DIR}/patches/topics.json"
 COPY patches/regions.rdf "${APP_DIR}/patches/regions.rdf"
 RUN chmod 666 "${APP_DIR}/patches/regions.rdf"
 
-COPY patches/model_dictize.py ${APP_DIR}/src/ckan/ckan/lib/dictization/model_dictize.pyà
+COPY patches/model_dictize.py ${APP_DIR}/src/ckan/ckan/lib/dictization/model_dictize.py
 COPY patches/base.py ${APP_DIR}/src/ckan/ckan/lib/base.py
 
 COPY patches/xmlrpc.py /usr/local/lib/python3.10/site-packages/pylons/controllers/xmlrpc.py
