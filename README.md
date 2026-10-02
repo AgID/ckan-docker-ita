@@ -72,7 +72,7 @@ Eseguire i comandi **in ordine**, aspettando il completamento di ciascuno.
 
    ```sh
    git clone https://github.com/piersoft/ckan-docker-ita.git
-   cd ckan-docker
+   cd ckan-docker-ita
    cp .env.example .env
    ```
 
