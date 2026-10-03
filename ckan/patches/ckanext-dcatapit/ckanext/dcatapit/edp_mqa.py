@@ -11,7 +11,7 @@ chiamate dal browser (HTTP 500 con header Origin diverso da data.europa.eu),
 quindi il calcolo avviene qui, lato server, durante il rendering della pagina.
 
 Flusso:
-  1. search API (q="<identifier>") per risolvere l'ID EDP del dataset
+  1. risolve l'ID EDP della copia che sta nel catalogo dati-gov-it (vedi sotto)
   2. API MQA v2 per leggere datasetFinal (o "No v2 metrics found" = non rivalutato)
   3. risultato in cache Redis (successo 6 ore, esito negativo 30 minuti)
   4. se data.europa.eu non risponde, si sospendono le chiamate per 5 minuti
@@ -30,7 +30,18 @@ import requests
 log = logging.getLogger(__name__)
 
 SEARCH_URL = 'https://data.europa.eu/api/hub/search/search'
+DATASET_URL = 'https://data.europa.eu/api/hub/search/datasets/'
 MQA_URL = 'https://data.europa.eu/api/mqa/cache/datasets/'
+
+# Catalogo di data.europa.eu che corrisponde a questo portale.
+#
+# Lo stesso dct:identifier puo' arrivare a EDP da due cataloghi: per esempio la
+# cartografia della Provincia di Bolzano arriva sia da dati.gov.it sia
+# dall'RNDT. EDP assegna l'URI canonico a chi arriva prima e il suffisso ~~N
+# agli altri. Bisogna mostrare il punteggio del record di dati.gov.it, non
+# quello di un altro catalogo: i metadati sono diversi e il voto anche.
+CATALOGO = 'dati-gov-it'
+SUFFISSI = ('', '~~1', '~~2', '~~3')
 EDP_PAGE = 'https://data.europa.eu/data/datasets/'
 EDP_HOME = 'https://data.europa.eu/data/datasets?locale=it'
 
@@ -38,7 +49,8 @@ TIMEOUT = (3, 5)            # (connessione, lettura) in secondi
 CACHE_TTL_OK = 6 * 3600     # esito con punteggio o "in attesa di rivalutazione"
 CACHE_TTL_KO = 30 * 60      # dataset non trovato / errore
 BREAKER_TTL = 5 * 60        # pausa dopo un errore di rete verso data.europa.eu
-KEY_PREFIX = 'dcatapit:edp_mqa:v2:'
+# v3: dalla scelta della copia per catalogo; v2 aveva in cache le copie RNDT
+KEY_PREFIX = 'dcatapit:edp_mqa:v3:'
 BREAKER_KEY = 'dcatapit:edp_mqa:breaker'
 
 HEADERS = {'Accept': 'application/json', 'User-Agent': 'CKAN dcatapit edp_mqa'}
@@ -110,36 +122,67 @@ def _candidates(pkg):
     return cands
 
 
+def _catalogo_di(edp_id):
+    """Catalogo EDP che contiene il dataset, None se il dataset non esiste."""
+    resp = requests.get(DATASET_URL + requests.utils.quote(edp_id, safe=''),
+                        headers=HEADERS, timeout=TIMEOUT)
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    data = resp.json()
+    record = data.get('result') or data
+    return (record.get('catalog') or {}).get('id')
+
+
+def _copia_del_catalogo(base):
+    """Fra la copia canonica e le varianti ~~N, quella del catalogo dati-gov-it.
+
+    La ricerca testuale non restituisce le varianti ~~N, quindi le si interroga
+    direttamente per indirizzo.
+    """
+    for suffisso in SUFFISSI:
+        candidato = base + suffisso
+        if _catalogo_di(candidato) == CATALOGO:
+            return candidato
+    return None
+
+
 def _resolve_edp_id(cands):
-    """Ritorna l'ID EDP (con eventuale ~~N) coerente con uno dei candidati."""
+    """ID EDP della copia di questo portale, o None se non ce n'e' una.
+
+    Prima versione: sceglieva fra le copie quella con quality_meas.scoring piu'
+    alto, a prescindere dal catalogo. Per i dataset presenti anche nell'RNDT
+    finiva per mostrare il voto del record RNDT sotto un dataset di dati.gov.it.
+    """
+    # 1. tentativo diretto: l'identificativo normalizzato e' quasi sempre l'ID
+    if cands:
+        trovato = _copia_del_catalogo(re.sub(r'~~\d+$', '', cands[0]))
+        if trovato:
+            return trovato
+
+    # 2. ripiego: la ricerca, per quando la normalizzazione non coincide con
+    #    quella di EDP; se ne ricavano le basi da provare
     expected = set(cands)
+    basi = []
     for cand in cands:
         params = {
             'filters': 'dataset',
             'q': '"%s"' % cand,
             'limit': 20,
-            'includes': 'id,resource,quality_meas',
+            'includes': 'id,resource',
         }
         resp = requests.get(SEARCH_URL, params=params, headers=HEADERS, timeout=TIMEOUT)
         resp.raise_for_status()
         results = (resp.json().get('result') or {}).get('results') or []
-
-        best_id, best_score, first_id = None, None, None
         for r in results:
             rid = _edp_id_from_resource(r.get('resource'))
-            if not rid:
-                continue
-            base = re.sub(r'~~\d+$', '', rid)
-            if rid not in expected and base not in expected:
-                continue
-            if first_id is None:
-                first_id = rid
-            sc = (r.get('quality_meas') or {}).get('scoring')
-            if sc is not None and (best_score is None or sc > best_score):
-                best_id, best_score = rid, sc
-        found = best_id or first_id
-        if found:
-            return found
+            base = re.sub(r'~~\d+$', '', rid or '')
+            if base and (rid in expected or base in expected) and base not in basi:
+                basi.append(base)
+    for base in basi:
+        trovato = _copia_del_catalogo(base)
+        if trovato:
+            return trovato
     return None
 
 
