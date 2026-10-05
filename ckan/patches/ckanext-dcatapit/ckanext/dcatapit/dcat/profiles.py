@@ -56,6 +56,10 @@ PROVENANCE_TEMPLATE = (
 PROVENANCE_TEMPLATE_NO_CATALOG = (
     "Dataset pubblicato da {holder_name}, acquisito da {site_title} tramite harvesting."
 )
+# 05.10.26 PATCH MQA: dataset inseriti direttamente sul portale, senza harvesting.
+PROVENANCE_TEMPLATE_DIRECT = (
+    "Dataset pubblicato da {holder_name} direttamente su {site_title}."
+)
 
 
 def _provenance_value(value, lang='it'):
@@ -120,6 +124,51 @@ def _set_provenance(dataset_dict):
     else:
         _set_provenance_value(dataset_dict, PROVENANCE_TEMPLATE_NO_CATALOG.format(
             holder_name=holder, site_title=site_title))
+
+def _dict_or_extra(dataset_dict, key):
+    return dataset_dict.get(key) or _get_extra_value(dataset_dict, key)
+
+
+def _provenance_text(dataset_dict):
+    """Testo di dct:provenance per la serializzazione, se il dataset non ce l'ha.
+
+    05.10.26 PATCH MQA. La provenienza si scrive nel DB solo quando dati.gov.it
+    harvesta la PA (_set_provenance in parse_dataset): i dataset non ripassati
+    dopo il 28.09.26 e quelli inseriti a mano ne restano senza, e un export
+    completo verso EDP non basterebbe a dargliela. Qui si compone lo stesso
+    testo al momento dell'export, senza salvare nulla nel DB.
+    Stessa regola dell'harvesting per i dataset harvestati; per quelli inseriti
+    direttamente una formula che non parla di harvesting. Se mancano i dati
+    certi (ente, titolo del sito) non si scrive nulla.
+    """
+    if _dict_or_extra(dataset_dict, 'provenance'):
+        return None
+    site_title = config.get('ckan.site_title') or ''
+    if not site_title:
+        return None
+    holder = _provenance_value(_dict_or_extra(dataset_dict, 'holder_name') or '')
+    harvested = bool(_dict_or_extra(dataset_dict, 'harvest_source_id')
+                     or _dict_or_extra(dataset_dict, 'harvest_object_id'))
+    if not harvested:
+        if not holder:
+            holder = _provenance_value((dataset_dict.get('organization') or {}).get('title') or '')
+        if not holder:
+            return None
+        return PROVENANCE_TEMPLATE_DIRECT.format(holder_name=holder, site_title=site_title)
+    if not holder:
+        return None
+    cat_title = _provenance_value(_dict_or_extra(dataset_dict, 'source_catalog_title') or '')
+    cat_home = _dict_or_extra(dataset_dict, 'source_catalog_homepage') or ''
+    template = config.get('ckanext.dcatapit.provenance_template')
+    if cat_title and cat_home and cat_title.lower() != 'portale dati aperti':
+        return (template or PROVENANCE_TEMPLATE).format(
+            holder_name=holder,
+            source_catalog_title=cat_title,
+            source_catalog_homepage=cat_home.rstrip('/'),
+            site_title=site_title,
+        )
+    return PROVENANCE_TEMPLATE_NO_CATALOG.format(holder_name=holder, site_title=site_title)
+
 
 class ItalianDCATAPProfile(RDFProfile):
     '''
@@ -1716,6 +1765,15 @@ class ItalianDCATAPProfile(RDFProfile):
                 'description': (distribution, DCT.description),
             }
             self._add_multilang_values(loc_dict, loc_resource_mapping)
+
+        # 05.10.26 PATCH MQA: dct:provenance anche per i dataset che non ce l'hanno
+        # nel DB (vedi _provenance_text). Solo se il grafo non ne contiene gia' una.
+        if not any(g.objects(dataset_ref, DCT.provenance)):
+            _prov = _provenance_text(dataset_dict)
+            if _prov:
+                self._add_statement_to_graph({'provenance': _prov}, 'provenance',
+                                             dataset_ref, DCT.provenance,
+                                             DCT.ProvenanceStatement)
 
     def _add_multilang_values(self, loc_dict, loc_mapping, exclude_default_lang=False):
         if loc_dict:
