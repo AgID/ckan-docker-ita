@@ -753,9 +753,24 @@ class DCATAPITOrganizationPlugin(plugins.SingletonPlugin, toolkit.DefaultOrganiz
         schema['extras'] = logic.schema.default_extras_schema()
 
         FROM_EXTRAS = toolkit.get_converter('convert_from_extras')
+        # 09.10.26 ignore_missing subito dopo convert_from_extras.
+        # In lettura la chiave puo' non esserci: organization_list?all_fields=true
+        # chiama organization_show forzando include_extras=False, quindi
+        # convert_from_extras non trova nulla da convertire e la chiave resta al
+        # sentinella `missing` di navl. Per i campi la cui catena NON inizia con
+        # ignore_missing/ignore_empty -- cioe' `identifier`, che ha
+        # ['not_empty'] -- not_empty registra un errore ma NON rimuove la
+        # chiave; group_show scarta gli errori
+        # (`group_dict, _errors = plugin_validate(...)`) e il sentinella arriva
+        # a json.dumps: TypeError("Unhandled Object") e 500 su tutto
+        # l'endpoint. ignore_missing invece fa data.pop(key).
+        # Va messo qui e non in get_custom_organization_schema() perche' quella
+        # lista di validator serve anche a create/update: anteporre
+        # ignore_missing la' renderebbe `identifier` opzionale in scrittura.
+        IGNORE_MISSING = toolkit.get_validator('ignore_missing')
 
         for field in dcatapit_schema.get_custom_organization_schema():
-            schema[field['name']] = [ FROM_EXTRAS ] + [toolkit.get_validator(v) for v in field['validator']]
+            schema[field['name']] = [ FROM_EXTRAS, IGNORE_MISSING ] + [toolkit.get_validator(v) for v in field['validator']]
 
         return schema
 
