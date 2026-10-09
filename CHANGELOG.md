@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-09` — foaf:page puntava al dataset stesso (difetto introdotto in giornata)
+- Verificato sul grafo in produzione: su dati.gov.it l'URI del dataset e' **esattamente** `https://www.dati.gov.it/view-dataset/dataset?id=<name>`, lo stesso URL che il fallback di `foaf:page` costruiva. Risultato: la distribuzione documentava il dataset stesso e il nodo del dataset si portava dietro un `rdf:type foaf:Document`.
+- `foaf:page` ora usa, in ordine: `documentation`/`describedBy` della risorsa, altrimenti una `dcat:landingPage` gia' presente nel grafo. Piu' una guardia: il valore non puo' mai coincidere con `dataset_ref` ne' con la distribuzione.
+- Conseguenza da accettare: i dataset senza landingPage e senza documentazione sulla risorsa non espongono `foaf:page`, quindi restano a 0 su `documentationAvailability`. Preferibile a un grafo sbagliato.
+- Corretto anche un difetto preesistente: su dati.gov.it `dcat:landingPage` era un IRI nudo, mentre la shape `dcat:DatasetShape` impone `sh:class foaf:Document`. Ora il tipo e' dichiarato nel grafo, nel profilo `it_dcat_ap` che gira per ultimo, cosi' copre anche le landingPage aggiunte da dcatapit. Lo stack 2.12 le tipizzava gia'.
+
 ## `2026-10-09` — organization_list?all_fields=true: il campo era `identifier` (fix in dcatapit)
 - Il campo che lasciava il sentinella `missing` in output e' **`identifier`**, confermato dalla risposta ora che l'endpoint torna 200: `[k for k,v in r.items() if v is None]` -> `['identifier']`.
 - Meccanismo completo: `organization_list?all_fields=true` chiama `organization_show` per ogni organizzazione forzando `include_extras=False`; `convert_from_extras` non trova extras da convertire e la chiave resta a `missing`. Nella catena di `identifier` c'e' **solo** `not_empty`, che registra l'errore ma **non rimuove la chiave** (a differenza di `ignore_missing` e `ignore_empty`, che fanno `data.pop(key)`); `group_show` poi **scarta** gli errori (`group_dict, _errors = plugin_validate(...)`) e il sentinella finisce in `json.dumps`.

@@ -723,21 +723,31 @@ class EuropeanDCATAPProfile(RDFProfile):
             self._add_list_triples_from_dict(resource_dict, distribution, items)
 
             # 09.10.26 documentationAvailability (foaf:page sulla
-            # distribuzione, 0,25): terza metrica MQA a 0 su dati.gov.it.
-            # La shape DCAT-AP 3.0 impone sh:class foaf:Document, quindi il
-            # nodo va tipizzato NEL GRAFO (il validatore non dereferenzia),
-            # stesso meccanismo di skos:inScheme per adms:status.
+            # distribuzione, 0,25). La shape DCAT-AP 3.0 impone
+            # sh:class foaf:Document, quindi il nodo va tipizzato NEL GRAFO
+            # (il validatore non dereferenzia), stesso meccanismo di
+            # skos:inScheme per adms:status.
+            # ATTENZIONE: il valore deve essere una risorsa DIVERSA dal
+            # dataset. Su dati.gov.it l'URI del dataset e' esattamente
+            # <site>/view-dataset/dataset?id=<name>: costruendo qui lo stesso
+            # URL la distribuzione finiva per documentarsi col dataset stesso
+            # e il nodo del dataset si portava dietro un rdf:type
+            # foaf:Document. Si usa quindi la documentazione dichiarata sulla
+            # risorsa e, in mancanza, una dcat:landingPage gia' presente nel
+            # grafo, che e' una pagina che descrive davvero la risorsa.
             if not any(g.objects(distribution, FOAF.page)):
                 _doc = (resource_dict.get('documentation')
                         or resource_dict.get('describedBy')
                         or resource_dict.get('describedby'))
-                if not _doc and dataset_dict.get('name'):
-                    _doc = ('https://www.dati.gov.it/view-dataset/dataset?id='
-                            + dataset_dict['name'])
+                if not _doc:
+                    for _lp in g.objects(dataset_ref, DCAT.landingPage):
+                        _doc = _lp
+                        break
                 if _doc:
                     _doc = CleanedURIRef(_doc)
-                    g.add((distribution, FOAF.page, _doc))
-                    g.add((_doc, RDF.type, FOAF.Document))
+                    if _doc != dataset_ref and _doc != distribution:
+                        g.add((distribution, FOAF.page, _doc))
+                        g.add((_doc, RDF.type, FOAF.Document))
 
             # Set default license for distribution if needed and available
             if resource_license_fallback and not (distribution, DCT.license, None) in g:

@@ -1425,6 +1425,16 @@ class ItalianDCATAPProfile(RDFProfile):
             self.g.add((_idnode, SKOS.notation, Literal(dataset_dict['id'])))
             self.g.add((dataset_ref, ADMS.identifier, _idnode))
 
+        # 09.10.26 DCAT-AP 3.0: dcat:landingPage ha sh:class foaf:Document e il
+        # validatore non dereferenzia, quindi il tipo va dichiarato nel grafo.
+        # Su dati.gov.it le landingPage erano IRI nudi (violazione su ogni
+        # dataset); lo stack 2.12 le tipizza gia'. Sta qui, nel profilo che
+        # gira per ultimo, per coprire anche le landingPage aggiunte da
+        # dcatapit dopo euro_dcat_ap.
+        for _lp in set(self.g.objects(dataset_ref, DCAT.landingPage)):
+            if _lp != dataset_ref:
+                self.g.add((_lp, RDF['type'], FOAF.Document))
+
         self._set_temporal_coverage(self.g, dataset_dict, dataset_ref)
 
         # publisher
