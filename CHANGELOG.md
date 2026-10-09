@@ -1,5 +1,13 @@
 # Changelog
 
+## `2026-10-09` — le ultime 3 metriche MQA a zero: adms:identifier, dct:relation, foaf:page
+- Rilevate sull'API MQA di data.europa.eu (`metricsVersion 2.0.0`): dataset **7,0/7,5**, distribuzioni **7,25/7,5**, `datasetFinal` **7,125**. Gli unici `result=0` erano `admsIdentifierAvailability`, `relationAvailability` (dataset) e `documentationAvailability` (distribuzione), 0,25 ciascuna.
+- Il mapping esisteva gia' in `euro_dcat_ap.py` (extra `alternate_identifier`, `related_resource`, `documentation`): erano i **valori** a mancare, perche' dcatapit non popola quegli extra. Aggiunti fallback deterministici, come per `adms:status` e `byteSize`.
+- `euro_dcat_ap.py`: `dct:relation` -> catalogo dell'ente sul portale nazionale; `foaf:page` sulla distribuzione -> `documentation`/`describedBy` della risorsa, altrimenti la pagina del dataset, **con `rdf:type foaf:Document` nel grafo** (la shape impone `sh:class foaf:Document` e il validatore non dereferenzia).
+- `ckanext-dcatapit/.../dcat/profiles.py`: `adms:identifier` -> nodo `adms:Identifier` con una sola `skos:notation` (id CKAN). Va qui e non in `euro_dcat_ap.py` perche' il profilo `it_dcat_ap`, che gira dopo, esegue `g.remove((dataset_ref, ADMS.identifier, None))` e azzererebbe il fallback.
+- Nessun valore passa da `URIRefOrLiteral`: le shape di `adms:identifier` e `dct:relation` impongono `sh:nodeKind sh:BlankNodeOrIRI`, un literal genererebbe un warning nuovo.
+- Atteso dopo l'harvest: dataset 7,5/7,5, distribuzioni 7,5/7,5, `datasetFinal` **7,5**.
+
 ## `2026-10-09` — adms:status: il warning SHACL di EDP non dipendeva dal vocabolario
 - Il validatore di data.europa.eu (shape `dcatap300level1`, `:StatusRestriction`) segnala `StatusRestrictionADMS` sulle distribuzioni. Verificato sull'endpoint SPARQL di EDP: il warning scatta con **entrambi** i vocabolari — 205.860 risultati con `purl.org/adms/status/Completed`, 17.216 con l'URI EU `distribution-status/COMPLETED` usato "nudo".
 - La shape richiede `skos:inScheme <...distribution-status>` **nel grafo pubblicato** (il validatore non dereferenzia il NAL). Le sole distribuzioni senza warning su EDP (~3.600) usano l'URI EU **e** dichiarano il concetto nel grafo.

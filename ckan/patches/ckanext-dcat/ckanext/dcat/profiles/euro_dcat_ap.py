@@ -406,6 +406,24 @@ class EuropeanDCATAPProfile(RDFProfile):
        # log.debug('in euro2 theme %s',dataset_dict.get('theme'))
         self._add_list_triples_from_dict(dataset_dict, dataset_ref, items)
 
+        # 09.10.26 relationAvailability (dct:relation, 0,25): metrica MQA
+        # 2.0.0 rimasta a 0 su dati.gov.it. Il mapping dell'extra
+        # related_resource esiste gia' sopra: qui solo il fallback quando
+        # l'extra e' vuoto (cioe' sempre, perche' dcatapit non lo popola).
+        # ATTENZIONE: la shape DCAT-AP 3.0 impone sh:nodeKind
+        # sh:BlankNodeOrIRI, quindi NON si puo' passare per URIRefOrLiteral
+        # (che emetterebbe un Literal e un nuovo warning).
+        # adms:identifier NON va messo qui: il profilo dcatapit, che gira
+        # dopo, fa g.remove((dataset_ref, ADMS.identifier, None)). Il
+        # fallback e' in ckanext-dcatapit/dcat/profiles.py.
+        if not any(g.objects(dataset_ref, DCT.relation)):
+            _org = dataset_dict.get('organization') or {}
+            _org_name = _org.get('name') if isinstance(_org, dict) else None
+            if _org_name:
+                g.add((dataset_ref, DCT.relation,
+                       URIRef('https://www.dati.gov.it/view-dataset'
+                              '?organization=' + _org_name)))
+
         # Contact details
         if any(
             [
@@ -703,6 +721,23 @@ class EuropeanDCATAPProfile(RDFProfile):
                 ("conforms_to", DCT.conformsTo, None, URIRefOrLiteral),
             ]
             self._add_list_triples_from_dict(resource_dict, distribution, items)
+
+            # 09.10.26 documentationAvailability (foaf:page sulla
+            # distribuzione, 0,25): terza metrica MQA a 0 su dati.gov.it.
+            # La shape DCAT-AP 3.0 impone sh:class foaf:Document, quindi il
+            # nodo va tipizzato NEL GRAFO (il validatore non dereferenzia),
+            # stesso meccanismo di skos:inScheme per adms:status.
+            if not any(g.objects(distribution, FOAF.page)):
+                _doc = (resource_dict.get('documentation')
+                        or resource_dict.get('describedBy')
+                        or resource_dict.get('describedby'))
+                if not _doc and dataset_dict.get('name'):
+                    _doc = ('https://www.dati.gov.it/view-dataset/dataset?id='
+                            + dataset_dict['name'])
+                if _doc:
+                    _doc = CleanedURIRef(_doc)
+                    g.add((distribution, FOAF.page, _doc))
+                    g.add((_doc, RDF.type, FOAF.Document))
 
             # Set default license for distribution if needed and available
             if resource_license_fallback and not (distribution, DCT.license, None) in g:

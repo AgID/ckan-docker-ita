@@ -1412,6 +1412,19 @@ class ItalianDCATAPProfile(RDFProfile):
                 if adata.get('agent_identifier'):
                     self.g.add((agent, DCT.identifier, Literal(adata['agent_identifier'])))
 
+        # 09.10.26 admsIdentifierAvailability (0,25): metrica MQA 2.0.0
+        # rimasta a 0 perche' l'extra alternate_identifier non e' mai
+        # valorizzato, quindi alt_ids resta vuoto. Fallback: l'id CKAN come
+        # identificatore secondario (dct:identifier porta gia' quello
+        # DCAT-AP_IT). La shape del Dataset impone sh:nodeKind
+        # sh:BlankNodeOrIRI, la adms:IdentifierShape esattamente una
+        # skos:notation literal.
+        if not alt_ids and dataset_dict.get('id'):
+            _idnode = BNode()
+            self.g.add((_idnode, RDF['type'], ADMS.Identifier))
+            self.g.add((_idnode, SKOS.notation, Literal(dataset_dict['id'])))
+            self.g.add((dataset_ref, ADMS.identifier, _idnode))
+
         self._set_temporal_coverage(self.g, dataset_dict, dataset_ref)
 
         # publisher
