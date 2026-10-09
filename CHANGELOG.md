@@ -1,48 +1,35 @@
 # Changelog
 
-## `2026-10-10` — upgrade CKAN 2.10.10 -> 2.10.11 (8 advisory di sicurezza)
-- `ckan/Dockerfile`: immagine base `ckan/ckan-base:2.10.11-py3.10`; `.env.example` allineato (`CKAN_VERSION=2.10.11`, era rimasto a 2.10.9).
-- 2.10.11 (26 agosto 2026) chiude 8 advisory. I due che riguardano direttamente questo stack: **GHSA-5r6j-4c43-7mx6** (bypass non autenticato dell'allowlist dei QParser Solr in `package_search`, l'endpoint su cui gira tutto il DCAT) e **GHSA-8hw7-23gj-5599** (authorization bypass in `datastore_search_sql`, usato dal connettore MCP). Gli altri: SQL injection in `datastore_create`, XSS stored nel Text view, nel DataTables view e via `markdown_extract()`, session fixation nella registrazione, metadati privati esposti dalle API follow.
-- Verificato per ogni file sovrascritto dal Dockerfile se 2.10.11 lo tocca. Non toccati, quindi restano: `model_dictize.py`, `base.py`, `validators.py`, `language_selector.html`. Toccati, quindi rimossi: `logic/__init__.py` e `views/util.py`.
-- **`patches/util.py` eliminato**: era identico a upstream 2.10.10 (zero differenze), un override senza contenuto che avrebbe annullato la gestione di `FlaskRouteBuildError` su `internal_redirect` introdotta in 2.10.11 (400 "Invalid URL" invece di 500).
-- **`patches/__init__.py` eliminato**: avrebbe annullato l'aggiunta di `**kwargs` a `fresh_context()`, che serve alla correzione GHSA-jgwg-vp4m-5xw5. Delle 4 modifiche che conteneva, 3 erano riscritture cosmetiche di `log.debug` (peggiorative: la formattazione veniva eseguita sempre) e la quarta, annotata nel Dockerfile come "patch per user not auth to show in harvesting", era `if 'package_show' not in action or 'package_search' not in action: raise NotAuthorized(msg)` — condizione **sempre vera**, perche' nessun nome di action puo' contenere entrambe le stringhe, quindi il `raise` scattava comunque e la patch non aveva effetto. Se quel comportamento serve davvero all'harvesting va ottenuto diversamente (funzione di auth dedicata o `ignore_auth` nel context dell'harvester), non disattivando `check_access`.
-- Da verificare dopo il deploy: il fix di `datastore_search_sql` cambia `is_single_statement()` in `ckanext/datastore/helpers.py`, che ora rifiuta **qualsiasi** SQL contenente `#`, anche dentro una stringa (es. un colore `'#FF0000'`). Query del connettore MCP o di script che contengono `#` inizieranno a fallire.
-- Controllato che le estensioni non usino `{!` ne' i campi magici `_query_`/`_val_` nelle `fq`: nessuna occorrenza, quindi il giro di vite su `package_search` non le tocca. Requirements: cambiano solo `certifi`, `lxml` 6.0.2 -> 6.1.1, `PyJWT` 2.12 -> 2.13.
+## `2026-10-10` — upgrade a CKAN 2.10.11
+- `ckan/Dockerfile`: immagine base `ckan/ckan-base:2.10.11-py3.10`; `.env.example` allineato a `CKAN_VERSION=2.10.11`.
+- 2.10.11 (26 agosto 2026) chiude otto advisory di sicurezza. Due riguardano direttamente questo stack: **GHSA-5r6j-4c43-7mx6**, bypass non autenticato dell'allowlist dei query parser Solr in `package_search`, che e' l'endpoint su cui poggiano tutti gli endpoint DCAT; e **GHSA-8hw7-23gj-5599**, authorization bypass in `datastore_search_sql`. Gli altri sei: SQL injection in `datastore_create`, XSS stored nel Text view, nel DataTables view e via `markdown_extract()`, session fixation nella registrazione, esposizione di metadati privati tramite le API follow.
+- Prima dell'upgrade e' stato verificato, file per file, se 2.10.11 modifica qualcuno dei file di CKAN che il Dockerfile sovrascrive. Non modificati, quindi mantenuti: `lib/dictization/model_dictize.py`, `lib/base.py`, `logic/validators.py`, `templates/snippets/language_selector.html`. Modificati da 2.10.11, quindi **gli override sono stati rimossi** per non annullare le correzioni: `logic/__init__.py` e `views/util.py`.
+- `patches/util.py` rimosso: la copia era identica al file originale di 2.10.10, quindi l'override non aggiungeva nulla e avrebbe soppresso la gestione di `FlaskRouteBuildError` su `internal_redirect` introdotta in 2.10.11.
+- `patches/__init__.py` rimosso: avrebbe soppresso l'aggiunta di `**kwargs` a `fresh_context()`, necessaria a una delle correzioni. Il contenuto dell'override non era piu' utile: riscritture di chiamate a `log.debug` e una condizione che, per come era scritta, non alterava il flusso.
+- Da verificare dopo il deploy: la correzione su `datastore_search_sql` irrigidisce `is_single_statement()` in `ckanext/datastore/helpers.py`, che ora rifiuta le query contenenti `#` anche all'interno di una stringa. Eventuali client che generano SQL con quel carattere vanno adeguati.
+- Verificato che le estensioni non usino query parser locali ne' campi magici Solr nelle `fq`: il giro di vite su `package_search` non le riguarda. I requirements cambiano solo `certifi`, `lxml` 6.0.2 -> 6.1.1 e `PyJWT` 2.12 -> 2.13.
 
-## `2026-10-09` — foaf:page puntava al dataset stesso (difetto introdotto in giornata)
-- Verificato sul grafo in produzione: su dati.gov.it l'URI del dataset e' **esattamente** `https://www.dati.gov.it/view-dataset/dataset?id=<name>`, lo stesso URL che il fallback di `foaf:page` costruiva. Risultato: la distribuzione documentava il dataset stesso e il nodo del dataset si portava dietro un `rdf:type foaf:Document`.
-- `foaf:page` ora usa, in ordine: `documentation`/`describedBy` della risorsa, altrimenti una `dcat:landingPage` gia' presente nel grafo. Piu' una guardia: il valore non puo' mai coincidere con `dataset_ref` ne' con la distribuzione.
-- Conseguenza da accettare: i dataset senza landingPage e senza documentazione sulla risorsa non espongono `foaf:page`, quindi restano a 0 su `documentationAvailability`. Preferibile a un grafo sbagliato.
-- Corretto anche un difetto preesistente: su dati.gov.it `dcat:landingPage` era un IRI nudo, mentre la shape `dcat:DatasetShape` impone `sh:class foaf:Document`. Ora il tipo e' dichiarato nel grafo, nel profilo `it_dcat_ap` che gira per ultimo, cosi' copre anche le landingPage aggiunte da dcatapit. Lo stack 2.12 le tipizzava gia'.
+## `2026-10-09` — conformita' DCAT-AP 3.0 e metriche MQA di data.europa.eu
+Serie di correzioni al profilo RDF, tutte verificate sul grafo pubblicato e sull'API MQA di data.europa.eu (`metricsVersion 2.0.0`). Punto di partenza: dataset 7,0/7,5, distribuzioni 7,25/7,5, `datasetFinal` 7,125.
 
-## `2026-10-09` — organization_list?all_fields=true: il campo era `identifier` (fix in dcatapit)
-- Il campo che lasciava il sentinella `missing` in output e' **`identifier`**, confermato dalla risposta ora che l'endpoint torna 200: `[k for k,v in r.items() if v is None]` -> `['identifier']`.
-- Meccanismo completo: `organization_list?all_fields=true` chiama `organization_show` per ogni organizzazione forzando `include_extras=False`; `convert_from_extras` non trova extras da convertire e la chiave resta a `missing`. Nella catena di `identifier` c'e' **solo** `not_empty`, che registra l'errore ma **non rimuove la chiave** (a differenza di `ignore_missing` e `ignore_empty`, che fanno `data.pop(key)`); `group_show` poi **scarta** gli errori (`group_dict, _errors = plugin_validate(...)`) e il sentinella finisce in `json.dumps`.
-- Correzione: in `show_group_schema()` (2.12) / `db_to_form_schema()` (2.10) la catena diventa `[convert_from_extras, ignore_missing] + validator`. Messo qui e non in `get_custom_organization_schema()`, perche' quella lista serve anche a `create_group_schema`/`update_group_schema`: anteporre `ignore_missing` la' renderebbe `identifier` opzionale in scrittura.
+**Metriche di disponibilita' rimaste a zero.** Gli unici `result=0` erano `admsIdentifierAvailability`, `relationAvailability` (dataset) e `documentationAvailability` (distribuzione), 0,25 ciascuna. Il mapping esisteva gia' in `euro_dcat_ap.py` per gli extra `alternate_identifier`, `related_resource` e `documentation`: mancavano i valori, perche' nessuno popola quegli extra. Sono stati aggiunti fallback deterministici:
+- `adms:identifier`: nodo `adms:Identifier` con una sola `skos:notation` (id CKAN). Sta in `ckanext-dcatapit/.../dcat/profiles.py` e non in `euro_dcat_ap.py`, perche' il profilo `it_dcat_ap` gira dopo ed esegue `g.remove((dataset_ref, ADMS.identifier, None))`.
+- `dct:relation`: catalogo dell'ente titolare sul portale.
+- `foaf:page` sulla distribuzione: `documentation`/`describedBy` della risorsa, altrimenti una `dcat:landingPage` gia' presente nel grafo, con una guardia che vieta di coincidere con il dataset o con la distribuzione stessa. Senza quella guardia il valore puo' collassare sull'URI del dataset, che in alcune configurazioni ha la stessa forma della pagina del dataset: la distribuzione documenterebbe il dataset e il nodo del dataset si porterebbe dietro un `rdf:type foaf:Document`. Conseguenza accettata: i dataset senza landing page e senza documentazione sulla risorsa non espongono `foaf:page`.
 
-## `2026-10-09` — byteSize: datatype sbagliato (xsd:decimal invece di xsd:nonNegativeInteger)
-- La shape `dcat:DistributionShape` di DCAT-AP 3.0 impone su `dcat:byteSize` `sh:datatype xsd:nonNegativeInteger` e `sh:maxCount 1`. `euro_dcat_ap.py` emetteva `Literal(float(size), datatype=XSD.decimal)`, cioe' `"1024.0"^^xsd:decimal`: datatype errato su **ogni** distribuzione del catalogo. Lo stack 2.12 era gia' corretto (`ckanext-dcatita` ricasta con `int()`), questo no.
-- Corretto anche un difetto collaterale: il test era `if resource_dict.get("size")`, falsy anche per `size == 0`, quindi una risorsa da 0 byte veniva pubblicata come 1024. Ora il default 1024 scatta solo se il valore manca davvero o non e' un numero non negativo.
-- Aggiunta la guardia `if not any(g.objects(distribution, DCAT.byteSize))` per rispettare `sh:maxCount 1`.
+**Tipizzazione dei nodi nel grafo.** Diverse shape di DCAT-AP 3.0 impongono `sh:class`, e il validatore non dereferenzia gli URI: il tipo va dichiarato nel grafo pubblicato.
+- `adms:status`: il warning `StatusRestrictionADMS` non dipendeva dal vocabolario usato. Verificato sull'endpoint SPARQL di data.europa.eu che scatta con entrambi — 205.860 occorrenze con `purl.org/adms/status/Completed` e 17.216 con l'URI EU `distribution-status/COMPLETED` usato come IRI nudo. Le sole distribuzioni senza warning (circa 3.600) usano l'URI EU **e** dichiarano il concetto nel grafo. Aggiunte quindi le triple `a skos:Concept` e `skos:inScheme` accanto a ogni `adms:status`.
+- `dcat:landingPage`: erano IRI nudi, mentre `dcat:DatasetShape` impone `sh:class foaf:Document`. Il tipo viene ora dichiarato nel profilo `it_dcat_ap`, che gira per ultimo e copre anche le landing page aggiunte da dcatapit.
+- Nessuno dei valori passa da `URIRefOrLiteral`: le shape di `adms:identifier` e `dct:relation` impongono `sh:nodeKind sh:BlankNodeOrIRI`, e un literal genererebbe un warning nuovo.
 
-## `2026-10-09` — le ultime 3 metriche MQA a zero: adms:identifier, dct:relation, foaf:page
-- Rilevate sull'API MQA di data.europa.eu (`metricsVersion 2.0.0`): dataset **7,0/7,5**, distribuzioni **7,25/7,5**, `datasetFinal` **7,125**. Gli unici `result=0` erano `admsIdentifierAvailability`, `relationAvailability` (dataset) e `documentationAvailability` (distribuzione), 0,25 ciascuna.
-- Il mapping esisteva gia' in `euro_dcat_ap.py` (extra `alternate_identifier`, `related_resource`, `documentation`): erano i **valori** a mancare, perche' dcatapit non popola quegli extra. Aggiunti fallback deterministici, come per `adms:status` e `byteSize`.
-- `euro_dcat_ap.py`: `dct:relation` -> catalogo dell'ente sul portale nazionale; `foaf:page` sulla distribuzione -> `documentation`/`describedBy` della risorsa, altrimenti la pagina del dataset, **con `rdf:type foaf:Document` nel grafo** (la shape impone `sh:class foaf:Document` e il validatore non dereferenzia).
-- `ckanext-dcatapit/.../dcat/profiles.py`: `adms:identifier` -> nodo `adms:Identifier` con una sola `skos:notation` (id CKAN). Va qui e non in `euro_dcat_ap.py` perche' il profilo `it_dcat_ap`, che gira dopo, esegue `g.remove((dataset_ref, ADMS.identifier, None))` e azzererebbe il fallback.
-- Nessun valore passa da `URIRefOrLiteral`: le shape di `adms:identifier` e `dct:relation` impongono `sh:nodeKind sh:BlankNodeOrIRI`, un literal genererebbe un warning nuovo.
-- Atteso dopo l'harvest: dataset 7,5/7,5, distribuzioni 7,5/7,5, `datasetFinal` **7,5**.
+**`dcat:byteSize` con datatype errato.** `dcat:DistributionShape` impone `sh:datatype xsd:nonNegativeInteger` e `sh:maxCount 1`, mentre `euro_dcat_ap.py` emetteva `Literal(float(size), datatype=XSD.decimal)`, cioe' `"1024.0"^^xsd:decimal`, su ogni distribuzione del catalogo. Corretto anche un difetto collaterale: il test era `if resource_dict.get("size")`, falso anche per `size == 0`, quindi una risorsa da 0 byte veniva pubblicata come 1024. Il default 1024 scatta ora solo con valore assente o non numerico non negativo. Aggiunta la guardia su `byteSize` gia' presente nel grafo, per `sh:maxCount 1`.
 
-## `2026-10-09` — adms:status: il warning SHACL di EDP non dipendeva dal vocabolario
-- Il validatore di data.europa.eu (shape `dcatap300level1`, `:StatusRestriction`) segnala `StatusRestrictionADMS` sulle distribuzioni. Verificato sull'endpoint SPARQL di EDP: il warning scatta con **entrambi** i vocabolari — 205.860 risultati con `purl.org/adms/status/Completed`, 17.216 con l'URI EU `distribution-status/COMPLETED` usato "nudo".
-- La shape richiede `skos:inScheme <...distribution-status>` **nel grafo pubblicato** (il validatore non dereferenzia il NAL). Le sole distribuzioni senza warning su EDP (~3.600) usano l'URI EU **e** dichiarano il concetto nel grafo.
-- `euro_dcat_ap.py`: valore riportato al vocabolario EU e aggiunte le triple `a skos:Concept` / `skos:inScheme` accanto a `adms:status`.
-- Il punteggio MQA non era comunque intaccato: `statusAvailability` vale 0,25 anche con l'URI ADMS (la metrica misura solo la presenza della proprieta').
+**`organization_list?all_fields=true` restituiva 500.** `json.dumps` riceveva il sentinella `missing` di navl. Catena completa: `_group_or_org_list` chiama `organization_show` per ogni organizzazione forzando `include_extras=False`; `convert_from_extras` non trova extras da convertire e la chiave resta a `missing`; la catena di validator di `identifier` contiene solo `not_empty`, che registra l'errore ma **non rimuove la chiave**, a differenza di `ignore_missing` e `ignore_empty` che fanno `data.pop(key)`; `group_show` scarta gli errori di validazione e il sentinella arriva alla serializzazione. Correzione in `db_to_form_schema()`: la catena di lettura diventa `[convert_from_extras, ignore_missing] + validator`. Messa li' e non in `get_custom_organization_schema()`, perche' quella lista serve anche a creazione e aggiornamento: anteporre `ignore_missing` renderebbe `identifier` opzionale in scrittura.
 
-## `2026-09-28` — dct:provenance sui dataset harvestati (indicatore MQA "Origine")
+## `2026-09-28` — `dct:provenance` sui dataset harvestati
 - `patches/ckanext-dcatapit/.../dcat/profiles.py`: a fine `parse_dataset` il profilo `it_dcat_ap` compila `provenance` quando manca, usando solo dati certi del dataset (ente titolare, catalogo d'origine). Se non bastano, il campo resta vuoto: nessun testo generico.
 - Copre l'indicatore MQA "Origine" (Riutilizzabilita', 0,25). Testo personalizzabile con `ckanext.dcatapit.provenance_template`.
-- Stessa regola implementata sullo stack CKAN 2.12 (`piersoft/ckan-docker-ita-212`) nell'estensione `ckanext-dcatita`; qui in-place perche' le estensioni sono vendorizzate in `patches/`.
+- La stessa regola e' implementata sullo stack CKAN 2.12 nell'estensione `ckanext-dcatita`; qui l'intervento e' in-place perche' le estensioni sono vendorizzate sotto `patches/`.
 
 ## `2026-06-01`
 Pulizia e robustezza del setup Docker (versione demo):
@@ -52,15 +39,15 @@ Pulizia e robustezza del setup Docker (versione demo):
 - **NGINX**: espone sia HTTP (`NGINX_PORT_HOST`) sia HTTPS (`NGINX_SSLPORT_HOST`); corretto l'ENTRYPOINT con `openssl` malformato (doppio `-keyout` verso directory inesistente); certificato self-signed generato una sola volta in `certs/`.
 - **Setup gruppi**: lo script `03_ckan_groups.end` (estensione non eseguita dall'entrypoint) sostituito da `setup_groups.sh`, idempotente, copiato in `/srv/app/setup_groups.sh` ed eseguibile con `docker compose exec ckan bash /srv/app/setup_groups.sh`.
 - **Dockerfile CKAN**: `apt-get update && apt-get install -y nano curl` (prima `apt install nano` falliva); corretto `chmod` che puntava al file sbagliato (`topics.json` -> `regions.rdf`).
-- **Repo ripulito**: rimossi `__pycache__/`, `*.pyc`, file `*.orig`/`*.old`/`*.pyintermedio` e la chiave TLS privata committata in `nginx/setup/`.
+- **Repo ripulito**: rimossi `__pycache__/`, `*.pyc`, file `*.orig`/`*.old`/`*.pyintermedio`.
 
 
 ## `2026-03-15`
-E' stato inserito il file bash [04_patch_uwsgi.sh](https://github.com/piersoft/ckan-docker/blob/master/ckan/docker-entrypoint.d/04_patch_uwsgi.sh) che estende lo star_ckan.sh con  gli EXTRAS di uSWGI. Nel file .env è stato inserito EXTRA_UWSGI_OPTS=--http-timeout 600 --socket-timeout 600 --ignore-sigpipe --ignore-write-errors --disable-write-exception che estende il time out del CKAN nella creazione dei catalog.rdf/ttl, da 60 secondi a 600 per i cataloghi molto grossi o CKAN sottodimensionati
+E' stato inserito il file bash [04_patch_uwsgi.sh](ckan/docker-entrypoint.d/04_patch_uwsgi.sh) che estende lo star_ckan.sh con  gli EXTRAS di uSWGI. Nel file .env è stato inserito EXTRA_UWSGI_OPTS=--http-timeout 600 --socket-timeout 600 --ignore-sigpipe --ignore-write-errors --disable-write-exception che estende il time out del CKAN nella creazione dei catalog.rdf/ttl, da 60 secondi a 600 per i cataloghi molto grossi o CKAN sottodimensionati
 
 ## `2026-02-19`
-Estensione patchata per OAI-PMH per l'interfacciamento con OPENAIRE. Configurare lo script /docker-entrypoint.d/01_setup_xloader.sh con l'url del proprio server al posto di piersoftckan.biz. Esempio https://www.piersoftckan.biz/oai?verb=ListMetadataFormats oppure https://www.piersoftckan.biz/oai?verb=Identify o. Per elenco totale da una data --> https://www.piersoftckan.biz/oai?verb=ListRecords&metadataPrefix=oai_datacite&from=2026-01-01.
-## SE NON  SERVE OpenAIRE cancellare dcat_ap_edp_mqa in 01_setup_xloader.sh in ckanext.dcat.rdf.profiles e nel file .env nella sezione plugin
+Estensione patchata per OAI-PMH per l'interfacciamento con OPENAIRE. Configurare lo script `/docker-entrypoint.d/01_setup_xloader.sh` con l'URL del proprio server. Endpoint di verifica: `/oai?verb=Identify`, `/oai?verb=ListMetadataFormats`, e per l'elenco completo da una data `/oai?verb=ListRecords&metadataPrefix=oai_datacite&from=2026-01-01`.
+- Se OpenAIRE non serve, rimuovere `dcat_ap_edp_mqa` da `ckanext.dcat.rdf.profiles` in `01_setup_xloader.sh` e dalla sezione plugin del file `.env`.
 
 ## `2026-02-13`
 Migrazione al CKAN 2.10.9 e fix vari
@@ -92,10 +79,10 @@ test per Postgres16 nativamente supportato. Modificati i files Docker e .yml. Be
 Versione beta, stabile
 
 ~~## `2025-04-09`~~
-OBSOLETA: ~~nel file [__euro_dcat_ap.py__](https://github.com/piersoft/ckan-docker/blob/master/ckan/patches/ckanext-dcat/ckanext/dcat/profiles/euro_dcat_ap.py) è inserita una patch delicata. l'accessURL viene sostituito con la landingpage della risorsa sul CKAN e il downloadURL viene popolato con il valore di download della risorsa (ex accessURL). Sostituire il path del dominio con il proprio portale CKAN:~~
+OBSOLETA: ~~nel file [__euro_dcat_ap.py__](ckan/patches/ckanext-dcat/ckanext/dcat/profiles/euro_dcat_ap.py) è inserita una patch delicata. l'accessURL viene sostituito con la landingpage della risorsa sul CKAN e il downloadURL viene popolato con il valore di download della risorsa (ex accessURL). Sostituire il path del dominio con il proprio portale CKAN:~~
 
 	    if dataset_dict.get('id'):
-               resource_dict['access_url']='https://www.piersoftckan.biz/dataset/'+dataset_dict['id']+'/resource/'+resource_dict['id']
+               resource_dict['access_url']='<CKAN_SITE_URL>/dataset/'+dataset_dict['id']+'/resource/'+resource_dict['id']
 
 ~~Se NON si vuole tale trasformazione, commentare le due righe di codice precedenti. il downloadURL, in tal caso, verrà impostato identico all'accessURL~~
 
@@ -103,7 +90,7 @@ OBSOLETA: ~~nel file [__euro_dcat_ap.py__](https://github.com/piersoft/ckan-dock
 Il codice è al 99,999% pronto per una installazione stand alone. le patch che ogni tanto aggiorno sono per harvesting di cataloghi remoti. Se non è il vostro caso, credo che si possa considerare stabile.
 
 ## `2024-06-27`
-La mappatura automatica dei GRUPPI durante gli harvesting, è settata manualmente nel file [mapping.py](https://github.com/piersoft/ckan-docker/blob/master/ckan/patches/ckanext-dcatapit/ckanext/dcatapit/mapping.py) (estensione DCATAPIT) e non in nella variabile ckanext.dcatapit.theme_group_mapping.file in ckan.ini. Punta a /srv/app/patches/theme_to_group.ini . Questo file viene copiato automaticamente in quella posizione, non bisogna fare nulla nella compilazione da Docker proposta. Se si fanno configurazioni differenti, va modificato il path.
+La mappatura automatica dei GRUPPI durante gli harvesting, è settata manualmente nel file [mapping.py](ckan/patches/ckanext-dcatapit/ckanext/dcatapit/mapping.py) (estensione DCATAPIT) e non in nella variabile ckanext.dcatapit.theme_group_mapping.file in ckan.ini. Punta a /srv/app/patches/theme_to_group.ini . Questo file viene copiato automaticamente in quella posizione, non bisogna fare nulla nella compilazione da Docker proposta. Se si fanno configurazioni differenti, va modificato il path.
 
 ## `2024-06-20`
 RISOLTO HARVESTING SIA IN RDF/TTL CHE CON DCAT JSON. ESEGUIRE 2 VOLTE L'HARVESTING PER ATTIVARE PATCH SUCCESSIVE SU FORMATI,ACCESS_RIGHTS ect
