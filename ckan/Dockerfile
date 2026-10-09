@@ -1,4 +1,4 @@
-FROM ckan/ckan-base:2.10.10-py3.10 AS ckan
+FROM ckan/ckan-base:2.10.11-py3.10 AS ckan
 
 USER root
 
@@ -69,13 +69,25 @@ COPY patches/core.py /usr/local/lib/python3.10/site-packages/pylons/controllers/
 COPY patches/supervisord.conf /etc/supervisord.conf
 COPY patches/sprite-resource-icons.png "${APP_DIR}/src/ckan/ckan/public/base/images"
 COPY patches/ckan_logo_col.png "${APP_DIR}/src/ckan/ckan/public/base/images"
-# patch per user not auth to show in harvesting
-COPY patches/__init__.py ${APP_DIR}/src/ckan/ckan/logic/__init__.py
+# 10.10.26 Rimosso l'override di ckan/logic/__init__.py (era patches/__init__.py,
+# "patch per user not auth to show in harvesting"). Due ragioni:
+#  1. 2.10.11 modifica quel file (fresh_context accetta **kwargs, serve alla
+#     correzione GHSA-jgwg-vp4m-5xw5 sull'esposizione di metadati privati via
+#     API follow): sovrascriverlo con la copia 2.10.10 annullava la correzione.
+#  2. Delle 4 modifiche che conteneva, 3 erano riscritture cosmetiche di
+#     log.debug e la quarta era
+#       if 'package_show' not in action or 'package_search' not in action:
+#     condizione sempre vera (nessun nome di action contiene entrambe le
+#     stringhe), quindi il raise NotAuthorized scattava comunque: la patch non
+#     aveva alcun effetto.
 # patch per avere il rating dal portale europeo dei dati aperti. Decommentare se si vuole il punteggio
 #COPY patches/read.html "${APP_DIR}/src/ckan/ckan/templates/package/read.html"
 # fix origin con landingpage e non /edit/
 COPY patches/language_selector.html ${APP_DIR}/src/ckan/ckan/templates/snippets/language_selector.html
-COPY patches/util.py ${APP_DIR}/src/ckan/ckan/views/util.py
+# 10.10.26 Rimosso l'override di ckan/views/util.py (era patches/util.py):
+# la copia era identica a upstream 2.10.10, zero differenze, e in 2.10.11 quel
+# file riceve la gestione di FlaskRouteBuildError su internal_redirect (400
+# invece di 500 su URL non costruibile).
 
 #FIX per XLOADER per il comando ckan xloader status. Consigliato:
 COPY patches/command.py /usr/local/lib/python3.10/site-packages/ckanext/xloader/command.py
