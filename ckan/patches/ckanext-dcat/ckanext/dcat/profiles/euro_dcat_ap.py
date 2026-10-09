@@ -949,25 +949,29 @@ class EuropeanDCATAPProfile(RDFProfile):
             self._add_date_triples_from_dict(resource_dict, distribution, items)
 
             # Numbers
-            if resource_dict.get("size"):
-                try:
-                    g.add(
-                        (
-                            distribution,
-                            DCAT.byteSize,
-                            Literal(float(resource_dict["size"]), datatype=XSD.decimal),
-                        )
+            # 09.10.26 La shape dcat:DistributionShape di DCAT-AP 3.0 impone
+            # su dcat:byteSize sh:datatype xsd:nonNegativeInteger e
+            # sh:maxCount 1. Qui si emetteva float(...)^^xsd:decimal, cioe'
+            # "1024.0"^^xsd:decimal: datatype sbagliato su ogni distribuzione.
+            # Nota: il vecchio test `if resource_dict.get("size")` era falsy
+            # anche per size == 0, quindi una risorsa da 0 byte diventava 1024.
+            # Il default 1024 ora scatta solo se il valore manca davvero o non
+            # e' un numero non negativo.
+            _size = resource_dict.get("size")
+            try:
+                _bytes = int(float(_size))
+                if _bytes < 0:
+                    raise ValueError(_size)
+            except (TypeError, ValueError):
+                _bytes = 1024
+            if not any(g.objects(distribution, DCAT.byteSize)):
+                g.add(
+                    (
+                        distribution,
+                        DCAT.byteSize,
+                        Literal(_bytes, datatype=XSD.nonNegativeInteger),
                     )
-                except (ValueError, TypeError):
-                    g.add((distribution, DCAT.byteSize, Literal(resource_dict["size"])))
-            else:
-                   g.add(
-                        (
-                            distribution,
-                            DCAT.byteSize,
-                            Literal(float("1024"), datatype=XSD.decimal),
-                        )
-                    )
+                )
 
             # Checksum
             if resource_dict.get("hash"):

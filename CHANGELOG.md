@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-09` — byteSize: datatype sbagliato (xsd:decimal invece di xsd:nonNegativeInteger)
+- La shape `dcat:DistributionShape` di DCAT-AP 3.0 impone su `dcat:byteSize` `sh:datatype xsd:nonNegativeInteger` e `sh:maxCount 1`. `euro_dcat_ap.py` emetteva `Literal(float(size), datatype=XSD.decimal)`, cioe' `"1024.0"^^xsd:decimal`: datatype errato su **ogni** distribuzione del catalogo. Lo stack 2.12 era gia' corretto (`ckanext-dcatita` ricasta con `int()`), questo no.
+- Corretto anche un difetto collaterale: il test era `if resource_dict.get("size")`, falsy anche per `size == 0`, quindi una risorsa da 0 byte veniva pubblicata come 1024. Ora il default 1024 scatta solo se il valore manca davvero o non e' un numero non negativo.
+- Aggiunta la guardia `if not any(g.objects(distribution, DCAT.byteSize))` per rispettare `sh:maxCount 1`.
+
 ## `2026-10-09` — le ultime 3 metriche MQA a zero: adms:identifier, dct:relation, foaf:page
 - Rilevate sull'API MQA di data.europa.eu (`metricsVersion 2.0.0`): dataset **7,0/7,5**, distribuzioni **7,25/7,5**, `datasetFinal` **7,125**. Gli unici `result=0` erano `admsIdentifierAvailability`, `relationAvailability` (dataset) e `documentationAvailability` (distribuzione), 0,25 ciascuna.
 - Il mapping esisteva gia' in `euro_dcat_ap.py` (extra `alternate_identifier`, `related_resource`, `documentation`): erano i **valori** a mancare, perche' dcatapit non popola quegli extra. Aggiunti fallback deterministici, come per `adms:status` e `byteSize`.
