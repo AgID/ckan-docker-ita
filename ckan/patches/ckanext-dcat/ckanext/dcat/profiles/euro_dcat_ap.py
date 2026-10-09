@@ -40,10 +40,19 @@ config = toolkit.config
 
 DISTRIBUTION_LICENSE_FALLBACK_CONFIG = "ckanext.dcat.resource.inherit.license"
 PREF_LANDING= config.get('ckanext.dcat.base_uri')
-# ADMS status vocabulary: e' quello richiesto dalle shape SHACL DCAT-AP 2.x usate dal
-# validatore di data.europa.eu (skos:inScheme <http://purl.org/adms/status/1.0>).
-# Il vocabolario EU distribution-status (DCAT-AP 3) genera violazioni su EDP.
-DISTRIBUTION_STATUS_COMPLETED = "http://purl.org/adms/status/Completed"
+# 09.10.26 adms:status della distribuzione.
+# La shape DCAT-AP 3.0 :StatusRestriction (usata dal validatore di data.europa.eu
+# come dcatap300level1) impone due cose insieme:
+#   1. il concetto del vocabolario EU "distribution-status" (sh:hasValue sullo scheme);
+#   2. la tripla skos:inScheme PRESENTE NEL GRAFO pubblicato, perche' il validatore
+#      non dereferenzia il NAL.
+# Senza la 2 il warning StatusRestrictionADMS scatta con qualunque URI, ADMS compreso
+# (su EDP: 205.860 warning con purl.org/adms/status/Completed e 17.216 con l'URI EU
+#  "nudo"; le ~3.600 distribuzioni senza warning sono tutte URI EU + skos:inScheme).
+DISTRIBUTION_STATUS_SCHEME = (
+    "http://publications.europa.eu/resource/authority/distribution-status"
+)
+DISTRIBUTION_STATUS_COMPLETED = DISTRIBUTION_STATUS_SCHEME + "/COMPLETED"
 
 class EuropeanDCATAPProfile(RDFProfile):
     """
@@ -678,6 +687,14 @@ class EuropeanDCATAPProfile(RDFProfile):
                 
             self._add_triples_from_dict(resource_dict, distribution, items)
 
+            # Dichiarazione SKOS del concetto di status: senza questa il validatore
+            # di EDP non trova skos:inScheme e segnala StatusRestrictionADMS (vedi
+            # commento su DISTRIBUTION_STATUS_SCHEME).
+            _status = resource_dict.get('status')
+            if _status and str(_status).startswith(DISTRIBUTION_STATUS_SCHEME):
+                g.add((URIRef(_status), RDF.type, SKOS.Concept))
+                g.add((URIRef(_status), SKOS.inScheme,
+                       URIRef(DISTRIBUTION_STATUS_SCHEME)))
 
             #  Lists
             items = [

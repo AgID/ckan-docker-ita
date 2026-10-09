@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-09` — adms:status: il warning SHACL di EDP non dipendeva dal vocabolario
+- Il validatore di data.europa.eu (shape `dcatap300level1`, `:StatusRestriction`) segnala `StatusRestrictionADMS` sulle distribuzioni. Verificato sull'endpoint SPARQL di EDP: il warning scatta con **entrambi** i vocabolari — 205.860 risultati con `purl.org/adms/status/Completed`, 17.216 con l'URI EU `distribution-status/COMPLETED` usato "nudo".
+- La shape richiede `skos:inScheme <...distribution-status>` **nel grafo pubblicato** (il validatore non dereferenzia il NAL). Le sole distribuzioni senza warning su EDP (~3.600) usano l'URI EU **e** dichiarano il concetto nel grafo.
+- `euro_dcat_ap.py`: valore riportato al vocabolario EU e aggiunte le triple `a skos:Concept` / `skos:inScheme` accanto a `adms:status`.
+- Il punteggio MQA non era comunque intaccato: `statusAvailability` vale 0,25 anche con l'URI ADMS (la metrica misura solo la presenza della proprieta').
+
 ## `2026-09-28` — dct:provenance sui dataset harvestati (indicatore MQA "Origine")
 - `patches/ckanext-dcatapit/.../dcat/profiles.py`: a fine `parse_dataset` il profilo `it_dcat_ap` compila `provenance` quando manca, usando solo dati certi del dataset (ente titolare, catalogo d'origine). Se non bastano, il campo resta vuoto: nessun testo generico.
 - Copre l'indicatore MQA "Origine" (Riutilizzabilita', 0,25). Testo personalizzabile con `ckanext.dcatapit.provenance_template`.
