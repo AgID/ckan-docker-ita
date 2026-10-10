@@ -25,6 +25,37 @@ from ckanext.dcat.profiles.base import (
 from ckanext.dcat.utils import catalog_uri, dataset_uri, resource_uri
 
 import ckanext.dcatapit.helpers as helpers
+
+
+# dct:type dell'Agent (publisher, rightsHolder, creator) dal codice IPA.
+# DCAT-AP 3 lo raccomanda (shape piveau "recommended", minCount 1) con il
+# vocabolario ADMS publisher type; la shape Level 1 ne ammette al massimo uno.
+# Stessa tabella di ckanext-dcatita (subcatalogs.json, publisher_type_by_ipa_prefix)
+# della 2.12: chiavi che finiscono con "_" = prefisso, le altre = sottostringa.
+# Codici non riconosciuti (es. codici ufficio IPA alfanumerici): nessun dct:type.
+ADMS_PUBLISHER_TYPE = "http://purl.org/adms/publishertype/"
+PUBLISHER_TYPE_BY_IPA = (
+    ("r_", "RegionalAuthority"),
+    ("p_", "RegionalAuthority"),
+    ("m_", "NationalAuthority"),
+    ("c_", "LocalAuthority"),
+    ("inail", "NationalAuthority"),
+    ("inps", "NationalAuthority"),
+    ("agid", "NationalAuthority"),
+    ("anac", "NationalAuthority"),
+    ("ispra", "NationalAuthority"),
+    ("pcm", "NationalAuthority"),
+)
+
+
+def publisher_type_from_ipa(agent_id):
+    code = str(agent_id or "").strip().lower()
+    if not code or code in ("n/a", "unknown", "none"):
+        return None
+    for key, kind in PUBLISHER_TYPE_BY_IPA:
+        if (key.endswith("_") and code.startswith(key)) or (not key.endswith("_") and key in code):
+            return ADMS_PUBLISHER_TYPE + kind
+    return None
 import ckanext.dcatapit.interfaces as interfaces
 from ckanext.dcatapit import schema, validators
 from ckanext.dcatapit.dcat.const import DCATAPIT, it_namespaces, THEME_BASE_URI, LANG_BASE_URI, FREQ_BASE_URI, \
@@ -2041,6 +2072,9 @@ class ItalianDCATAPProfile(RDFProfile):
             else:
                 self.g.add((agent, FOAF.name, Literal(agent_name)))
         self.g.add((agent, DCT.identifier, Literal(agent_id)))
+        _ptype = publisher_type_from_ipa(agent_id)
+        if _ptype and not any(self.g.objects(agent, DCT.type)):
+            self.g.add((agent, DCT.type, URIRef(_ptype)))
 
         return agent
 
@@ -2125,6 +2159,9 @@ class ItalianDCATAPProfile(RDFProfile):
         self.g.add((catalog_ref, DCT.publisher, agent))
         self.g.add((agent, FOAF.name, Literal(pub_agent_name)))
         self.g.add((agent, DCT.identifier, Literal(pub_agent_id)))
+        _ptype = publisher_type_from_ipa(pub_agent_id)
+        if _ptype:
+            self.g.add((agent, DCT.type, URIRef(_ptype)))
 
         # issued date
         issued = config.get('ckanext.dcatapit_config.catalog_issued', '1900-01-01')
