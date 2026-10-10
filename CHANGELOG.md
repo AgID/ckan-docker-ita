@@ -7,7 +7,7 @@
 - `patches/util.py` rimosso: la copia era identica al file originale di 2.10.10, quindi l'override non aggiungeva nulla e avrebbe soppresso la gestione di `FlaskRouteBuildError` su `internal_redirect` introdotta in 2.10.11.
 - `patches/__init__.py` rimosso: avrebbe soppresso l'aggiunta di `**kwargs` a `fresh_context()`, necessaria a una delle correzioni. Il contenuto dell'override non era piu' utile: riscritture di chiamate a `log.debug` e una condizione che, per come era scritta, non alterava il flusso.
 - Da verificare dopo il deploy: la correzione su `datastore_search_sql` irrigidisce `is_single_statement()` in `ckanext/datastore/helpers.py`, che ora rifiuta le query contenenti `#` anche all'interno di una stringa. Eventuali client che generano SQL con quel carattere vanno adeguati.
-- Verificato che le estensioni non usino query parser locali ne' campi magici Solr nelle `fq`: il giro di vite su `package_search` non le riguarda. I requirements cambiano solo `certifi`, `lxml` 6.0.2 -> 6.1.1 e `PyJWT` 2.12 -> 2.13.
+- Verificato che le estensioni non usino query parser locali ne' campi magici Solr nelle `fq`. I requirements cambiano solo `certifi`, `lxml` 6.0.2 -> 6.1.1 e `PyJWT` 2.12 -> 2.13.
 
 ## `2026-10-09` — conformita' DCAT-AP 3.0 e metriche MQA di data.europa.eu
 Serie di correzioni al profilo RDF, tutte verificate sul grafo pubblicato e sull'API MQA di data.europa.eu (`metricsVersion 2.0.0`). Punto di partenza: dataset 7,0/7,5, distribuzioni 7,25/7,5, `datasetFinal` 7,125.
