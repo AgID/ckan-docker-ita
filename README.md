@@ -1,7 +1,7 @@
 # CKAN Docker per l'Italia
 
 > [!NOTE]
-> Stack CKAN **2.10.10** + PostgreSQL **16** + Solr **9** + Redis + NGINX, già
+> Stack CKAN **2.10.11** + PostgreSQL **16** + Solr **9** + Redis + NGINX, già
 > predisposto per le funzionalità dei cataloghi open data italiani. Pensato per essere
 > provato in locale e poi spostato su un dominio reale cambiando una sola
 > variabile (`CKAN_SITE_URL`). Leggere il [CHANGELOG](CHANGELOG.md) per i
