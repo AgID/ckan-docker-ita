@@ -1,7 +1,7 @@
 # CKAN Docker per l'Italia
 
 > [!NOTE]
-> Stack CKAN **2.10.10** + PostgreSQL **16** + Solr **9** + Redis + NGINX, già
+> Stack CKAN **2.10.11** + PostgreSQL **16** + Solr **9** + Redis + NGINX, già
 > predisposto per le funzionalità dei cataloghi open data italiani. Pensato per essere
 > provato in locale e poi spostato su un dominio reale cambiando una sola
 > variabile (`CKAN_SITE_URL`). Leggere il [CHANGELOG](CHANGELOG.md) per i
@@ -195,7 +195,7 @@ Se non serve l'integrazione con OpenAIRE/`data.europa.eu`:
 
 ## Crediti
 
-- Estensione DCAT-AP_IT: [Geosolutions — ckanext-dcatapit](https://github.com/geosolutions-it/ckanext-dcatapit)
+- Estensione originale DCAT-AP_IT re-ingegnerizzata e aggiornata: [Geosolutions — ckanext-dcatapit](https://github.com/geosolutions-it/ckanext-dcatapit)
 - OAI-PMH: [tlmat-unican — ckanext-oai-pmh-server](https://github.com/tlmat-unican/ckanext-oai-pmh-server)
 - Immagini base CKAN: [ckan/ckan-docker-base](https://github.com/ckan/ckan-docker-base)
 
