@@ -1431,9 +1431,31 @@ class ItalianDCATAPProfile(RDFProfile):
         # dataset); lo stack 2.12 le tipizza gia'. Sta qui, nel profilo che
         # gira per ultimo, per coprire anche le landingPage aggiunte da
         # dcatapit dopo euro_dcat_ap.
-        for _lp in set(self.g.objects(dataset_ref, DCAT.landingPage)):
-            if _lp != dataset_ref:
-                self.g.add((_lp, RDF['type'], FOAF.Document))
+        _landing_pages = sorted(
+            (_lp for _lp in set(self.g.objects(dataset_ref, DCAT.landingPage))
+             if _lp != dataset_ref),
+            key=str)
+        for _lp in _landing_pages:
+            self.g.add((_lp, RDF['type'], FOAF.Document))
+
+        # 10.10.26 foaf:page sulle distribuzioni (documentationAvailability,
+        # 0,25). Il fallback in euro_dcat_ap non basta sui dataset harvestati:
+        # la' la landingPage arriva dal campo `url` del dataset, che per gli
+        # harvestati e' vuoto, mentre quella vera sta nell'extra `landingpage`
+        # e viene emessa da QUESTO profilo, che gira dopo. Al momento del
+        # fallback in euro_dcat_ap il grafo non ha quindi nessuna landingPage
+        # e la distribuzione resta senza foaf:page. Qui la landingPage c'e'
+        # gia', quindi si completa il lavoro.
+        # La shape impone sh:class foaf:Document (tipo gia' dichiarato sopra)
+        # e il valore non deve coincidere con il dataset ne' con la
+        # distribuzione, altrimenti la distribuzione documenta se stessa.
+        if _landing_pages:
+            _doc = _landing_pages[0]
+            for _dist in self.g.objects(dataset_ref, DCAT.distribution):
+                if _dist == _doc:
+                    continue
+                if not any(self.g.objects(_dist, FOAF.page)):
+                    self.g.add((_dist, FOAF.page, _doc))
 
         self._set_temporal_coverage(self.g, dataset_dict, dataset_ref)
 

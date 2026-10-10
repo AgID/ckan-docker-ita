@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-10` — `foaf:page` assente sulle distribuzioni dei dataset harvestati
+- Sui dataset harvestati il fallback di `foaf:page` in `euro_dcat_ap.py` non produceva nulla. Causa: li' la `dcat:landingPage` deriva dal campo `url` del dataset, che per un dataset harvestato e' vuoto; la landing page vera sta nell'extra `landingpage` e viene emessa dal profilo `it_dcat_ap`, che gira **dopo**. Al momento del fallback il grafo non contiene quindi nessuna landingPage e la distribuzione resta senza `foaf:page`.
+- Il completamento e' stato spostato in `ckanext-dcatapit/.../dcat/profiles.py`, accanto alla tipizzazione delle landingPage: li' la landing page e' gia' nel grafo. Restano le due guardie: il valore non puo' coincidere con il dataset ne' con la distribuzione.
+- Il fallback in `euro_dcat_ap.py` resta e ha ancora senso per i dataset locali, dove `url` e' valorizzato, e per le risorse che dichiarano `documentation`/`describedBy`.
+
 ## `2026-10-10` — upgrade a CKAN 2.10.11
 - `ckan/Dockerfile`: immagine base `ckan/ckan-base:2.10.11-py3.10`; `.env.example` allineato a `CKAN_VERSION=2.10.11`.
 - 2.10.11 (26 agosto 2026) chiude otto advisory di sicurezza. Due riguardano direttamente questo stack: **GHSA-5r6j-4c43-7mx6**, bypass non autenticato dell'allowlist dei query parser Solr in `package_search`, che e' l'endpoint su cui poggiano tutti gli endpoint DCAT; e **GHSA-8hw7-23gj-5599**, authorization bypass in `datastore_search_sql`. Gli altri sei: SQL injection in `datastore_create`, XSS stored nel Text view, nel DataTables view e via `markdown_extract()`, session fixation nella registrazione, esposizione di metadati privati tramite le API follow.
