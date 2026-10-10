@@ -713,6 +713,12 @@ class EuropeanDCATAPProfile(RDFProfile):
                 g.add((URIRef(_status), RDF.type, SKOS.Concept))
                 g.add((URIRef(_status), SKOS.inScheme,
                        URIRef(DISTRIBUTION_STATUS_SCHEME)))
+                # La shape dei concetti (DCAT-AP 3.0.1) richiede skos:prefLabel
+                # su ogni skos:Concept presente nel grafo: senza, il concetto
+                # dichiarato sopra genera una Violation.
+                if _status == DISTRIBUTION_STATUS_COMPLETED:
+                    g.add((URIRef(_status), SKOS.prefLabel, Literal("Completed", lang="en")))
+                    g.add((URIRef(_status), SKOS.prefLabel, Literal("Completato", lang="it")))
 
             #  Lists
             items = [
