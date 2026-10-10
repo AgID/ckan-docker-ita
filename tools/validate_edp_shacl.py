@@ -14,7 +14,7 @@ Uso:
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --name interventi-aerei-aib-protezione-civile
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --pages 3
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --fq organization:regione-puglia --pages 2
-  python3 validate_edp_shacl.py --file catalog.ttl
+  python3 validate_edp_shacl.py --file catalog.ttl   # TTL gia' scaricato in locale
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --level 2   # anche le raccomandate
 
 Opzioni:
@@ -118,6 +118,9 @@ def main():
     # MaxCount sul publisher.
     sources = []
     if a.file:
+        if not os.path.isfile(a.file):
+            print(f"ERRORE: file non trovato: {a.file}", file=sys.stderr)
+            return 2
         sources.append((a.file, open(a.file, encoding="utf-8").read()))
     else:
         for u in catalog_urls(a.base, a.name, a.fq, a.pages):
