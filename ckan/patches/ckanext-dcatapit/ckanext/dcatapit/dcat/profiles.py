@@ -1325,7 +1325,12 @@ class ItalianDCATAPProfile(RDFProfile):
          else:
             landing_page_uri_f = landing_page_uri
 
-         landing_page_uri_f += '#'
+         # 11.10.26 Non aggiungere '#' se il valore lo contiene gia' in coda.
+         # Quando l'extra `landingpage` finisce per '#' usciva un doppio '##':
+         # URI malformato, e diverso da quello usato per foaf:page, che quindi
+         # restava senza la tripla di tipo. Misurato: 18.518 landingPage su
+         # 65.027 (28,5%) terminavano con '##'.
+         landing_page_uri_f = landing_page_uri_f.rstrip('/#') + '#'
 
 #         self.g.add((dataset_ref, DCAT.landingPage, URIRef(landing_page_uri_f)))
 
@@ -1437,6 +1442,23 @@ class ItalianDCATAPProfile(RDFProfile):
             key=str)
         for _lp in _landing_pages:
             self.g.add((_lp, RDF['type'], FOAF.Document))
+
+        # 11.10.26 Anche gli oggetti di foaf:page vanno tipizzati
+        # foaf:Document, non solo quelli che coincidono con una landingPage.
+        # Misurato su una pagina di catalog.ttl: 192 foaf:page su 484 senza
+        # tipo, nessuna delle quali era una landingPage. Venivano dall'extra
+        # `documentation` della risorsa, che il catalogo sorgente pubblica e
+        # che il mapping generico di euro_dcat_ap riemette senza tipo, e dai
+        # casi in cui la landingPage usciva con il doppio '#'.
+        # Si cicla sulle distribuzioni di QUESTO dataset e non su tutto il
+        # grafo: durante la generazione di catalog.ttl self.g contiene tutti i
+        # dataset della pagina, quindi una scansione globale per ogni dataset
+        # sarebbe quadratica.
+        for _ref in [dataset_ref] + list(
+                self.g.objects(dataset_ref, DCAT.distribution)):
+            for _pg in set(self.g.objects(_ref, FOAF.page)):
+                if _pg != dataset_ref and _pg != _ref:
+                    self.g.add((_pg, RDF['type'], FOAF.Document))
 
         # 10.10.26 foaf:page sulle distribuzioni (documentationAvailability,
         # 0,25). Il fallback in euro_dcat_ap non basta sui dataset harvestati:

@@ -1,5 +1,12 @@
 # Changelog
 
+## `2026-10-11` — `foaf:page` senza tipo e `dcat:landingPage` con doppio `#`
+- `foaf:page` veniva tipizzato `foaf:Document` solo quando il suo oggetto coincideva con una `dcat:landingPage`. Misurato su una pagina di `catalog.ttl`: 192 `foaf:page` su 484 senza tipo, e nessuna di esse era una landing page. La shape `sh:class foaf:Document` risultava quindi violata, perche' il validatore non dereferenzia l'URI e il tipo va dichiarato nel grafo.
+- Due origini distinte, stessa conseguenza: l'extra `documentation` della risorsa, che alcuni cataloghi sorgente pubblicano e che il mapping generico di `euro_dcat_ap` riemette come `foaf:page` senza tipo; e le landing page che uscivano con un doppio `#`, quindi con un URI diverso da quello tipizzato.
+- Ora vengono tipizzati tutti gli oggetti di `foaf:page` del dataset e delle sue distribuzioni. Il ciclo e' limitato al dataset corrente e non esteso a tutto il grafo: durante la generazione di `catalog.ttl` il grafo contiene tutti i dataset della pagina, quindi una scansione globale per ogni dataset sarebbe quadratica.
+- Corretta la costruzione dell'URI della landing page: `'#'` non viene piu' aggiunto quando il valore lo contiene gia' in coda. Erano 18.518 `dcat:landingPage` su 65.027 (28,5%) a terminare con `##`, un URI malformato a prescindere dalla tipizzazione.
+- Nessun effetto sul punteggio MQA: `documentationAvailability` e `landingPageAvailability` verificano la sola presenza del predicato. L'intervento chiude un warning SHACL.
+
 ## `2026-10-10` — `foaf:page` assente sulle distribuzioni dei dataset harvestati
 - Sui dataset harvestati il fallback di `foaf:page` in `euro_dcat_ap.py` non produceva nulla. Causa: li' la `dcat:landingPage` deriva dal campo `url` del dataset, che per un dataset harvestato e' vuoto; la landing page vera sta nell'extra `landingpage` e viene emessa dal profilo `it_dcat_ap`, che gira **dopo**. Al momento del fallback il grafo non contiene quindi nessuna landingPage e la distribuzione resta senza `foaf:page`.
 - Il completamento e' stato spostato in `ckanext-dcatapit/.../dcat/profiles.py`, accanto alla tipizzazione delle landingPage: li' la landing page e' gia' nel grafo. Restano le due guardie: il valore non puo' coincidere con il dataset ne' con la distribuzione.
