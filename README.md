@@ -173,6 +173,59 @@ Il portale è ora raggiungibile all'indirizzo impostato in `CKAN_SITE_URL`.
 
 ---
 
+## Validazione SHACL con il profilo di data.europa.eu
+
+`tools/validate_edp_shacl.py` valida il `catalog.ttl` con **le stesse shape che
+usa data.europa.eu**, cosi' da vedere violazioni e warning prima che compaiano
+sul portale europeo. Non usa le shape SEMIC "pure": scarica
+`shapes.ttl` + `deprecateduris.ttl` dal progetto
+[piveau-metrics-validating-shacl](https://gitlab.com/piveau/metrics/piveau-metrics-validating-shacl),
+cioe' il profilo "DCAT-AP 3.0.1 Level 1" con cui EDP valida i metadati
+harvestati. Piveau aggiunge regole proprie che nelle shape SEMIC non esistono.
+
+```bash
+pip install rdflib pyshacl
+
+# un singolo dataset
+python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --name NOME-DATASET
+
+# le prime 3 pagine del catalogo (100 dataset per pagina)
+python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --pages 3
+
+# solo un ente
+python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --fq organization:NOME-ENTE
+
+# un TTL gia' scaricato
+python3 tools/validate_edp_shacl.py --file catalog.ttl
+
+# aggiunge anche le shape raccomandate, piu' severe del profilo EDP
+python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --level 2
+```
+
+Altre opzioni: `--dcatap` per la versione delle shape (default `3.0.1`),
+`--examples` per quanti esempi mostrare di ogni segnalazione, `--json FILE` per
+salvare il riepilogo. Codice di uscita: `0` se non ci sono Violation, `1` se ce
+ne sono, `2` in caso di errore — quindi si puo' usare in una pipeline.
+
+Le shape vengono scaricate una volta e messe in cache nella directory
+temporanea del sistema. Due avvertenze pratiche: serve rete verso `gitlab.com`,
+e **`dati.gov.it` va interrogato senza `www`**, perche' il WAF blocca le
+richieste che non arrivano da un browser.
+
+Ogni pagina viene validata separatamente, come fa EDP: unire le pagine in un
+unico grafo duplicherebbe i nodi anonimi dei sottocataloghi e produrrebbe falsi
+errori di cardinalita' sul publisher.
+
+### Come leggere l'esito
+
+`Violation` sono non conformita' da correggere. `Warning` no: molti vengono
+dalle shape di deprecazione di piveau, che segnalano cambi di vocabolario fra
+DCAT-AP 2.1 e 3.0 e in alcuni casi penalizzano proprio il vocabolario nuovo.
+Prima di inseguire un warning conviene leggere la shape che lo genera nei file
+in cache, perche' non sempre indica un errore nei metadati.
+
+---
+
 ## Note sulle patch (harvesting cataloghi federati)
 
 Le patch nei file `processors.py`, `rdf.py`, `profiles.py` (dentro `ckan/patches`
