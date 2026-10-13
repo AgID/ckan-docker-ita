@@ -514,6 +514,12 @@ class ItalianDCATAPProfile(RDFProfile):
                 ))
             #applico patch alle licenze specifiche e per evitare duplicati in dct:license e patch ad hoc per Reg Campania
             elif license:
+                # 13.10.26 FIX: le replace() sotto trasformano il nodo URIRef in una str
+                # semplice, e rdflib non trova piu' dct:type / foaf:name / versionInfo
+                # della licenza nel grafo: names restava vuoto e il ramo di ripiego
+                # forzava CC BY 4.0 su ogni licenza diversa da CC0 (es. IODL 2.0).
+                # Le letture dal grafo usano il nodo originale.
+                license_node = license
                 license=license.replace("https://w3id.org/italia/env/ld/catalog/license/ccby40","https://creativecommons.org/licenses/by/4.0/")
                 license=license.replace("https://api.smartdatanet.it/metadataapi/api/license/CCBY","https://creativecommons.org/licenses/by/4.0/")
                 license=license.replace("https://dati.veneto.it/lod/licenses/CC_BY-SA_-_Condivisione_con_la_stessa_licenza","https://creativecommons.org/licenses/by-sa/4.0/")
@@ -530,9 +536,9 @@ class ItalianDCATAPProfile(RDFProfile):
                 license=license.replace("Licenza Sconosciuta","Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)")
                 license_uri = str(license)
                 license_uri = license_uri.replace("https://w3id.org/italia/controlled-vocabulary/licences/C1_Unknown","https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40")
-                license_dct = self._object_value(license, DCT.type)
-                license_names = self.g.objects(license, FOAF.name)  # may be either the title or the id
-                license_version = self._object_value(license, FOAF.versionInfo)
+                license_dct = self._object_value(license_node, DCT.type)
+                license_names = self.g.objects(license_node, FOAF.name)  # may be either the title or the id
+                license_version = self._object_value(license_node, FOAF.versionInfo)
 
                 names = {}
                 prefname = None
@@ -591,7 +597,7 @@ class ItalianDCATAPProfile(RDFProfile):
                         log.warning('license_name non ESISTE')
                         if names.values():
                            #log.warning('names %s',names.values()[0])
-                           license_name = names.values()[0]
+                           license_name = list(names.values())[0]
                         else:
                            log.warning('license_type.default_name')
                            license_name = 'Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)'
