@@ -3,7 +3,7 @@
 Validazione SHACL del catalog.ttl con lo stesso profilo usato da data.europa.eu.
 
 data.europa.eu (piveau) valida i metadati harvestati con il profilo
-"DCAT-AP 3.0.1 Level 1" = shapes.ttl + deprecateduris.ttl del progetto
+"DCAT-AP 3.0.0 Level 1" (dct:isVersionOf "dcatap300level1" nel DQV) = shapes.ttl + deprecateduris.ttl del progetto
 piveau-metrics-validating-shacl. Non sono le shape SEMIC "pure": piveau aggiunge
 regole proprie (es. StatusRestrictionADMS) e nel Level 1 non controlla i
 vocabolari. Questo script riproduce quella validazione su un campione del
@@ -22,7 +22,8 @@ Opzioni:
   --fq FILTRO       filtro Solr libero sul catalog.ttl (ripetibile)
   --pages N         pagine del catalog.ttl da validare (default 1, 100 dataset/pagina)
   --level 1|2       1 = profilo EDP (default), 2 = aggiunge le shape raccomandate
-  --dcatap 3.0.1    versione delle shape (default 3.0.1, come EDP oggi)
+  --dcatap 3.0.0    versione delle shape (default 3.0.0: il DQV di EDP riporta
+                    "dcatap300level1", anche se la pagina violazioni dice 3.0.1)
   --examples N      esempi per ogni tipo di segnalazione (default 2)
   --json FILE       salva il riepilogo anche in JSON
 
@@ -98,7 +99,7 @@ def main():
     ap.add_argument("--fq", action="append", default=[])
     ap.add_argument("--pages", type=int, default=1)
     ap.add_argument("--level", type=int, default=1, choices=(1, 2))
-    ap.add_argument("--dcatap", default="3.0.1")
+    ap.add_argument("--dcatap", default="3.0.0")
     ap.add_argument("--examples", type=int, default=2)
     ap.add_argument("--json")
     a = ap.parse_args()
