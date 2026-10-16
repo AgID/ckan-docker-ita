@@ -18,7 +18,7 @@ const getProfiles = () => (profilesP ||= buildProfiles(SHAPES))
 const state = {
   source: { kind: 'esempio', name: 'esempio-errori.ttl', text: esempio },
   last: null,          // { groups, results, stats, meta, selected, sourceName, ms }
-  filterSev: new Set(['Violation', 'Warning', 'Info']),
+  filterSev: new Set(['Violation']),   // avvisi nascosti di default
   filterProfile: 'tutti',
   query: '',
 }
@@ -146,8 +146,10 @@ function render () {
   const tot = countBy(L.results)
   const ok = tot.Violation === 0
   $('#verdict').dataset.ok = ok
+  // conforme = nessuna violazione; gli avvisi non cambiano l'esito
   $('#verdict-text').textContent = ok ? 'Conforme' : 'Non conforme'
-  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple`
+  const avvisi = tot.Warning ? ` · ${tot.Warning.toLocaleString('it-IT')} avvisi` : ''
+  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple${avvisi}`
 
   const st = L.stats
   const hvdM = L.meta.hvd
@@ -178,7 +180,11 @@ function renderTable () {
     (!q || (g.path + ' ' + g.message + ' ' + g.examples.map(e => e.focus + ' ' + e.value).join(' ')).toLowerCase().includes(q)))
   $('#rows-count').textContent = rows.length === L.groups.length ? `${rows.length} regole` : `${rows.length} di ${L.groups.length} regole`
   if (!rows.length) {
-    $('#rows').innerHTML = `<p class="empty">${L.groups.length ? 'Nessuna segnalazione con questi filtri.' : 'Nessuna segnalazione: il file rispetta tutti i profili scelti.'}</p>`
+    const nascosti = !state.filterSev.has('Warning') && L.groups.some(g => g.severity === 'Warning')
+    const msg = !L.groups.length ? 'Nessuna segnalazione: il file rispetta tutti i profili scelti.'
+      : nascosti && !L.groups.some(g => g.severity === 'Violation') ? 'Nessuna violazione. Gli avvisi sono nascosti: attiva «Avvisi» per vederli.'
+      : 'Nessuna segnalazione con questi filtri.'
+    $('#rows').innerHTML = `<p class="empty">${msg}</p>`
     return
   }
   $('#rows').innerHTML = rows.map((g, i) => `
