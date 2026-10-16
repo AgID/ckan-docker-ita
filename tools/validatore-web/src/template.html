@@ -1,0 +1,253 @@
+<title>Validatore DCAT-AP_IT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco di lavoro a due colonne — a sinistra sorgente e profili, a destra l'esito; una colonna sotto i 900px. */
+:root {
+  --bg: #f4f6f9;          /* fondo, grigio con tinta blu PA */
+  --surface: #ffffff;
+  --ink: #17212f;
+  --muted: #5a6779;
+  --line: #d9dfe8;
+  --accent: #0b5cad;      /* blu istituzionale */
+  --accent-ink: #ffffff;
+  --accent-soft: #e3eefa;
+  --bad: #b3261e; --bad-soft: #fbe9e7;
+  --warn: #8a5a00; --warn-soft: #fdf1d6;
+  --good: #1e6b3a; --good-soft: #e3f3e8;
+  --f-display: "Titillium Web", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Titillium Web", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f151e; --surface: #17202c; --ink: #e6ebf2; --muted: #9aa7b8; --line: #2a3646;
+  --accent: #6fa8e8; --accent-ink: #0b1420; --accent-soft: #1b2c42;
+  --bad: #f28b82; --bad-soft: #3a1d1b; --warn: #f1c065; --warn-soft: #362a12; --good: #7fd19b; --good-soft: #15301f;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f151e; --surface: #17202c; --ink: #e6ebf2; --muted: #9aa7b8; --line: #2a3646;
+  --accent: #6fa8e8; --accent-ink: #0b1420; --accent-soft: #1b2c42;
+  --bad: #f28b82; --bad-soft: #3a1d1b; --warn: #f1c065; --warn-soft: #362a12; --good: #7fd19b; --good-soft: #15301f;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+p { margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--f-mono); font-size: .82em; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+header.top p { color: var(--muted); max-width: 70ch; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: .75rem; border: 1px solid var(--line); border-radius: 99px; padding: 1px 10px; color: var(--muted); background: var(--surface); }
+
+.grid { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.side { display: grid; gap: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 900px) { .side { position: static; } }
+
+.tabs { display: flex; gap: 2px; background: var(--bg); border-radius: var(--r); padding: 3px; }
+.tabs button { flex: 1; border: 0; background: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+.pane { display: grid; gap: 10px; }
+
+.drop { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 18px 12px; text-align: center; display: grid; gap: 6px; cursor: pointer; }
+.drop[data-over] { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font-family: var(--f-display); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+label.f { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+input[type=text], input[type=url], input[type=number], select, textarea {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; background: var(--bg); color: var(--ink); }
+textarea { min-height: 150px; font-family: var(--f-mono); font-size: .8rem; resize: vertical; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preview { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); background: var(--bg); padding: 6px 8px; border-radius: 4px; overflow-wrap: anywhere; }
+.note { font-size: .82rem; color: var(--muted); }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 7px 12px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); width: 100%; padding: 10px; font-size: 1rem; }
+.btn.primary:disabled { opacity: .55; cursor: progress; }
+.btn.small { padding: 4px 10px; font-size: .85rem; }
+
+.src { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .88rem; }
+.src b { font-family: var(--f-mono); font-weight: 500; font-size: .82rem; overflow-wrap: anywhere; }
+.pill-ex { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; background: var(--warn-soft); color: var(--warn); border-radius: 3px; padding: 1px 6px; }
+
+.prof { display: grid; gap: 2px; }
+.prof label { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 7px 4px; border-radius: 4px; cursor: pointer; }
+.prof label:hover { background: var(--bg); }
+.prof input { grid-row: span 2; margin-top: 4px; accent-color: var(--accent); }
+.prof .t { font-weight: 600; }
+.prof .d { font-size: .8rem; color: var(--muted); }
+
+#status { font-size: .85rem; min-height: 1.4em; }
+#status[data-kind="busy"] { color: var(--accent); }
+#status[data-kind="error"] { color: var(--bad); }
+#status[data-kind="done"] { color: var(--muted); }
+
+/* esito */
+.verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; justify-content: space-between; }
+.verdict .v { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.stamp { font-family: var(--f-display); font-weight: 700; font-size: 1.35rem; padding: 4px 14px; border-radius: 4px; border: 2px solid currentColor; text-transform: uppercase; letter-spacing: .04em; }
+#verdict[data-ok="true"] .stamp { color: var(--good); background: var(--good-soft); }
+#verdict[data-ok="false"] .stamp { color: var(--bad); background: var(--bad-soft); }
+#verdict-sub { color: var(--muted); font-size: .88rem; overflow-wrap: anywhere; }
+.exports { display: flex; gap: 6px; flex-wrap: wrap; }
+
+dl#counts { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; }
+.kv { display: grid; }
+.kv dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+#profiles-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.psum { text-align: left; border: 1px solid var(--line); border-left: 4px solid var(--good); background: var(--surface); border-radius: 4px; padding: 8px 10px; cursor: pointer; display: grid; gap: 2px; }
+.psum[data-pass="false"] { border-left-color: var(--bad); }
+.psum[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -1px; }
+.pname { font-weight: 700; font-size: .9rem; }
+.pcount, .pnote { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pcount b.v { color: var(--bad); } .pcount b.w { color: var(--warn); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.filters label { display: inline-flex; gap: 5px; align-items: center; font-size: .88rem; cursor: pointer; }
+.filters input[type=search] { flex: 1 1 220px; width: auto; }
+#rows-count { font-size: .82rem; color: var(--muted); margin-left: auto; }
+
+#rows { display: grid; gap: 6px; }
+details.row { border: 1px solid var(--line); border-radius: 4px; background: var(--surface); min-width: 0; }
+details.row summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; grid-template-areas: "sev msg n" "sev meta n"; gap: 2px 12px; padding: 9px 12px; align-items: center; }
+details.row summary::-webkit-details-marker { display: none; }
+details.row[open] summary { border-bottom: 1px solid var(--line); }
+.sev { grid-area: sev; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 3px; text-align: center; align-self: start; margin-top: 2px; }
+[data-sev="Violation"] .sev { background: var(--bad-soft); color: var(--bad); }
+[data-sev="Warning"] .sev { background: var(--warn-soft); color: var(--warn); }
+[data-sev="Info"] .sev { background: var(--accent-soft); color: var(--accent); }
+.msg { grid-area: msg; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.meta { grid-area: meta; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: .82rem; color: var(--muted); }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; }
+.n { grid-area: n; font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { details.row summary { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sev n" "msg msg" "meta meta"; } .sev { justify-self: start; } }
+.ex { padding: 10px 12px; display: grid; gap: 8px; overflow-x: auto; }
+.exh { font-size: .85rem; color: var(--muted); }
+.ex table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+.ex th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.ex td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ex td:first-child { width: 55%; }
+.empty { padding: 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; }
+
+.about { font-size: .85rem; color: var(--muted); display: grid; gap: 6px; }
+.about ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+#toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 4px; font-size: .9rem; }
+@media (prefers-reduced-motion: no-preference) { details.row summary { transition: background .12s; } }
+details.row summary:hover { background: var(--bg); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div style="display:grid;gap:6px;min-width:0">
+      <h1>Validatore DCAT-AP_IT</h1>
+      <p>Controlla un catalogo RDF con le stesse regole SHACL di data.europa.eu, il profilo italiano DCAT-AP_IT, i vocabolari controllati e i requisiti dei dati di elevato valore. Tutto avviene nel browser: il file non viene inviato a nessun server.</p>
+    </div>
+    <div class="badge-row"><span class="badge">DCAT-AP 3.0.0</span><span class="badge">DCAT-AP_IT</span><span class="badge">HVD · Reg. UE 2023/138</span></div>
+  </header>
+
+  <div class="grid">
+    <aside class="side">
+      <section class="panel" aria-labelledby="h-src">
+        <h2 id="h-src">Sorgente</h2>
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="file" aria-selected="true" id="tab-file">File</button>
+          <button role="tab" data-tab="incolla" aria-selected="false" id="tab-incolla">Incolla</button>
+          <button role="tab" data-tab="ckan" aria-selected="false" id="tab-ckan">CKAN</button>
+          <button role="tab" data-tab="url" aria-selected="false" id="tab-url">URL</button>
+        </div>
+
+        <div class="pane" id="pane-file">
+          <label class="drop" id="drop">
+            <input type="file" id="file" accept=".ttl,.rdf,.xml,.nt,.jsonld,.json,.n3,text/turtle,application/rdf+xml,application/ld+json">
+            <strong>Trascina qui il catalogo</strong>
+            <span class="note">oppure tocca per sceglierlo · Turtle, RDF/XML, N-Triples, JSON-LD</span>
+          </label>
+        </div>
+        <div class="pane" id="pane-incolla" hidden>
+          <textarea id="paste" spellcheck="false" placeholder="@prefix dcat: &lt;http://www.w3.org/ns/dcat#&gt; .&#10;…"></textarea>
+          <button class="btn" id="paste-go" type="button">Valida il testo</button>
+        </div>
+        <div class="pane" id="pane-ckan" hidden>
+          <label class="f">Indirizzo base del portale CKAN<input type="url" id="ckan-base" placeholder="https://dati.comune.example.it/opendata" value=""></label>
+          <div class="row2">
+            <label class="f">Pagina<input type="number" id="ckan-page" min="1" value="1"></label>
+            <label class="f">Formato<select id="ckan-format"><option value="ttl">Turtle</option><option value="rdf">RDF/XML</option><option value="jsonld">JSON-LD</option></select></label>
+          </div>
+          <label class="f">Nome del dataset (facoltativo)<input type="text" id="ckan-name" placeholder="es. interventi-aerei-aib"></label>
+          <label class="f">Filtro Solr (facoltativo)<input type="text" id="ckan-fq" placeholder="es. organization:regione-puglia"></label>
+          <div class="preview" id="ckan-preview"></div>
+          <button class="btn" id="ckan-go" type="button">Scarica e valida</button>
+          <p class="note">Funziona solo con i portali che permettono la lettura da altre pagine. dati.gov.it non lo permette: apri l'indirizzo, salva il file e caricalo dalla scheda File.</p>
+        </div>
+        <div class="pane" id="pane-url" hidden>
+          <label class="f">Indirizzo del file RDF<input type="url" id="url" placeholder="https://…/catalog.ttl"></label>
+          <button class="btn" id="url-go" type="button">Scarica e valida</button>
+        </div>
+
+        <div class="src"><span class="muted">In esame</span><span><span class="pill-ex" id="src-example">esempio</span> <b id="src-name"></b> <span class="muted" id="src-size"></span></span></div>
+        <label class="f">Sintassi<select id="fmt"><option value="auto">Riconoscimento automatico</option><option value="turtle">Turtle</option><option value="rdfxml">RDF/XML</option><option value="ntriples">N-Triples</option><option value="jsonld">JSON-LD</option></select></label>
+      </section>
+
+      <section class="panel" aria-labelledby="h-prof">
+        <h2 id="h-prof">Profili</h2>
+        <div class="prof">
+          <label><input type="checkbox" id="p-edp" checked><span class="t">EDP · DCAT-AP 3.0.0 L1</span><span class="d">Le shape piveau usate da data.europa.eu: violazioni e avvisi come nel report DQV</span></label>
+          <label><input type="checkbox" id="p-edpRecommended"><span class="t">EDP · raccomandate</span><span class="d">Proprietà raccomandate DCAT-AP (livello 2 dello script)</span></label>
+          <label><input type="checkbox" id="p-dcatapit" checked><span class="t">DCAT-AP_IT</span><span class="d">Titolare, frequenza, identificativo, soggetti, punto di contatto, licenza, classi dcatapit</span></label>
+          <label><input type="checkbox" id="p-vocabolari" checked><span class="t">Vocabolari</span><span class="d">Temi, frequenze, lingue, formati, IANA, ELI, categorie HVD</span></label>
+          <label><input type="checkbox" id="p-hvd" checked><span class="t">HVD</span><span class="d">Solo sulle risorse che dichiarano l'ELI 2023/138 o una categoria HVD</span></label>
+        </div>
+        <button class="btn primary" id="run" type="button">Valida</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+    </aside>
+
+    <main id="results" class="panel" hidden>
+      <div class="verdict" id="verdict">
+        <div class="v"><span class="stamp" id="verdict-text"></span><span id="verdict-sub"></span></div>
+        <div class="exports"><button class="btn small" id="exp-json" type="button">Report JSON</button><button class="btn small" id="exp-csv" type="button">Report CSV</button></div>
+      </div>
+      <dl id="counts"></dl>
+      <div id="profiles-sum"></div>
+      <div class="filters">
+        <label><input type="checkbox" data-sevfilter="Violation" id="f-v" checked> Violazioni</label>
+        <label><input type="checkbox" data-sevfilter="Warning" id="f-w" checked> Avvisi</label>
+        <input type="search" id="q" placeholder="Cerca proprietà, messaggio o URI">
+        <button class="btn small" id="expand" type="button">Apri/chiudi tutto</button>
+        <span id="rows-count"></span>
+      </div>
+      <div id="rows"></div>
+      <div class="about">
+        <h2>Da dove vengono le regole</h2>
+        <ul>
+          <li><b>EDP</b>: shape <code>shapes.ttl</code> e <code>deprecateduris.ttl</code> di piveau-metrics-validating-shacl, DCAT-AP 3.0.0. Stesso esito di <code>tools/validate_edp_shacl.py</code>.</li>
+          <li><b>DCAT-AP_IT</b>: Linee guida per i cataloghi dati (AgID). Obbligatorio → violazione, raccomandato → avviso.</li>
+          <li><b>HVD</b>: Guida operativa AgID sulle serie di dati di elevato valore v1.0 (azione #hvd14) e DCAT-AP HVD 2.2.0.</li>
+          <li><b>Vocabolari</b>: authority table EU; i temi sono controllati sull'elenco chiuso, gli altri sul namespace.</li>
+        </ul>
+        <p>Un esempio con errori inseriti apposta viene caricato all'apertura. <button class="btn small" id="load-example" type="button">Ricarica l'esempio</button></p>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast" role="status" hidden></div>
+<script>/*__BUNDLE__*/</script>

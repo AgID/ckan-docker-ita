@@ -16,3 +16,7 @@ local/*
 # certificati generati a runtime
 nginx/certs/
 *.pem
+
+# validatore web
+tools/validatore-web/node_modules/
+tools/validatore-web/dist/

@@ -1,0 +1,102 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcat:   <http://www.w3.org/ns/dcat#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix adms:   <http://www.w3.org/ns/adms#> .
+@prefix dcatap: <http://data.europa.eu/r5r/> .
+@prefix voc:    <urn:validatore-dcatapit:shapes:vocabolari#> .
+
+# Vocabolari controllati: i valori devono venire dalle authority table EU
+# (e da quelle indicate da DCAT-AP_IT). Si controlla l'URI, non il contenuto
+# del vocabolario: per i temi l'elenco è chiuso, per gli altri il pattern.
+
+voc:Dataset a sh:NodeShape ;
+  rdfs:label "Vocabolari del dataset" ;
+  sh:targetClass dcat:Dataset ;
+  sh:property
+    [ sh:path dcat:theme ; sh:severity sh:Violation ;
+      sh:in ( <http://publications.europa.eu/resource/authority/data-theme/AGRI>
+              <http://publications.europa.eu/resource/authority/data-theme/ECON>
+              <http://publications.europa.eu/resource/authority/data-theme/EDUC>
+              <http://publications.europa.eu/resource/authority/data-theme/ENER>
+              <http://publications.europa.eu/resource/authority/data-theme/ENVI>
+              <http://publications.europa.eu/resource/authority/data-theme/GOVE>
+              <http://publications.europa.eu/resource/authority/data-theme/HEAL>
+              <http://publications.europa.eu/resource/authority/data-theme/INTR>
+              <http://publications.europa.eu/resource/authority/data-theme/JUST>
+              <http://publications.europa.eu/resource/authority/data-theme/REGI>
+              <http://publications.europa.eu/resource/authority/data-theme/SOCI>
+              <http://publications.europa.eu/resource/authority/data-theme/TECH>
+              <http://publications.europa.eu/resource/authority/data-theme/TRAN> ) ;
+      sh:message "Tema non presente nel vocabolario EU data-theme (13 valori)" ] ,
+    [ sh:path dct:accrualPeriodicity ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/[A-Z0-9_]+$" ;
+      sh:message "Frequenza non presa dal vocabolario EU frequency" ] ,
+    [ sh:path dct:language ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/[A-Z]{3}$" ;
+      sh:message "Lingua non presa dal vocabolario EU language (es. .../language/ITA)" ] ,
+    [ sh:path dct:subject ; sh:severity sh:Warning ;
+      sh:pattern "^http://eurovoc\\.europa\\.eu/[0-9]+$" ;
+      sh:message "Sottotema non preso da EuroVoc (http://eurovoc.europa.eu/...)" ] ,
+    [ sh:path dct:accessRights ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/access-right/[A-Z_]+$" ;
+      sh:message "Diritti di accesso non presi dal vocabolario EU access-right" ] ,
+    [ sh:path dcatap:applicableLegislation ; sh:severity sh:Violation ;
+      sh:pattern "^http://data\\.europa\\.eu/eli/" ;
+      sh:message "Legislazione applicabile non espressa con un URI ELI (http://data.europa.eu/eli/...)" ] ,
+    [ sh:path dcatap:hvdCategory ; sh:severity sh:Violation ;
+      sh:pattern "^http://data\\.europa\\.eu/bna/c_[0-9a-f]{8}$" ;
+      sh:message "Categoria HVD non presa dal vocabolario EU high-value dataset categories" ] .
+
+voc:Catalog a sh:NodeShape ;
+  rdfs:label "Vocabolari del catalogo" ;
+  sh:targetClass dcat:Catalog ;
+  sh:property
+    [ sh:path dct:language ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/[A-Z]{3}$" ;
+      sh:message "Lingua del catalogo non presa dal vocabolario EU language" ] ,
+    [ sh:path dcat:themeTaxonomy ; sh:severity sh:Warning ;
+      sh:in ( <http://publications.europa.eu/resource/authority/data-theme> <http://eurovoc.europa.eu/100141> ) ;
+      sh:message "Tassonomia dei temi diversa da data-theme EU / EuroVoc" ] .
+
+voc:Distribution a sh:NodeShape ;
+  rdfs:label "Vocabolari della distribuzione" ;
+  sh:targetClass dcat:Distribution ;
+  sh:property
+    [ sh:path dct:format ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/file-type/[A-Z0-9_]+$" ;
+      sh:message "Formato non preso dal vocabolario EU file-type" ] ,
+    [ sh:path dcat:mediaType ; sh:severity sh:Warning ;
+      sh:pattern "^http://www\\.iana\\.org/assignments/media-types/[a-z]+/[^\\s]+$" ;
+      sh:message "Media type non nella forma IANA attesa da EDP (http://www.iana.org/assignments/media-types/...)" ] ,
+    [ sh:path dcat:compressFormat ; sh:severity sh:Warning ;
+      sh:pattern "^http://www\\.iana\\.org/assignments/media-types/" ;
+      sh:message "Formato di compressione non nella forma IANA" ] ,
+    [ sh:path adms:status ; sh:severity sh:Warning ;
+      sh:pattern "^(http://publications\\.europa\\.eu/resource/authority/distribution-status/|http://purl\\.org/adms/status/)" ;
+      sh:message "Stato della distribuzione fuori dai vocabolari distribution-status / ADMS status" ] ,
+    [ sh:path dcatap:availability ; sh:severity sh:Warning ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/planned-availability/|^http://data\\.europa\\.eu/r5r/availability/|^http://publications\\.europa\\.eu/resource/authority/distribution-availability/" ;
+      sh:message "Disponibilità fuori dal vocabolario EU planned-availability" ] ,
+    [ sh:path dct:language ; sh:severity sh:Violation ;
+      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/[A-Z]{3}$" ;
+      sh:message "Lingua della distribuzione non presa dal vocabolario EU language" ] ,
+    [ sh:path dcatap:applicableLegislation ; sh:severity sh:Violation ;
+      sh:pattern "^http://data\\.europa\\.eu/eli/" ;
+      sh:message "Legislazione applicabile non espressa con un URI ELI" ] .
+
+voc:LicenseType a sh:NodeShape ;
+  rdfs:label "Tipo di licenza" ;
+  sh:targetObjectsOf dct:license ;
+  sh:property
+    [ sh:path dct:type ; sh:severity sh:Warning ;
+      sh:pattern "^http://purl\\.org/adms/licencetype/" ;
+      sh:message "Tipo di licenza non preso dal vocabolario ADMS licence type" ] .
+
+voc:PublisherType a sh:NodeShape ;
+  rdfs:label "Tipo di soggetto" ;
+  sh:targetObjectsOf dct:publisher , dct:rightsHolder , dct:creator ;
+  sh:property
+    [ sh:path dct:type ; sh:severity sh:Warning ;
+      sh:pattern "^http://purl\\.org/adms/publishertype/" ;
+      sh:message "Tipo di soggetto non preso dal vocabolario ADMS publisher type" ] .

@@ -1,0 +1,60 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcat:   <http://www.w3.org/ns/dcat#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix dcatap: <http://data.europa.eu/r5r/> .
+@prefix hvd:    <urn:validatore-dcatapit:shapes:hvd#> .
+
+# Dati di elevato valore (Reg. UE 2023/138).
+# Fonti: AgID, Guida operativa HVD v1.0, azione #hvd14 (per i dati non INSPIRE
+# documentati in DCAT-AP_IT usare dcatap:applicableLegislation con l'ELI del
+# Regolamento) e DCAT-AP HVD 2.2.0 (SEMIC) per le proprietà obbligatorie.
+#
+# Le shape non hanno target: il validatore le applica solo alle risorse HVD,
+# aggiungendo sh:targetNode per ogni dataset che dichiara l'ELI 2023/138 o una
+# hvdCategory, per le sue distribuzioni e per i servizi che lo servono.
+# (Le shape SEMIC ufficiali assumono un catalogo interamente HVD.)
+
+hvd:Dataset a sh:NodeShape ;
+  rdfs:label "Dataset HVD" ;
+  sh:property
+    [ sh:path dcatap:applicableLegislation ; sh:hasValue <http://data.europa.eu/eli/reg_impl/2023/138/oj> ;
+      sh:severity sh:Violation ;
+      sh:message "HVD: il dataset deve dichiarare dcatap:applicableLegislation <http://data.europa.eu/eli/reg_impl/2023/138/oj> (azione #hvd14)" ] ,
+    [ sh:path dcatap:hvdCategory ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: il dataset deve avere almeno una categoria HVD (dcatap:hvdCategory)" ] ,
+    [ sh:path dcat:distribution ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "HVD: il dataset dovrebbe avere almeno una distribuzione" ] ,
+    [ sh:path dcat:contactPoint ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "HVD: punto di contatto (dcat:contactPoint) raccomandato" ] .
+
+hvd:Distribution a sh:NodeShape ;
+  rdfs:label "Distribuzione di un dataset HVD" ;
+  sh:property
+    [ sh:path dcatap:applicableLegislation ; sh:hasValue <http://data.europa.eu/eli/reg_impl/2023/138/oj> ;
+      sh:severity sh:Violation ;
+      sh:message "HVD: anche la distribuzione deve dichiarare dcatap:applicableLegislation con l'ELI 2023/138" ] ,
+    [ sh:path dcat:accessURL ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: URL di accesso (dcat:accessURL) obbligatorio" ] ,
+    [ sh:path dct:license ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Warning ;
+      sh:message "HVD: licenza (dct:license) raccomandata, una sola" ] .
+
+hvd:DataService a sh:NodeShape ;
+  rdfs:label "Servizio dati HVD" ;
+  sh:property
+    [ sh:path dcatap:applicableLegislation ; sh:hasValue <http://data.europa.eu/eli/reg_impl/2023/138/oj> ;
+      sh:severity sh:Violation ;
+      sh:message "HVD: il servizio deve dichiarare dcatap:applicableLegislation con l'ELI 2023/138" ] ,
+    [ sh:path dcatap:hvdCategory ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: il servizio deve avere almeno una categoria HVD (dcatap:hvdCategory)" ] ,
+    [ sh:path dcat:contactPoint ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: il servizio deve avere un punto di contatto (dcat:contactPoint)" ] ,
+    [ sh:path foaf:page ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: il servizio deve avere documentazione (foaf:page)" ] ,
+    [ sh:path dcat:endpointURL ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "HVD: il servizio deve avere un endpoint (dcat:endpointURL)" ] ,
+    [ sh:path dcat:endpointDescription ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "HVD: descrizione dell'endpoint (dcat:endpointDescription) raccomandata" ] ,
+    [ sh:path dcat:servesDataset ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "HVD: il servizio dovrebbe indicare i dataset serviti (dcat:servesDataset)" ] .

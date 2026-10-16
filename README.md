@@ -202,7 +202,8 @@ python3 tools/validate_edp_shacl.py --file catalog.ttl
 python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --level 2
 ```
 
-Altre opzioni: `--dcatap` per la versione delle shape (default `3.0.1`),
+Altre opzioni: `--dcatap` per la versione delle shape (default `3.0.0`, quella
+indicata nei report DQV di EDP),
 `--examples` per quanti esempi mostrare di ogni segnalazione, `--json FILE` per
 salvare il riepilogo. Codice di uscita: `0` se non ci sono Violation, `1` se ce
 ne sono, `2` in caso di errore — quindi si puo' usare in una pipeline.
@@ -223,6 +224,63 @@ dalle shape di deprecazione di piveau, che segnalano cambi di vocabolario fra
 DCAT-AP 2.1 e 3.0 e in alcuni casi penalizzano proprio il vocabolario nuovo.
 Prima di inseguire un warning conviene leggere la shape che lo genera nei file
 in cache, perche' non sempre indica un errore nei metadati.
+
+### Profili italiani: DCAT-AP_IT, vocabolari, HVD
+
+Con `--profile` lo stesso script valida anche secondo le regole italiane. Le
+shape stanno in `tools/shapes/` e non vengono scaricate.
+
+| Profilo | Cosa controlla | Fonte |
+|---|---|---|
+| `edp` (default) | shape di piveau usate da data.europa.eu | piveau-metrics-validating-shacl |
+| `dcatapit` | identificativo, titolare (`dct:rightsHolder`), frequenza, temi, data di modifica; soggetti con `dct:identifier` e `foaf:name` non vuoti; punto di contatto con `vcard:fn` e `vcard:hasEmail`; formato, URL di accesso e licenza della distribuzione; tipi `dcatapit:*` | Linee guida AgID per i cataloghi dati |
+| `vocabolari` | temi sui 13 valori EU `data-theme`, frequenza, lingua, formato, diritti di accesso, media type IANA, URI ELI, categorie HVD | authority table EU |
+| `hvd` | `dcatap:applicableLegislation` con l'ELI del Reg. UE 2023/138 e `dcatap:hvdCategory` su dataset, distribuzioni e servizi | Guida operativa AgID sui dati di elevato valore v1.0 (azione #hvd14), DCAT-AP HVD 2.2.0 |
+
+Nel profilo `dcatapit` le proprieta' obbligatorie producono una `Violation`, le
+raccomandate un `Warning`. Il profilo `hvd` si applica solo alle risorse che
+dichiarano l'ELI 2023/138 o una categoria HVD, alle loro distribuzioni e ai
+servizi che le servono: le shape HVD ufficiali di SEMIC assumono invece un
+catalogo interamente HVD. Per i vocabolari i temi sono controllati sull'elenco
+chiuso, gli altri valori sul namespace dell'URI.
+
+```bash
+# EDP + tutti i profili italiani
+python3 tools/validate_edp_shacl.py --file catalog.ttl --profile tutti
+
+# solo i profili italiani (it = dcatapit,vocabolari,hvd)
+python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --pages 2 --profile it
+```
+
+`--file` accetta anche RDF/XML e JSON-LD.
+
+### Validatore nel browser
+
+`tools/validatore-web/` contiene la stessa validazione come pagina web: si
+carica un file (Turtle, RDF/XML, N-Triples, JSON-LD), si scelgono i profili e
+si ottiene l'elenco delle segnalazioni raggruppate per regola, con esempi ed
+esportazione in JSON o CSV. Tutto avviene nel browser, il file non viene inviato
+a nessun server. Le shape EDP sono incluse nella pagina (licenza Apache 2.0,
+Fraunhofer FOKUS) invece di essere scaricate.
+
+La pagina e' pubblicata su GitHub Pages dal workflow
+`.github/workflows/validatore-pages.yml`, che riparte a ogni modifica della
+pagina o delle shape. Per costruirla in locale:
+
+```bash
+cd tools/validatore-web
+npm ci
+npm run build          # produce dist/index.html, un file unico
+node test/run.mjs catalog.ttl   # stessa validazione da riga di comando
+```
+
+La scheda "CKAN" scarica direttamente `catalog.ttl` da un portale, ma funziona
+solo se il server permette la lettura da altre pagine (CORS). Con i portali che
+non lo permettono, `dati.gov.it` compreso, si scarica il file e lo si carica
+dalla scheda "File".
+
+Sugli stessi file la pagina e lo script Python danno gli stessi conteggi, per
+profilo e per gravita'.
 
 ---
 

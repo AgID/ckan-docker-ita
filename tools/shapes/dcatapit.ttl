@@ -1,0 +1,183 @@
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dct:      <http://purl.org/dc/terms/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix vcard:    <http://www.w3.org/2006/vcard/ns#> .
+@prefix adms:     <http://www.w3.org/ns/adms#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:   <http://schema.org/> .
+@prefix dcatapit: <http://dati.gov.it/onto/dcatapit#> .
+@prefix it:       <urn:validatore-dcatapit:shapes:it#> .
+
+# Profilo DCAT-AP_IT secondo le "Linee guida per i cataloghi dati" (AgID).
+# M (obbligatorio) -> sh:Violation ; R (raccomandato) -> sh:Warning.
+# Le classi sono intercettate tramite la classe DCAT di base (dcat:Dataset, ...)
+# e il tipo dcatapit:* è controllato a parte, cosi' un dataset privo del tipo
+# italiano viene comunque validato.
+
+# ---------------------------------------------------------------- CATALOGO
+it:Catalog a sh:NodeShape ;
+  rdfs:label "Catalogo (dcatapit:Catalog)" ;
+  sh:targetClass dcat:Catalog ;
+  sh:property
+    [ sh:path rdf:type ; sh:hasValue dcatapit:Catalog ; sh:severity sh:Warning ;
+      sh:message "Il catalogo dovrebbe essere tipizzato anche dcatapit:Catalog" ] ,
+    [ sh:path dct:title ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Catalogo: titolo (dct:title) obbligatorio" ] ,
+    [ sh:path dct:description ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Catalogo: descrizione (dct:description) obbligatoria" ] ,
+    [ sh:path dct:publisher ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Catalogo: editore (dct:publisher) obbligatorio, una sola occorrenza" ] ,
+    [ sh:path dct:publisher ; sh:node it:Agent ; sh:severity sh:Violation ;
+      sh:message "Catalogo: l'editore non è un Soggetto DCAT-AP_IT valido (dct:identifier o foaf:name mancante o vuoto)" ] ,
+    [ sh:path dct:modified ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Catalogo: data di ultima modifica (dct:modified) obbligatoria, una sola occorrenza" ] ,
+    [ sh:path dct:modified ; sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) ; sh:severity sh:Violation ;
+      sh:message "Catalogo: dct:modified deve essere xsd:date o xsd:dateTime" ] ,
+    [ sh:path [ sh:alternativePath ( dcat:dataset dct:hasPart dcat:catalog ) ] ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Catalogo: deve elencare almeno un dataset (dcat:dataset) o un sottocatalogo (dct:hasPart / dcat:catalog)" ] ,
+    [ sh:path foaf:homepage ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Warning ;
+      sh:message "Catalogo: home page (foaf:homepage) raccomandata, una sola occorrenza" ] ,
+    [ sh:path dct:language ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "Catalogo: lingua (dct:language) raccomandata" ] ,
+    [ sh:path dct:issued ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Warning ;
+      sh:message "Catalogo: data di rilascio (dct:issued) raccomandata" ] ,
+    [ sh:path dcat:themeTaxonomy ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "Catalogo: tassonomia dei temi (dcat:themeTaxonomy) raccomandata" ] .
+
+# ---------------------------------------------------------------- DATASET
+it:Dataset a sh:NodeShape ;
+  rdfs:label "Dataset (dcatapit:Dataset)" ;
+  sh:targetClass dcat:Dataset ;
+  sh:property
+    [ sh:path rdf:type ; sh:hasValue dcatapit:Dataset ; sh:severity sh:Warning ;
+      sh:message "Il dataset dovrebbe essere tipizzato anche dcatapit:Dataset" ] ,
+    [ sh:path dct:identifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: identificativo (dct:identifier) obbligatorio, una sola occorrenza" ] ,
+    [ sh:path dct:identifier ; sh:nodeKind sh:Literal ; sh:minLength 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: dct:identifier deve essere un letterale non vuoto" ] ,
+    [ sh:path dct:title ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: titolo (dct:title) obbligatorio" ] ,
+    [ sh:path dct:description ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: descrizione (dct:description) obbligatoria" ] ,
+    [ sh:path dct:modified ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: data di ultima modifica (dct:modified) obbligatoria, una sola occorrenza" ] ,
+    [ sh:path dct:modified ; sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:dateTime ] ) ; sh:severity sh:Violation ;
+      sh:message "Dataset: dct:modified deve essere xsd:date o xsd:dateTime" ] ,
+    [ sh:path dcat:theme ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: almeno un tema (dcat:theme) obbligatorio" ] ,
+    [ sh:path dct:rightsHolder ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: titolare (dct:rightsHolder) obbligatorio, una sola occorrenza" ] ,
+    [ sh:path dct:rightsHolder ; sh:node it:Agent ; sh:severity sh:Violation ;
+      sh:message "Dataset: il titolare non è un Soggetto DCAT-AP_IT valido (dct:identifier o foaf:name mancante o vuoto)" ] ,
+    [ sh:path dct:accrualPeriodicity ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: frequenza di aggiornamento (dct:accrualPeriodicity) obbligatoria, una sola occorrenza" ] ,
+    [ sh:path dct:accrualPeriodicity ; sh:nodeKind sh:IRI ; sh:severity sh:Violation ;
+      sh:message "Dataset: la frequenza deve essere un URI del vocabolario frequency" ] ,
+    [ sh:path dcat:distribution ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: almeno una distribuzione (dcat:distribution) obbligatoria per i dati aperti" ] ,
+    [ sh:path dct:subject ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "Dataset: sottotema (dct:subject) raccomandato" ] ,
+    [ sh:path dcat:contactPoint ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "Dataset: punto di contatto (dcat:contactPoint) raccomandato" ] ,
+    [ sh:path dcat:contactPoint ; sh:node it:ContactPoint ; sh:severity sh:Violation ;
+      sh:message "Dataset: punto di contatto incompleto (servono vcard:fn e vcard:hasEmail)" ] ,
+    [ sh:path dct:publisher ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Warning ;
+      sh:message "Dataset: editore (dct:publisher) raccomandato, una sola occorrenza" ] ,
+    [ sh:path dct:publisher ; sh:node it:Agent ; sh:severity sh:Violation ;
+      sh:message "Dataset: l'editore non è un Soggetto DCAT-AP_IT valido (dct:identifier o foaf:name mancante o vuoto)" ] ,
+    [ sh:path dct:creator ; sh:node it:Agent ; sh:severity sh:Violation ;
+      sh:message "Dataset: l'autore non è un Soggetto DCAT-AP_IT valido (dct:identifier o foaf:name mancante o vuoto)" ] ,
+    [ sh:path dct:issued ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: data di rilascio (dct:issued) al massimo una" ] ,
+    [ sh:path dcat:landingPage ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: pagina di accesso (dcat:landingPage) al massimo una" ] ,
+    [ sh:path dct:temporal ; sh:node it:PeriodOfTime ; sh:severity sh:Violation ;
+      sh:message "Dataset: estensione temporale senza data di inizio" ] ,
+    [ sh:path dct:conformsTo ; sh:node it:Standard ; sh:severity sh:Violation ;
+      sh:message "Dataset: standard di conformità senza identificativo (dct:identifier)" ] ,
+    [ sh:path adms:identifier ; sh:node it:AltIdentifier ; sh:severity sh:Warning ;
+      sh:message "Dataset: identificativo alternativo senza notazione (skos:notation)" ] .
+
+# ---------------------------------------------------------------- DISTRIBUZIONE
+it:Distribution a sh:NodeShape ;
+  rdfs:label "Distribuzione (dcatapit:Distribution)" ;
+  sh:targetClass dcat:Distribution ;
+  sh:property
+    [ sh:path rdf:type ; sh:hasValue dcatapit:Distribution ; sh:severity sh:Warning ;
+      sh:message "La distribuzione dovrebbe essere tipizzata anche dcatapit:Distribution" ] ,
+    [ sh:path dct:format ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: formato (dct:format) obbligatorio, una sola occorrenza" ] ,
+    [ sh:path dcat:accessURL ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: URL di accesso (dcat:accessURL) obbligatorio" ] ,
+    [ sh:path dcat:accessURL ; sh:nodeKind sh:IRI ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: dcat:accessURL deve essere un URI" ] ,
+    [ sh:path dct:license ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: licenza (dct:license) obbligatoria, una sola occorrenza" ] ,
+    [ sh:path dct:license ; sh:node it:License ; sh:severity sh:Warning ;
+      sh:message "Distribuzione: la licenza dovrebbe essere descritta come dcatapit:LicenseDocument con dct:type" ] ,
+    [ sh:path dct:description ; sh:minCount 1 ; sh:severity sh:Warning ;
+      sh:message "Distribuzione: descrizione (dct:description) raccomandata" ] ,
+    [ sh:path dct:modified ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: dct:modified al massimo una" ] ,
+    [ sh:path dcat:byteSize ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Distribuzione: dcat:byteSize al massimo uno" ] .
+
+# ---------------------------------------------------------------- NODI COLLEGATI
+it:Agent a sh:NodeShape ;
+  rdfs:label "Soggetto (dcatapit:Agent)" ;
+  sh:property
+    [ sh:path dct:identifier ; sh:minCount 1 ; sh:minLength 1 ; sh:severity sh:Violation ;
+      sh:message "Soggetto: identificativo (dct:identifier, es. codice IPA) obbligatorio" ] ,
+    [ sh:path foaf:name ; sh:minCount 1 ; sh:minLength 1 ; sh:severity sh:Violation ;
+      sh:message "Soggetto: nome (foaf:name) obbligatorio" ] .
+
+it:AgentType a sh:NodeShape ;
+  rdfs:label "Soggetto: tipo" ;
+  sh:targetObjectsOf dct:rightsHolder , dct:publisher ;
+  sh:property
+    [ sh:path rdf:type ; sh:hasValue dcatapit:Agent ; sh:severity sh:Warning ;
+      sh:message "Il soggetto (titolare/editore) dovrebbe essere tipizzato dcatapit:Agent" ] ,
+    [ sh:path foaf:name ; sh:minLength 1 ; sh:severity sh:Warning ;
+      sh:message "Soggetto: foaf:name vuoto" ] ,
+    [ sh:path foaf:mbox ; sh:minLength 1 ; sh:severity sh:Warning ;
+      sh:message "Soggetto: foaf:mbox presente ma vuoto" ] .
+
+it:ContactPoint a sh:NodeShape ;
+  rdfs:label "Punto di contatto (dcatapit:Organization)" ;
+  sh:property
+    [ sh:path vcard:fn ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Punto di contatto: nome (vcard:fn) obbligatorio" ] ,
+    [ sh:path vcard:hasEmail ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
+      sh:message "Punto di contatto: email (vcard:hasEmail) obbligatoria, una sola occorrenza" ] .
+
+it:ContactEmail a sh:NodeShape ;
+  rdfs:label "Punto di contatto: email" ;
+  sh:targetObjectsOf vcard:hasEmail ;
+  sh:or ( [ sh:nodeKind sh:IRI ; sh:pattern "^mailto:[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" ]
+          [ sh:nodeKind sh:Literal ; sh:pattern "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" ] ) ;
+  sh:severity sh:Warning ;
+  sh:message "Punto di contatto: vcard:hasEmail non è un indirizzo email valido (atteso mailto:...)" .
+
+it:License a sh:NodeShape ;
+  rdfs:label "Licenza (dcatapit:LicenseDocument)" ;
+  sh:property
+    [ sh:path rdf:type ; sh:hasValue dct:LicenseDocument ] ,
+    [ sh:path dct:type ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+it:PeriodOfTime a sh:NodeShape ;
+  rdfs:label "Periodo di tempo (dct:PeriodOfTime)" ;
+  sh:or ( [ sh:path dcatapit:startDate ; sh:minCount 1 ]
+          [ sh:path dcat:startDate ; sh:minCount 1 ]
+          [ sh:path schema:startDate ; sh:minCount 1 ] ) .
+
+it:Standard a sh:NodeShape ;
+  rdfs:label "Standard (dcatapit:Standard)" ;
+  sh:property [ sh:path dct:identifier ; sh:minCount 1 ] .
+
+it:AltIdentifier a sh:NodeShape ;
+  rdfs:label "Identificativo alternativo (adms:Identifier)" ;
+  sh:property [ sh:path skos:notation ; sh:minCount 1 ] .

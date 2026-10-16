@@ -1,0 +1,61 @@
+name: Validatore DCAT-AP_IT su GitHub Pages
+
+# Costruisce tools/validatore-web e lo pubblica su GitHub Pages.
+# Riparte quando cambiano la pagina o le shape; si puo' lanciare anche a mano.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/validatore-web/**'
+      - 'tools/shapes/**'
+      - '.github/workflows/validatore-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/validatore-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/validatore-web/package-lock.json
+      - run: npm ci
+      - name: Prova sul file di esempio (deve trovare le violazioni attese)
+        run: |
+          node test/run.mjs test/esempio.ttl > risultato.txt || true
+          cat risultato.txt
+          grep -q '"hvd Violation":7' risultato.txt
+          grep -q '"dcatapit Violation":10' risultato.txt
+      - run: npm run build
+      - name: Prepara il sito
+        run: |
+          mkdir -p ../../_site
+          cp dist/index.html ../../_site/index.html
+          touch ../../_site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,5 +1,17 @@
 # Changelog
 
+## `2026-10-16` — validazione con i profili italiani e validatore nel browser
+- `tools/validate_edp_shacl.py` ha una nuova opzione `--profile`: oltre al profilo EDP (default, invariato) valida con `dcatapit`, `vocabolari` e `hvd`, oppure `it` per i tre insieme e `tutti` per EDP piu' i tre. Le shape italiane stanno in `tools/shapes/`.
+- `dcatapit` traduce in SHACL le Linee guida AgID per i cataloghi dati: obbligatorio diventa `Violation`, raccomandato `Warning`. Copre catalogo, dataset, distribuzione, soggetto (titolare, editore, autore), punto di contatto, licenza, periodo, standard e identificativo alternativo. Il catalogo radice puo' elencare sottocataloghi (`dct:hasPart`) invece di dataset.
+- `vocabolari` controlla i valori presi dalle authority table EU: i temi sull'elenco chiuso dei 13 `data-theme`, gli altri sul namespace.
+- `hvd` applica i requisiti dei dati di elevato valore (Guida operativa AgID v1.0, azione #hvd14, e DCAT-AP HVD 2.2.0) solo alle risorse che dichiarano l'ELI 2023/138 o una `hvdCategory`, alle loro distribuzioni e ai servizi che le servono.
+- `--file` accetta anche RDF/XML e JSON-LD. Il riepilogo JSON riporta il profilo di ogni segnalazione.
+- Nuovo `tools/validatore-web/`: la stessa validazione in una pagina web che gira tutta nel browser, pubblicata su GitHub Pages dal workflow `validatore-pages.yml`. Include le shape EDP (Apache 2.0) per non dipendere da `gitlab.com`.
+- Verificato su tre pagine di `catalog.ttl` (Turtle e RDF/XML) e su un file di prova costruito per far scattare ogni regola: pagina e script danno gli stessi conteggi per profilo e gravita'; sul profilo EDP coincidono con la validazione precedente regola per regola.
+- Nella libreria JS di validazione va disattivato `maxNodeChecks`: con il valore predefinito, dopo 50 controlli dello stesso valore (es. lo status `COMPLETED` ripetuto su ogni distribuzione) il nodo veniva considerato conforme e le segnalazioni successive andavano perse.
+- Cosa emerge gia' su una pagina di `catalog.ttl`: distribuzioni di dataset HVD senza l'ELI 2023/138, un servizio dati che serve dataset HVD senza alcuna proprieta' HVD, autori ed editori con `dct:identifier` o `foaf:name` vuoti, `dcat:mediaType` nella forma `https://iana.org/...` invece di `http://www.iana.org/...`.
+- README: corretto il default di `--dcatap`, che e' `3.0.0` e non `3.0.1`.
+
 ## `2026-10-13` — licenze harvestate trasformate in CC BY 4.0
 - Su ogni dataset harvestato la licenza finiva in CC BY 4.0 anche quando il catalogo sorgente dichiarava altro (es. IODL 2.0 con `A29_IODL20`). Unica eccezione: le licenze CC0, salvate dal controllo `publicdomain`.
 - Causa, in `ckanext-dcatapit/.../dcat/profiles.py`: le `license.replace(...)` trasformano il nodo `URIRef` della licenza in una `str` semplice. Le letture successive dal grafo (`dct:type`, `foaf:name`, `versionInfo`) usavano quella `str`, e rdflib non la riconosce come URI: zero risultati. Con `names` vuoto si entrava nel ramo di ripiego, che imposta `license_name` = CC BY 4.0, `license_type` = `A21_CCBY40` e `document_uri` = creativecommons by/4.0. Per lo stesso motivo la toppa per `r_lazio` veniva sovrascritta subito dopo.

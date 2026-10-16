@@ -1,0 +1,45 @@
+# Esempio con errori inseriti apposta: catalogo, dataset DCAT-AP_IT, dataset HVD e servizio.
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix dcatap: <http://data.europa.eu/r5r/> .
+@prefix dcatapit: <http://dati.gov.it/onto/dcatapit#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Catalogo senza editore, senza dataset, senza tipo italiano
+<https://example.org/cat> a dcat:Catalog ;
+  dct:title "Catalogo di prova" ; dct:description "x" ;
+  dct:modified "2026-10-16" .
+
+# Dataset: manca rightsHolder, accrualPeriodicity, identifier; tema fuori vocabolario
+<https://example.org/ds1> a dcat:Dataset ;
+  dct:title "DS1" ; dct:description "x" ;
+  dct:modified "16/10/2026" ;
+  dcat:theme <http://publications.europa.eu/resource/authority/data-theme/EMPL> ;
+  dct:language <http://publications.europa.eu/resource/authority/language/it> ;
+  dcat:contactPoint [ vcard:fn "Ufficio" ; vcard:hasEmail "non-una-mail" ] ;
+  dcat:distribution <https://example.org/ds1/d1> .
+
+<https://example.org/ds1/d1> a dcat:Distribution ;
+  dct:format <https://example.org/csv> ;
+  dcat:mediaType <https://iana.org/assignments/media-types/text/csv> .
+
+# Dataset HVD: ELI presente ma niente categoria; distribuzione senza ELI; titolare vuoto
+<https://example.org/ds2> a dcatapit:Dataset, dcat:Dataset ;
+  dct:identifier "c_x:ds2" ; dct:title "DS2" ; dct:description "x" ;
+  dct:modified "2026-10-16T10:00:00"^^xsd:dateTime ;
+  dcat:theme <http://publications.europa.eu/resource/authority/data-theme/ENVI> ;
+  dct:accrualPeriodicity <http://publications.europa.eu/resource/authority/frequency/ANNUAL> ;
+  dct:rightsHolder [ a dcatapit:Agent ; dct:identifier "" ; foaf:name "Comune X" ] ;
+  dcatap:applicableLegislation <http://data.europa.eu/eli/reg_impl/2023/138/oj> ;
+  dcat:distribution <https://example.org/ds2/d1> .
+
+<https://example.org/ds2/d1> a dcatapit:Distribution, dcat:Distribution ;
+  dct:format <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+  dcat:accessURL <https://example.org/ds2.csv> ;
+  dct:license <https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40> .
+
+# Servizio che serve un dataset HVD ma senza nulla di HVD
+<https://example.org/api> a dcat:DataService ;
+  dct:title "API" ; dcat:servesDataset <https://example.org/ds2> .

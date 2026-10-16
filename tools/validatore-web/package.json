@@ -1,0 +1,21 @@
+{
+  "name": "validatore-dcatapit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Validatore SHACL nel browser: profilo EDP (DCAT-AP 3.0.0), DCAT-AP_IT, vocabolari controllati e HVD",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/run.mjs test/esempio.ttl"
+  },
+  "dependencies": {
+    "@zazuko/env": "3.0.1",
+    "jsonld-streaming-parser": "5.0.2",
+    "n3": "2.13.12",
+    "rdf-validate-shacl": "0.6.5",
+    "rdfxml-streaming-parser": "3.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
