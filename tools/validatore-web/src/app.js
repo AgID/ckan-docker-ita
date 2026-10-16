@@ -24,7 +24,9 @@ const state = {
 }
 
 // ------------------------------------------------------------ sorgente
+let activeTab = 'file'
 function setTab (kind) {
+  activeTab = kind
   for (const b of document.querySelectorAll('[data-tab]')) {
     const on = b.dataset.tab === kind
     b.setAttribute('aria-selected', on)
@@ -256,15 +258,29 @@ function init () {
   drop.addEventListener('dragover', e => { e.preventDefault(); drop.dataset.over = '1' })
   drop.addEventListener('dragleave', () => { delete drop.dataset.over })
   drop.addEventListener('drop', e => { e.preventDefault(); delete drop.dataset.over; const f = e.dataTransfer.files[0]; if (f) readFile(f) })
-  $('#paste-go').addEventListener('click', () => {
+  // il testo incollato diventa subito la sorgente: "Valida" lo usa senza altri passaggi
+  const usePaste = () => {
     const t = $('#paste').value
-    setSource({ kind: 'incolla', name: 'testo incollato', text: t })
-    validate()
-  })
+    if (t.trim()) setSource({ kind: 'incolla', name: 'testo incollato', text: t })
+  }
+  $('#paste').addEventListener('input', usePaste)
   for (const id of ['ckan-base', 'ckan-page', 'ckan-name', 'ckan-fq', 'ckan-format']) $('#' + id).addEventListener('input', refreshCkanPreview)
   $('#ckan-go').addEventListener('click', () => { const u = ckanUrl(); if (u) fetchUrl(u) })
   $('#url-go').addEventListener('click', () => { const u = $('#url').value.trim(); if (u) fetchUrl(u) })
-  $('#run').addEventListener('click', validate)
+  // "Valida" lavora sulla scheda aperta
+  $('#run').addEventListener('click', () => {
+    if (activeTab === 'incolla') {
+      if (!$('#paste').value.trim()) { setStatus('error', 'Incolla prima il testo RDF nel riquadro.'); return }
+      usePaste()
+    } else if (activeTab === 'ckan') {
+      const u = ckanUrl(); if (!u) { setStatus('error', "Indica l'indirizzo base del portale CKAN."); return }
+      return fetchUrl(u)
+    } else if (activeTab === 'url') {
+      const u = $('#url').value.trim(); if (!u) { setStatus('error', "Indica l'indirizzo del file RDF."); return }
+      return fetchUrl(u)
+    }
+    validate()
+  })
   $('#load-example').addEventListener('click', () => { setSource({ kind: 'esempio', name: 'esempio-errori.ttl', text: esempio }); validate() })
   $('#profiles-sum').addEventListener('click', e => {
     const b = e.target.closest('.psum'); if (!b) return
