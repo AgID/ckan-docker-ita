@@ -1266,10 +1266,6 @@ class ItalianDCATAPProfile(RDFProfile):
             landing_page_uri = dataset_uri(dataset_dict)
             landing_page_uri=landing_page_uri.replace(PREF_LANDING,"https://ckan.opendatalaquila.it")
             noaddsl=1
-         if 'cci' in dataset_dict.get('holder_identifier'):
-            landing_page_uri = dataset_uri(dataset_dict)
-            landing_page_uri=landing_page_uri.replace(PREF_LANDING,"https://www.mistralportal.it")
-            noaddsl=1
          if 'agid' in dataset_dict.get('holder_identifier'):
             landing_page_uri = dataset_uri(dataset_dict)
             landing_page_uri=landing_page_uri.replace(PREF_LANDING,"https://indicepa.gov.it")

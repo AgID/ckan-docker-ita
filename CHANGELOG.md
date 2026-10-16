@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-16` — landing page dei dataset delle Camere di Commercio verso mistralportal.it
+- I dataset con `cci` nell'identificativo del titolare (Camere di Commercio) uscivano con `dcat:landingPage` su `https://www.mistralportal.it/...`. Il portale MISTRAL non esiste piu': il dominio rimanda alla home di MeteoHub (Agenzia ItaliaMeteo), quindi quelle landing page non portano al dataset. Su dati.gov.it erano circa 500 dataset, tra cui quelli della Camera di Commercio di Lecce pubblicati su dati.puglia.it.
+- Correzione: tolta la regola in `ckanext-dcatapit/.../dcat/profiles.py`. Questi dataset ora hanno la landing page del portale che li pubblica, come gli altri.
+- I dataset harvestati si correggono al successivo harvest del portale di origine.
+
 ## `2026-10-16` — lingua dei sottocataloghi harvestati scelta a caso tra quelle della sorgente
 - I cataloghi sorgente possono dichiarare piu' lingue: per esempio Crispiano e Copertino dichiarano DEU, ENG, FRA, ITA e il letterale `"it"`. In fase di harvest l'extra `source_catalog_language` ne prendeva una qualsiasi (`_object_value`), quindi i sottocataloghi uscivano con `DEU`, `FRA` o `ENG` invece di `ITA`, e il valore poteva cambiare da un harvest all'altro.
 - Correzione in `ckanext-dcat/.../profiles/base.py`, `_extract_catalog_dict`: tra le lingue del catalogo sorgente si sceglie l'italiano (URI `.../language/ITA` o il letterale `it`/`ita`, preferendo l'URI); se non c'e', la prima in ordine alfabetico, cosi' l'esito e' stabile.
