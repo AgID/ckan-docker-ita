@@ -1060,6 +1060,18 @@ class RDFProfile(object):
 
         for key, predicate in sources:
             val = self._object_value(catalog_ref, predicate)
+            if key == "source_catalog_language":
+                # Il catalogo sorgente puo' dichiarare piu' lingue (es. DEU, ENG,
+                # FRA, ITA): _object_value ne prende una qualsiasi. Si preferisce
+                # l'italiano; altrimenti la prima in ordine alfabetico, cosi'
+                # l'esito non cambia da un harvest all'altro.
+                langs = [str(o) for o in self.g.objects(catalog_ref, predicate)]
+                ita = [l for l in langs
+                       if l.upper().endswith("/ITA") or l.strip().lower() in ("it", "ita")]
+                if ita:
+                    val = sorted(ita, key=lambda l: not l.startswith("http"))[0]
+                elif langs:
+                    val = sorted(langs)[0]
             if val:
                 out.append({"key": key, "value": val})
 
