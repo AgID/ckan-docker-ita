@@ -24,11 +24,12 @@ voc:Dataset a sh:NodeShape ;
               <http://publications.europa.eu/resource/authority/data-theme/HEAL>
               <http://publications.europa.eu/resource/authority/data-theme/INTR>
               <http://publications.europa.eu/resource/authority/data-theme/JUST>
+              <http://publications.europa.eu/resource/authority/data-theme/OP_DATPRO>
               <http://publications.europa.eu/resource/authority/data-theme/REGI>
               <http://publications.europa.eu/resource/authority/data-theme/SOCI>
               <http://publications.europa.eu/resource/authority/data-theme/TECH>
               <http://publications.europa.eu/resource/authority/data-theme/TRAN> ) ;
-      sh:message "Tema non presente nel vocabolario EU data-theme (13 valori)" ] ,
+      sh:message "Tema non presente nel vocabolario EU data-theme (14 valori)" ] ,
     [ sh:path dct:accrualPeriodicity ; sh:severity sh:Violation ;
       sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/[A-Z0-9_]+$" ;
       sh:message "Frequenza non presa dal vocabolario EU frequency" ] ,

@@ -120,7 +120,7 @@ async function validate () {
     const profiles = await getProfiles()
     const { results, meta } = await runValidation(ds, profiles, sel)
     const ms = Math.round(performance.now() - t0)
-    state.last = { results, groups: groupResults(results, 5), stats: st, meta, selected: sel, sourceName: src.name, format: fmt, ms, at: new Date() }
+    state.last = { results, groups: groupResults(results, Infinity), stats: st, meta, selected: sel, sourceName: src.name, format: fmt, ms, at: new Date() }
     setStatus('done', `Validato in ${(ms / 1000).toFixed(1)} s`)
     render()
   } catch (e) {
@@ -187,8 +187,9 @@ function renderTable () {
     $('#rows').innerHTML = `<p class="empty">${msg}</p>`
     return
   }
+  state.visible = rows
   $('#rows').innerHTML = rows.map((g, i) => `
-    <details class="row" data-sev="${g.severity}">
+    <details class="row" data-sev="${g.severity}" data-i="${i}">
       <summary>
         <span class="sev">${sevLabel(g.severity)}</span>
         <span class="msg">${esc(g.message)}</span>
@@ -196,13 +197,37 @@ function renderTable () {
         <span class="n" title="${g.nodes} risorse coinvolte">${g.count.toLocaleString('it-IT')}</span>
       </summary>
       <div class="ex">
-        <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}${g.original && g.original !== g.message ? ` · messaggio originale: <code>${esc(g.original)}</code>` : ''}. Esempi:</p>
-        <table><thead><tr><th>Risorsa</th><th>Valore</th></tr></thead><tbody>
-        ${g.examples.map(e => `<tr><td>${linkish(e.focus)}</td><td>${e.value ? linkish(e.value) : '<span class="muted">assente</span>'}</td></tr>`).join('')}
-        </tbody></table>
+        <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}${g.original && g.original !== g.message ? ` · messaggio originale: <code>${esc(g.original)}</code>` : ''}.</p>
+        <table><thead><tr><th>Risorsa</th><th>Valore</th></tr></thead><tbody>${exampleRows(g, 0, FIRST)}</tbody></table>
+        ${moreBar(g, Math.min(FIRST, g.examples.length))}
       </div>
     </details>`).join('')
 }
+// righe di esempio: le prime FIRST subito, poi a blocchi di STEP
+const FIRST = 10
+const STEP = 200
+function exampleRows (g, from, to) {
+  return g.examples.slice(from, to).map(e => `<tr><td>${linkish(e.focus)}</td><td>${e.value ? linkish(e.value) : '<span class="muted">assente</span>'}</td></tr>`).join('')
+}
+function moreBar (g, shown) {
+  const rest = g.examples.length - shown
+  if (rest <= 0) return ''
+  const next = Math.min(STEP, rest)
+  return `<div class="more" data-shown="${shown}">
+    <span class="muted">Mostrate ${shown.toLocaleString('it-IT')} di ${g.examples.length.toLocaleString('it-IT')}</span>
+    <button class="btn small" type="button" data-more="${next}">Mostra altre ${next.toLocaleString('it-IT')}</button>
+    ${rest > next ? `<button class="btn small" type="button" data-more="all">Mostra tutte</button>` : ''}
+  </div>`
+}
+function showMore (btn) {
+  const det = btn.closest('details.row'); const bar = btn.closest('.more')
+  const g = state.visible[+det.dataset.i]
+  const shown = +bar.dataset.shown
+  const to = btn.dataset.more === 'all' ? g.examples.length : shown + (+btn.dataset.more)
+  det.querySelector('tbody').insertAdjacentHTML('beforeend', exampleRows(g, shown, to))
+  bar.outerHTML = moreBar(g, to)
+}
+
 const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Info' }[s] || s)
 function linkish (v) {
   if (/^https?:\/\//.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener" class="mono">${esc(v)}</a>`
@@ -297,6 +322,7 @@ function init () {
     c.checked ? state.filterSev.add(c.dataset.sevfilter) : state.filterSev.delete(c.dataset.sevfilter)
     state.last && renderTable()
   })
+  $('#rows').addEventListener('click', e => { const b = e.target.closest('[data-more]'); if (b) showMore(b) })
   $('#q').addEventListener('input', e => { state.query = e.target.value; state.last && renderTable() })
   $('#exp-json').addEventListener('click', () => save('json'))
   $('#exp-csv').addEventListener('click', () => save('csv'))

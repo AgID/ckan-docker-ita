@@ -234,7 +234,7 @@ shape stanno in `tools/shapes/` e non vengono scaricate.
 |---|---|---|
 | `edp` (default) | shape di piveau usate da data.europa.eu | piveau-metrics-validating-shacl |
 | `dcatapit` | identificativo, titolare (`dct:rightsHolder`), frequenza, temi, data di modifica; soggetti con `dct:identifier` e `foaf:name` non vuoti; punto di contatto con `vcard:fn` e `vcard:hasEmail`; formato, URL di accesso e licenza della distribuzione; tipi `dcatapit:*` | Linee guida AgID per i cataloghi dati |
-| `vocabolari` | temi sui 13 valori EU `data-theme`, frequenza, lingua, formato, diritti di accesso, media type IANA, URI ELI, categorie HVD | authority table EU |
+| `vocabolari` | temi sui 14 valori EU `data-theme`, frequenza, lingua, formato, diritti di accesso, media type IANA, URI ELI, categorie HVD | authority table EU |
 | `hvd` | `dcatap:applicableLegislation` con l'ELI del Reg. UE 2023/138 e `dcatap:hvdCategory` su dataset, distribuzioni e servizi | Guida operativa AgID sui dati di elevato valore v1.0 (azione #hvd14), DCAT-AP HVD 2.2.0 |
 
 Nel profilo `dcatapit` le proprieta' obbligatorie producono una `Violation`, le

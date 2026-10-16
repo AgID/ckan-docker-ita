@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-16` — validatore: tema `OP_DATPRO` e elenco completo delle segnalazioni
+- Il profilo `vocabolari` segnalava come errato il tema `data-theme/OP_DATPRO` (dati provvisori), che invece fa parte del vocabolario EU data-theme e non e' deprecato. I temi ammessi sono 14, non 13: falso positivo corretto in `tools/shapes/vocabolari.ttl`.
+- Validatore web: ogni regola mostrava al massimo 5 risorse. Ora ne mostra 10 e si possono aprire le altre a blocchi di 200 o tutte insieme; la ricerca lavora su tutte.
+
 ## `2026-10-16` — lingua dei sottocataloghi emessa come testo
 - Nei sottocataloghi (`dct:hasPart` del catalogo radice) `dct:language` usciva come stringa: `dct:language "http://publications.europa.eu/resource/authority/language/ITA"`. La shape EDP chiede un URI o un nodo (`sh:nodeKind sh:BlankNodeOrIRI`): una Violation per ogni sottocatalogo, anche su data.europa.eu.
 - Causa, in `ckanext-dcat/.../processors.py`: l'extra `source_catalog_language` veniva sempre aggiunto con `Literal`, anche quando contiene gia' l'URI del vocabolario EU. Lo stesso valeva per il valore `ITA` impostato per un catalogo specifico.
