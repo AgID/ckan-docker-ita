@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-16` — lingua dei sottocataloghi emessa come testo
+- Nei sottocataloghi (`dct:hasPart` del catalogo radice) `dct:language` usciva come stringa: `dct:language "http://publications.europa.eu/resource/authority/language/ITA"`. La shape EDP chiede un URI o un nodo (`sh:nodeKind sh:BlankNodeOrIRI`): una Violation per ogni sottocatalogo, anche su data.europa.eu.
+- Causa, in `ckanext-dcat/.../processors.py`: l'extra `source_catalog_language` veniva sempre aggiunto con `Literal`, anche quando contiene gia' l'URI del vocabolario EU. Lo stesso valeva per il valore `ITA` impostato per un catalogo specifico.
+- Correzione: nuova funzione `_catalog_language`. Un URI resta URI (con `https://publications.europa.eu/` riportato a `http://`), un codice a 3 lettere diventa `.../language/ITA`, uno a 2 lettere (`it`, `en`, `de`, `fr`, `es`) viene convertito; ogni altro valore resta letterale come prima.
+- Trovato con il validatore web su un catalogo comunale: 4 Violation `dct:language`, una per sottocatalogo. Con la lingua emessa come URI lo stesso catalogo non ha piu' Violation sul profilo EDP.
+
 ## `2026-10-16` — validazione con i profili italiani e validatore nel browser
 - `tools/validate_edp_shacl.py` ha una nuova opzione `--profile`: oltre al profilo EDP (default, invariato) valida con `dcatapit`, `vocabolari` e `hvd`, oppure `it` per i tre insieme e `tutti` per EDP piu' i tre. Le shape italiane stanno in `tools/shapes/`.
 - `dcatapit` traduce in SHACL le Linee guida AgID per i cataloghi dati: obbligatorio diventa `Violation`, raccomandato `Warning`. Copre catalogo, dataset, distribuzione, soggetto (titolare, editore, autore), punto di contatto, licenza, periodo, standard e identificativo alternativo. Il catalogo radice puo' elencare sottocataloghi (`dct:hasPart`) invece di dataset.

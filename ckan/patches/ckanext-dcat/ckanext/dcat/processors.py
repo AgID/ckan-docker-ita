@@ -23,6 +23,23 @@ from ckanext.dcat.utils import catalog_uri, dataset_uri, url_to_rdflib_format, D
 from ckanext.dcat.profiles import DCAT, DCT, FOAF
 from ckanext.dcat.exceptions import RDFProfileException, RDFParserException
 
+LANG_BASE_URI = 'http://publications.europa.eu/resource/authority/language/'
+_LANG_2_TO_3 = {'it': 'ITA', 'en': 'ENG', 'de': 'DEU', 'fr': 'FRA', 'es': 'SPA'}
+
+
+def _catalog_language(value):
+    '''dct:language del sottocatalogo: URI del vocabolario EU language.
+    Accetta l'URI (anche con https) o il codice a 3 lettere (ITA) o a 2 (it);
+    qualunque altro valore resta un letterale.'''
+    v = str(value).strip()
+    if v.startswith('http://') or v.startswith('https://'):
+        return URIRef(v.replace('https://publications.europa.eu/', 'http://publications.europa.eu/'))
+    if len(v) == 3 and v.isalpha():
+        return URIRef(LANG_BASE_URI + v.upper())
+    if v.lower() in _LANG_2_TO_3:
+        return URIRef(LANG_BASE_URI + _LANG_2_TO_3[v.lower()])
+    return Literal(v)
+
 HYDRA = Namespace('http://www.w3.org/ns/hydra/core#')
 DCAT = Namespace("http://www.w3.org/ns/dcat#")
 DCATAPIT = Namespace("http://dati.gov.it/onto/dcatapit#")
@@ -595,6 +612,9 @@ class RDFSerializer(RDFProcessor):
                    _date = parse_date(value, default=default_datetime)
                    g.add((catalog_ref, predicate, _type(_date.isoformat(),
                                                   datatype=XSD.dateTime)))
+                 elif key == 'source_catalog_language':
+                   # la lingua va emessa come URI del vocabolario EU, non come testo
+                   g.add((catalog_ref, predicate, _catalog_language(value)))
                  else:
                    g.add((catalog_ref, predicate, _type(value)))
                    log.debug('catalog_ref alla fine %s',_type(value))
