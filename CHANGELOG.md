@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-16` — `spdx:checksum` doppio sulle distribuzioni
+- Con il profilo `dcat_ap_edp_mqa` attivo ogni distribuzione con un hash usciva con due nodi `spdx:checksum` identici: una Violation EDP (`sh:maxCount 1`) per distribuzione. Senza quel profilo il checksum esce una volta sola.
+- Causa: `dcat_ap_edp_mqa` eredita da `euro_dcat_ap_2` e richiama `super().graph_from_dataset()`, quindi il codice europeo delle distribuzioni gira due volte. Le triple con URI si fondono da sole nel grafo; il checksum e' un nodo anonimo creato con un `BNode()` nuovo, quindi restava doppio. Su un catalogo di 100 dataset era l'unico nodo anonimo duplicato.
+- Correzione in `ckanext-dcat/.../profiles/euro_dcat_ap.py`: il checksum non viene aggiunto se la distribuzione ne ha gia' uno con lo stesso valore. Funziona qualunque sia la catena dei profili.
+- Nello stesso blocco: senza `hash_algorithm` l'algoritmo era sempre `sha1`, anche per hash di 32 caratteri (MD5). Ora si ricava dalla lunghezza: 32 MD5, 40 SHA-1, 64 SHA-256. E il controllo su `holder_identifier` non va piu' in errore quando il campo manca.
+
 ## `2026-10-16` — validatore: tema `OP_DATPRO` e elenco completo delle segnalazioni
 - Il profilo `vocabolari` segnalava come errato il tema `data-theme/OP_DATPRO` (dati provvisori), che invece fa parte del vocabolario EU data-theme e non e' deprecato. I temi ammessi sono 14, non 13: falso positivo corretto in `tools/shapes/vocabolari.ttl`.
 - Validatore web: ogni regola mostrava al massimo 5 risorse. Ora ne mostra 10 e si possono aprire le altre a blocchi di 200 o tutte insieme; la ricerca lavora su tutte.

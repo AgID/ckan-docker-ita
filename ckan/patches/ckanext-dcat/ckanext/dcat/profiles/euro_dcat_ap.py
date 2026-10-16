@@ -997,34 +997,35 @@ class EuropeanDCATAPProfile(RDFProfile):
                 )
 
             # Checksum
-            if resource_dict.get("hash"):
-              if not 'r_emiro' in dataset_dict.get('holder_identifier'):
+            # Il blocco puo' girare due volte sulla stessa distribuzione (il profilo
+            # dcat_ap_edp_mqa eredita da euro_dcat_ap_2 e richiama super()): il nodo
+            # e' anonimo, quindi senza questo controllo spdx:checksum usciva doppio
+            # (Violation EDP sh:maxCount 1).
+            hash_value = (resource_dict.get("hash") or "").strip()
+            already = hash_value and any(
+                str(self._object_value(c, SPDX.checksumValue)) == hash_value
+                for c in g.objects(distribution, SPDX.checksum)
+            )
+            if hash_value and not already:
+              if 'r_emiro' not in (dataset_dict.get('holder_identifier') or ''):
                 checksum = BNode()
                 g.add((checksum, RDF.type, SPDX.Checksum))
                 g.add(
                     (
                         checksum,
                         SPDX.checksumValue,
-                        Literal(resource_dict["hash"], datatype=XSD.hexBinary),
+                        Literal(hash_value, datatype=XSD.hexBinary),
                     )
                 )
 
                 if resource_dict.get("hash_algorithm"):
-                    g.add(
-                        (
-                            checksum,
-                            SPDX.algorithm,
-                            URIRefOrLiteral(resource_dict["hash_algorithm"]),
-                        )
-                    )
+                    algorithm = resource_dict["hash_algorithm"]
                 else:
-                    g.add(
-                        (
-                            checksum,
-                            SPDX.algorithm,
-                            URIRefOrLiteral("http://spdx.org/rdf/terms#checksumAlgorithm_sha1"),
-                        )
-                    )
+                    # senza algoritmo dichiarato lo si ricava dalla lunghezza
+                    # dell'hash (32 = MD5, 40 = SHA-1, 64 = SHA-256)
+                    algorithm = "http://spdx.org/rdf/terms#checksumAlgorithm_" + {
+                        32: "md5", 64: "sha256"}.get(len(hash_value), "sha1")
+                g.add((checksum, SPDX.algorithm, URIRefOrLiteral(algorithm)))
 
                 g.add((distribution, SPDX.checksum, checksum))
 
