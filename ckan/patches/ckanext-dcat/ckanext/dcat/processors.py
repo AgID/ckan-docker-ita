@@ -575,6 +575,16 @@ class RDFSerializer(RDFProcessor):
             for item in sources:
                 key, predicate, _type = item
                 value = _get_from_extra(key)
+                # sottocatalogo ricavato dal 'site' dell'organizzazione: senza
+                # extra source_catalog_* i valori vengono dall'organizzazione
+                if not value and org_site:
+                    _org = dataset_dict.get('organization') or {}
+                    value = {
+                        'source_catalog_homepage': org_site.rstrip('/'),
+                        'source_catalog_language': 'ITA',
+                        'source_catalog_title': _org.get('title'),
+                        'source_catalog_description': _org.get('description'),
+                    }.get(key)
                 if key == 'source_catalog_description':
                    if not value:
                      value='Portale Dati Aperti'

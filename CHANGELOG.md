@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-16` — sottocataloghi ricavati dal `site` dell'organizzazione senza homepage e lingua
+- Quando l'organizzazione ha il campo `site`, i suoi dataset finiscono in un sottocatalogo con quell'URI. Per i dataset caricati direttamente sul portale (non harvestati) mancano gli extra `source_catalog_*`, quindi il sottocatalogo usciva senza `foaf:homepage` e `dct:language` (raccomandate in DCAT-AP_IT e DCAT-AP) e con titolo e descrizione di ripiego "Portale Dati Aperti".
+- Correzione in `ckanext-dcat/.../processors.py`, nel ciclo delle proprieta' del sottocatalogo: se l'extra manca e il sottocatalogo viene dal `site`, i valori si prendono dall'organizzazione. Homepage = `site`, lingua = `ITA` (URI del vocabolario EU), titolo e descrizione = quelli dell'organizzazione; se la descrizione e' vuota resta il ripiego di prima. Gli extra, quando ci sono (dataset harvestati), hanno sempre la precedenza.
+- Resta invariato `dct:modified`, che senza extra vale ancora `2024-01-01`: il sottocatalogo viene creato una sola volta per pagina e non c'e' un punto semplice dove calcolare la data piu' recente dei suoi dataset.
+
 ## `2026-10-16` — `dcatap:availability` con `https://`; regola dei media type nel validatore
 - `dcatap:availability` usciva con `https://publications.europa.eu/resource/authority/planned-availability/...`: le authority table EU usano `http://`, quindi il valore non corrispondeva ad alcun concetto del vocabolario. Lo generavano le opzioni del modulo in `ckanext-dcatapit/.../schema.py`, e arriva uguale anche da alcuni cataloghi harvestati.
 - Correzione: in `ckanext-dcat/.../profiles/euro_dcat_ap_2.py` il valore viene riportato a `http://` prima di scriverlo nel grafo, cosi' vale anche per i dataset gia' salvati e per quelli harvestati; nel modulo le due opzioni ora hanno il valore `http://`. Un dataset salvato con il vecchio valore, riaperto in modifica, potrebbe non mostrare l'opzione selezionata: nell'RDF esce comunque corretto.
