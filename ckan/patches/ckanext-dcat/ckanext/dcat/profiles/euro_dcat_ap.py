@@ -1000,10 +1000,11 @@ class EuropeanDCATAPProfile(RDFProfile):
             # Il blocco puo' girare due volte sulla stessa distribuzione (il profilo
             # dcat_ap_edp_mqa eredita da euro_dcat_ap_2 e richiama super()): il nodo
             # e' anonimo, quindi senza questo controllo spdx:checksum usciva doppio
-            # (Violation EDP sh:maxCount 1).
+            # (Violation EDP sh:maxCount 1). Confronto senza maiuscole: rdflib
+            # normalizza in minuscolo i valori xsd:hexBinary.
             hash_value = (resource_dict.get("hash") or "").strip()
             already = hash_value and any(
-                str(self._object_value(c, SPDX.checksumValue)) == hash_value
+                str(self._object_value(c, SPDX.checksumValue)).lower() == hash_value.lower()
                 for c in g.objects(distribution, SPDX.checksum)
             )
             if hash_value and not already:
