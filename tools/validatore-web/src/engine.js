@@ -128,6 +128,31 @@ function messageText (m) {
   return it.value
 }
 
+// Le shape EDP non hanno messaggi propri: si traducono quelli generici del motore SHACL.
+const KIND = {
+  BlankNodeOrIRI: 'un URI (o un nodo strutturato)', IRI: 'un URI', Literal: 'un testo (letterale)',
+  BlankNode: 'un nodo strutturato', BlankNodeOrLiteral: 'un nodo o un testo', IRIOrLiteral: 'un URI o un testo',
+}
+export function spiega (message, component, value) {
+  let m
+  if ((m = /node kind <[^#>]*#(\w+)>/.exec(message))) {
+    const atteso = KIND[m[1]] || m[1]
+    const testo = value && value.startsWith('"')
+    return `Il valore deve essere ${atteso}` + (testo && /IRI/.test(m[1]) ? ', non un testo tra virgolette' : '')
+  }
+  if ((m = /^Less than (\d+) values?/.exec(message))) return m[1] === '1' ? 'Proprietà obbligatoria assente' : `Servono almeno ${m[1]} valori`
+  if ((m = /^More than (\d+) values?/.exec(message))) return m[1] === '1' ? 'Troppi valori: la proprietà ne ammette uno solo' : `Troppi valori: al massimo ${m[1]}`
+  if (/StatusRestrictionADMS/.test(message)) return 'Stato non preso dal vocabolario ADMS (regola piveau che chiede il vocabolario DCAT-AP 2.1; con il vocabolario EU distribution-status il warning è atteso)'
+  if (/DateOrDateTimeDataType/.test(message)) return 'La data deve essere xsd:date, xsd:dateTime, xsd:gYear o xsd:gYearMonth'
+  if ((m = /does not have datatype <([^>]+)>/.exec(message))) return `Tipo di dato errato: atteso ${shorten(m[1])}`
+  if ((m = /does not have class <([^>]+)>/.exec(message))) return `Il valore non è dichiarato come ${shorten(m[1])}`
+  if ((m = /does not have shape <([^>]+)>/.exec(message))) return `Il valore non rispetta la regola ${shorten(m[1]).replace(/^.*#/, '')}`
+  if (component === 'Or' || message === 'Or') return 'Il valore non rispetta nessuna delle forme ammesse'
+  if (component === 'In') return 'Valore non tra quelli ammessi'
+  if (component === 'Pattern') return 'Valore in una forma non ammessa'
+  return message
+}
+
 export async function validateProfile (dataDs, shapesDs, profile) {
   const validator = new SHACLValidator(shapesDs, { factory: rdf, allowNamedNodeInList: true, importGraph: () => rdf.dataset(), maxNodeChecks: 0 })
   const report = await validator.validate(dataDs)
@@ -135,11 +160,13 @@ export async function validateProfile (dataDs, shapesDs, profile) {
   for (const r of report.results) {
     const sev = (r.severity && r.severity.value.split('#')[1]) || 'Violation'
     const comp = r.sourceConstraintComponent ? r.sourceConstraintComponent.value.split('#')[1].replace(/ConstraintComponent$/, '') : ''
+    const original = messageText(r.message) || comp
     results.push({
       profile,
       severity: sev,
       path: pathText(r.path),
-      message: messageText(r.message) || comp,
+      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value)) : original,
+      original,
       component: comp,
       focus: termText(r.focusNode),
       value: termText(r.value),
@@ -154,7 +181,7 @@ export function groupResults (results, examples = 3) {
   for (const r of results) {
     const k = [r.profile, r.severity, r.path, r.message].join('\u0001')
     let g = groups.get(k)
-    if (!g) groups.set(k, g = { profile: r.profile, severity: r.severity, path: r.path, message: r.message, component: r.component, count: 0, focus: new Set(), examples: [] })
+    if (!g) groups.set(k, g = { profile: r.profile, severity: r.severity, path: r.path, message: r.message, original: r.original, component: r.component, count: 0, focus: new Set(), examples: [] })
     g.count++
     g.focus.add(r.focus)
     if (g.examples.length < examples) g.examples.push({ focus: r.focus, value: r.value })

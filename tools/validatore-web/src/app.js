@@ -196,7 +196,7 @@ function renderTable () {
         <span class="n" title="${g.nodes} risorse coinvolte">${g.count.toLocaleString('it-IT')}</span>
       </summary>
       <div class="ex">
-        <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}. Esempi:</p>
+        <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}${g.original && g.original !== g.message ? ` · messaggio originale: <code>${esc(g.original)}</code>` : ''}. Esempi:</p>
         <table><thead><tr><th>Risorsa</th><th>Valore</th></tr></thead><tbody>
         ${g.examples.map(e => `<tr><td>${linkish(e.focus)}</td><td>${e.value ? linkish(e.value) : '<span class="muted">assente</span>'}</td></tr>`).join('')}
         </tbody></table>
