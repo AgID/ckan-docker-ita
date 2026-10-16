@@ -602,7 +602,7 @@ def get_custom_resource_schema():
                     'name': 'Stabile',
                     'validator': ['ignore_missing'],
                     'label': 'Dati relativi disponibilità a lungo termine',
-                    'value': 'https://publications.europa.eu/resource/authority/planned-availability/STABLE',
+                    'value': 'http://publications.europa.eu/resource/authority/planned-availability/STABLE',
                     'placeholder': 'Dati relativi disponibilità a lungo termine',
                     'localized': True
                 },
@@ -610,7 +610,7 @@ def get_custom_resource_schema():
                     'name': 'http://data.europa.eu/bna/c_a9135398',
                     'validator': ['ignore_missing'],
                     'label': _('Dati relativi disponibilità a medio termine'),
-                    'value': 'https://publications.europa.eu/resource/authority/planned-availability/AVAILABLE',
+                    'value': 'http://publications.europa.eu/resource/authority/planned-availability/AVAILABLE',
                     'placeholder': _('Dati relativi disponibilità a medio termine'),
                     'localized': True
                 },

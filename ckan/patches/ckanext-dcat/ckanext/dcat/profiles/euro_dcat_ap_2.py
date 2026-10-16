@@ -280,6 +280,12 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
 
             distribution = CleanedURIRef(resource_uri(resource_dict))
 
+            # Le authority table EU usano http://: un valore salvato (o harvestato)
+            # con https:// non corrisponde ad alcun concetto del vocabolario.
+            _av = resource_dict.get("availability")
+            if isinstance(_av, str) and _av.startswith("https://publications.europa.eu/"):
+                resource_dict["availability"] = "http://" + _av[len("https://"):]
+
             #  Simple values
             items = [
                 ("availability", DCATAP.availability, None, URIRefOrLiteral),

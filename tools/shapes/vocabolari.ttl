@@ -68,8 +68,8 @@ voc:Distribution a sh:NodeShape ;
       sh:pattern "^http://publications\\.europa\\.eu/resource/authority/file-type/[A-Z0-9_]+$" ;
       sh:message "Formato non preso dal vocabolario EU file-type" ] ,
     [ sh:path dcat:mediaType ; sh:severity sh:Warning ;
-      sh:pattern "^http://www\\.iana\\.org/assignments/media-types/[a-z]+/[^\\s]+$" ;
-      sh:message "Media type non nella forma IANA attesa da EDP (http://www.iana.org/assignments/media-types/...)" ] ,
+      sh:pattern "^https?://(www\\.)?iana\\.org/assignments/media-types/[a-z]+/[^\\s/]+$" ;
+      sh:message "Media type non preso dal registro IANA (atteso .../assignments/media-types/tipo/sottotipo)" ] ,
     [ sh:path dcat:compressFormat ; sh:severity sh:Warning ;
       sh:pattern "^http://www\\.iana\\.org/assignments/media-types/" ;
       sh:message "Formato di compressione non nella forma IANA" ] ,
@@ -78,7 +78,7 @@ voc:Distribution a sh:NodeShape ;
       sh:message "Stato della distribuzione fuori dai vocabolari distribution-status / ADMS status" ] ,
     [ sh:path dcatap:availability ; sh:severity sh:Warning ;
       sh:pattern "^http://publications\\.europa\\.eu/resource/authority/planned-availability/|^http://data\\.europa\\.eu/r5r/availability/|^http://publications\\.europa\\.eu/resource/authority/distribution-availability/" ;
-      sh:message "Disponibilità fuori dal vocabolario EU planned-availability" ] ,
+      sh:message "Disponibilità fuori dal vocabolario EU planned-availability (gli URI EU iniziano con http://, non https://)" ] ,
     [ sh:path dct:language ; sh:severity sh:Violation ;
       sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/[A-Z]{3}$" ;
       sh:message "Lingua della distribuzione non presa dal vocabolario EU language" ] ,

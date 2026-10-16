@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-16` — `dcatap:availability` con `https://`; regola dei media type nel validatore
+- `dcatap:availability` usciva con `https://publications.europa.eu/resource/authority/planned-availability/...`: le authority table EU usano `http://`, quindi il valore non corrispondeva ad alcun concetto del vocabolario. Lo generavano le opzioni del modulo in `ckanext-dcatapit/.../schema.py`, e arriva uguale anche da alcuni cataloghi harvestati.
+- Correzione: in `ckanext-dcat/.../profiles/euro_dcat_ap_2.py` il valore viene riportato a `http://` prima di scriverlo nel grafo, cosi' vale anche per i dataset gia' salvati e per quelli harvestati; nel modulo le due opzioni ora hanno il valore `http://`. Un dataset salvato con il vecchio valore, riaperto in modifica, potrebbe non mostrare l'opzione selezionata: nell'RDF esce comunque corretto.
+- Validatore: la regola su `dcat:mediaType` chiedeva la sola forma `http://www.iana.org/...`, piu' severa di EDP, che conta come validi anche i media type `https://iana.org/...` emessi da questo stack. Ora accetta `http`/`https`, con o senza `www`, e segnala solo i valori fuori dal registro IANA. Il messaggio sulla disponibilita' indica il caso `https://`.
+
 ## `2026-10-16` — `spdx:checksum` doppio sulle distribuzioni
 - Con il profilo `dcat_ap_edp_mqa` attivo ogni distribuzione con un hash usciva con due nodi `spdx:checksum` identici: una Violation EDP (`sh:maxCount 1`) per distribuzione. Senza quel profilo il checksum esce una volta sola.
 - Causa: `dcat_ap_edp_mqa` eredita da `euro_dcat_ap_2` e richiama `super().graph_from_dataset()`, quindi il codice europeo delle distribuzioni gira due volte. Le triple con URI si fondono da sole nel grafo; il checksum e' un nodo anonimo creato con un `BNode()` nuovo, quindi restava doppio. Su un catalogo di 100 dataset era l'unico nodo anonimo duplicato.
