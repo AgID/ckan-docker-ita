@@ -38,6 +38,47 @@ from .base import (
 
 config = toolkit.config
 
+# 17.10.26 dct:relation di ripiego: ricerca dei dataset dello stesso titolare.
+# Segnaposto del modello (ckanext.dcat.relation_url, env
+# CKANEXT__DCAT__RELATION_URL):
+#   {site_url}  ckan.site_url senza / finale
+#   {holder}    titolare codificato per URL   (ASSET%20Puglia)
+#   {qholder}   titolare tra virgolette, codificato (%22ASSET%20Puglia%22)
+# Il default usa la ricerca di CKAN, che trasforma holder_name=... in un filtro
+# fq. Su dati.gov.it la ricerca e' nel frontend Drupal:
+#   https://www.dati.gov.it/view-dataset?holder_name={qholder}
+RELATION_URL_DEFAULT = '{site_url}/dataset/?holder_name={holder}'
+
+
+def _holder_relation_url(dataset_dict):
+    from urllib.parse import quote
+    # Prima l'extra: nei risultati di package_search (che alimentano
+    # catalog.ttl) holder_name di primo livello vale il titolo
+    # dell'organizzazione, il titolare vero sta negli extra. In package_show
+    # gli extra sono gia' portati al primo livello e la lista e' vuota.
+    holder = None
+    for extra in dataset_dict.get('extras') or []:
+        if extra.get('key') == 'holder_name':
+            holder = extra.get('value')
+            break
+    if not holder:
+        holder = dataset_dict.get('holder_name')
+    if not holder:
+        org = dataset_dict.get('organization') or {}
+        holder = org.get('title') if isinstance(org, dict) else None
+    holder = (holder or '').strip()
+    site_url = (config.get('ckan.site_url') or '').rstrip('/')
+    if not holder or not site_url:
+        return None
+    template = config.get('ckanext.dcat.relation_url') or RELATION_URL_DEFAULT
+    try:
+        return template.format(site_url=site_url,
+                               holder=quote(holder, safe=''),
+                               qholder=quote('"%s"' % holder, safe=''))
+    except (KeyError, IndexError, ValueError):
+        log.warning('[DCAT] ckanext.dcat.relation_url non valida: %r', template)
+        return None
+
 
 DISTRIBUTION_LICENSE_FALLBACK_CONFIG = "ckanext.dcat.resource.inherit.license"
 PREF_LANDING= config.get('ckanext.dcat.base_uri')
@@ -417,13 +458,23 @@ class EuropeanDCATAPProfile(RDFProfile):
         # adms:identifier NON va messo qui: il profilo dcatapit, che gira
         # dopo, fa g.remove((dataset_ref, ADMS.identifier, None)). Il
         # fallback e' in ckanext-dcatapit/dcat/profiles.py.
+        # 17.10.26 Il fallback precedente scriveva
+        # https://www.dati.gov.it/view-dataset?organization=<org> con dominio
+        # fisso e con l'organizzazione locale: su un'altra istanza (es.
+        # dati.puglia.it, org "asset-puglia") produceva un link a dati.gov.it
+        # verso un'organizzazione che li' non esiste, e dati.gov.it lo
+        # ri-esponeva dall'extra related_resource dopo l'harvest. Su
+        # dati.gov.it, poi, le organizzazioni sono i cataloghi federati, non i
+        # titolari. Ora: (1) si scartano i valori generati dal vecchio
+        # fallback, anche se arrivano dall'harvest; (2) il link punta alla
+        # ricerca per titolare (holder_name) sul portale che serializza.
+        for _rel in list(g.objects(dataset_ref, DCT.relation)):
+            if 'view-dataset?organization=' in str(_rel):
+                g.remove((dataset_ref, DCT.relation, _rel))
         if not any(g.objects(dataset_ref, DCT.relation)):
-            _org = dataset_dict.get('organization') or {}
-            _org_name = _org.get('name') if isinstance(_org, dict) else None
-            if _org_name:
-                g.add((dataset_ref, DCT.relation,
-                       URIRef('https://www.dati.gov.it/view-dataset'
-                              '?organization=' + _org_name)))
+            _rel_url = _holder_relation_url(dataset_dict)
+            if _rel_url:
+                g.add((dataset_ref, DCT.relation, URIRef(_rel_url)))
 
         # Contact details
         if any(

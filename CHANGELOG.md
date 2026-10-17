@@ -1,5 +1,17 @@
 # Changelog
 
+## `2026-10-17` — `dct:relation` verso un'organizzazione inesistente su dati.gov.it
+- Il ripiego di `dct:relation` (metrica MQA `relationAvailability`) scriveva `https://www.dati.gov.it/view-dataset?organization=<org>`, con il dominio di dati.gov.it fisso e il nome dell'organizzazione locale. Due problemi:
+  - su qualunque altra istanza il link puntava a dati.gov.it con un'organizzazione che li' non esiste. Esempio: dati.puglia.it esponeva `?organization=asset-puglia`; dati.gov.it lo salvava nell'extra `related_resource` all'harvest e lo ri-esponeva, e su data.europa.eu il dataset di ASSET Puglia rimandava a un'organizzazione inesistente (su dati.gov.it e' sotto `regione-puglia`);
+  - su dati.gov.it le organizzazioni sono i cataloghi, anche federati, non i titolari dei dati.
+- Correzione in `ckanext-dcat/.../profiles/euro_dcat_ap.py`:
+  - i valori `...view-dataset?organization=...` vengono scartati in serializzazione, anche quando arrivano dall'harvest, quindi i dataset gia' in archivio si correggono senza ri-harvest;
+  - il ripiego ora punta alla ricerca dei dataset dello stesso titolare (`holder_name`; se manca, il titolo dell'organizzazione). Il formato si sceglie con `CKANEXT__DCAT__RELATION_URL`; vuoto = ricerca CKAN del portale, `{site_url}/dataset/?holder_name=<titolare>`.
+- Su dati.gov.it va impostato `CKANEXT__DCAT__RELATION_URL=https://www.dati.gov.it/view-dataset?holder_name={qholder}`, che produce per esempio `https://www.dati.gov.it/view-dataset?holder_name=%22ASSET%20Puglia%22`.
+- Il titolare si legge prima dagli extra: nei risultati di `package_search`, che alimentano `catalog.ttl`, `holder_name` di primo livello vale il titolo dell'organizzazione (per il dataset di ASSET: "Regione Puglia" al primo livello, "ASSET Puglia" negli extra).
+- Se il dataset ha gia' un `dct:relation` valido proprio, il ripiego non interviene.
+- Le istanze che harvestano da portali non ancora aggiornati sono comunque coperte: il valore sbagliato viene scartato in serializzazione.
+
 ## `2026-10-17` — validatore: indirizzi non http nel campo URL
 - Con un indirizzo come `javascript:...` nel campo URL (o come base CKAN), il controllo rifiutava il download ma il messaggio d'errore conteneva un link "il file" con quell'indirizzo: cliccandolo, il codice veniva eseguito nella pagina. Era sfruttabile solo da chi scrive l'indirizzo da se' (la pagina non legge indirizzi dalla barra del browser), ma non deve succedere.
 - Correzione: l'indirizzo viene verificato con il parser URL del browser e sono ammessi solo `http:` e `https:`; per gli altri compare un messaggio senza link. Il link nel messaggio d'errore viene costruito solo da un indirizzo gia' verificato. Stesso controllo sui link mostrati nei risultati.
