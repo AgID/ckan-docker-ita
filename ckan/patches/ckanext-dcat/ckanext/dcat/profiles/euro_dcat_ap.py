@@ -44,6 +44,7 @@ config = toolkit.config
 #   {site_url}  ckan.site_url senza / finale
 #   {holder}    titolare codificato per URL   (ASSET%20Puglia)
 #   {qholder}   titolare tra virgolette, codificato (%22ASSET%20Puglia%22)
+#   {org}       nome dell'organizzazione, codificato (asset-puglia)
 # Il default usa la ricerca di CKAN, che trasforma holder_name=... in un filtro
 # fq. Su dati.gov.it la ricerca e' nel frontend Drupal:
 #   https://www.dati.gov.it/view-dataset?holder_name={qholder}
