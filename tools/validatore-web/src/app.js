@@ -1,4 +1,4 @@
-import { buildProfiles, datasetFromText, detectFormat, runValidation, groupResults, stats, PROFILE_LABELS } from './engine.js'
+import { MAX_BYTES, buildProfiles, datasetFromText, detectFormat, runValidation, groupResults, stats, PROFILE_LABELS } from './engine.js'
 import edp from '../../shapes/edp/shapes.ttl'
 import edpDeprecated from '../../shapes/edp/deprecateduris.ttl'
 import edpRecommended from '../../shapes/edp/shapes_recommended.ttl'
@@ -43,7 +43,10 @@ function fmtBytes (n) {
   return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n > 1024 ? Math.round(n / 1024) + ' KB' : n + ' B'
 }
 
+const troppoGrande = n => `File troppo grande (${fmtBytes(n)}): il limite è ${fmtBytes(MAX_BYTES)}. Valida una pagina alla volta (?page=N) o un sottoinsieme.`
+
 async function readFile (file) {
+  if (file.size > MAX_BYTES) { setStatus('error', troppoGrande(file.size)); return }
   const text = await file.text()
   setSource({ kind: 'file', name: file.name, text })
   validate()
@@ -68,12 +71,32 @@ function refreshCkanPreview () {
   $('#ckan-preview').textContent = u || 'https://…/catalog.ttl'
 }
 
+// legge la risposta fermandosi oltre MAX_BYTES (null se superato)
+async function readCapped (r) {
+  const len = +r.headers.get('content-length')
+  if (len > MAX_BYTES) return null
+  if (!r.body) return r.text()
+  const reader = r.body.getReader()
+  const parts = []
+  let n = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    n += value.length
+    if (n > MAX_BYTES) { reader.cancel(); return null }
+    parts.push(value)
+  }
+  return new TextDecoder().decode(await new Blob(parts).arrayBuffer())
+}
+
 async function fetchUrl (url) {
   setStatus('busy', 'Scarico ' + url)
   try {
-    const r = await fetch(url, { headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
+    if (!/^https?:\/\//i.test(url)) throw new Error('indirizzo non http/https')
+    const r = await fetch(url, { referrerPolicy: 'no-referrer', credentials: 'omit', headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
     if (!r.ok) throw new Error('HTTP ' + r.status)
-    const text = await r.text()
+    const text = await readCapped(r)
+    if (text === null) { setStatus('error', troppoGrande(MAX_BYTES + 1)); return }
     const name = url.split('/').pop() || url
     setSource({ kind: 'url', name, text, url })
     validate()
@@ -124,6 +147,9 @@ async function validate () {
     setStatus('done', `Validato in ${(ms / 1000).toFixed(1)} s`)
     render()
   } catch (e) {
+    // niente esito vecchio accanto a un errore: si nasconde il pannello dei risultati
+    $('#results').hidden = true
+    state.last = null
     setStatus('error', e.message)
   } finally {
     running = false
@@ -255,7 +281,8 @@ function reportJson () {
 }
 function reportCsv () {
   const L = state.last
-  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"'
+  // valori che iniziano con = + - @ diventerebbero formule in Excel/LibreOffice: si antepone '
+  const q = v => { let t = String(v ?? ''); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"' }
   const head = ['profilo', 'gravita', 'proprieta', 'messaggio', 'vincolo', 'risorsa', 'contenuta_in', 'valore']
   return [head.join(','), ...L.results.map(r => [PROFILE_LABELS[r.profile], r.severity, r.path, r.message, r.component, r.focus, r.where ? (r.where.path + ' di ' + r.where.owner).trim() : '', r.value].map(q).join(','))].join('\n')
 }
@@ -298,7 +325,9 @@ function init () {
   // il testo incollato diventa subito la sorgente: "Valida" lo usa senza altri passaggi
   const usePaste = () => {
     const t = $('#paste').value
+    if (t.length > MAX_BYTES) { setStatus('error', troppoGrande(t.length)); return false }
     if (t.trim()) setSource({ kind: 'incolla', name: 'testo incollato', text: t })
+    return true
   }
   $('#paste').addEventListener('input', usePaste)
   for (const id of ['ckan-base', 'ckan-page', 'ckan-name', 'ckan-fq', 'ckan-format']) $('#' + id).addEventListener('input', refreshCkanPreview)
@@ -308,7 +337,7 @@ function init () {
   $('#run').addEventListener('click', () => {
     if (activeTab === 'incolla') {
       if (!$('#paste').value.trim()) { setStatus('error', 'Incolla prima il testo RDF nel riquadro.'); return }
-      usePaste()
+      if (!usePaste()) return
     } else if (activeTab === 'ckan') {
       const u = ckanUrl(); if (!u) { setStatus('error', "Indica l'indirizzo base del portale CKAN."); return }
       return fetchUrl(u)

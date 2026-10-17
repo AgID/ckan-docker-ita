@@ -53,9 +53,21 @@ function streamToQuads (parser, text, baseIRI) {
   })
 }
 
+// I @context remoti non vengono scaricati: un file potrebbe far fare al browser
+// richieste verso indirizzi scelti da chi l'ha scritto. Vale solo il contesto
+// scritto nel file, come nel JSON-LD prodotto da CKAN.
+const noRemoteContexts = {
+  load (url) {
+    return Promise.reject(new Error(`@context remoto non ammesso (${url}): inserisci il contesto nel file o usa Turtle/RDF-XML`))
+  },
+}
+
+// Dimensione massima accettata per file, testo incollato e URL.
+export const MAX_BYTES = 100 * 1024 * 1024
+
 export async function parseRdf (text, format, baseIRI = 'urn:x-base:') {
   if (format === 'rdfxml') return streamToQuads(new RdfXmlParser({ baseIRI, dataFactory: rdf }), text)
-  if (format === 'jsonld') return streamToQuads(new JsonLdParser({ baseIRI, dataFactory: rdf }), text)
+  if (format === 'jsonld') return streamToQuads(new JsonLdParser({ baseIRI, dataFactory: rdf, documentLoader: noRemoteContexts }), text)
   const fmt = format === 'ntriples' ? 'N-Triples' : 'Turtle'
   return new N3Parser({ baseIRI, format: fmt, factory: rdf }).parse(text)
 }

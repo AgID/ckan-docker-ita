@@ -1,5 +1,15 @@
 # Changelog
 
+## `2026-10-17` — validatore: mitigazioni di sicurezza
+- La pagina elabora tutto nel browser e non invia nulla a server propri. Restavano alcuni punti da chiudere:
+  - **`@context` JSON-LD remoti**: il parser li scaricava, quindi un file poteva far fare al browser richieste verso indirizzi scelti da chi l'aveva scritto. Ora sono rifiutati con un messaggio chiaro; vale solo il contesto scritto nel file, come nel JSON-LD prodotto da CKAN.
+  - **Content-Security-Policy** (solo in `index.html`; il frammento eredita quella del sito che lo ospita): niente script, frame, form o plugin esterni; le uniche richieste ammesse sono i font Google e la lettura dei cataloghi. Aggiunto `Referrer-Policy: no-referrer`.
+  - **Dimensione massima** di 100 MB per file, testo incollato e URL; la lettura da URL si ferma appena il limite viene superato.
+  - **Richieste da URL** solo `http`/`https`, senza cookie e senza referrer.
+  - **Report CSV**: i valori che iniziano con `=`, `+`, `-` o `@` sono preceduti da `'`, per evitare che Excel o LibreOffice li eseguano come formule.
+  - In caso di errore di lettura il pannello dell'esito precedente viene nascosto, per non mostrare un "Conforme" che si riferisce a un altro file.
+- Verificato nel browser: nessun errore CSP, validazione e download dei report funzionanti, nessuna richiesta verso il contesto remoto, un valore `<img onerror=...>` nel catalogo resta testo.
+
 ## `2026-10-17` — publisher dei sottocataloghi con valori vuoti
 - Il `dct:publisher` dei sottocataloghi usciva con `foaf:mbox ""` e, quando mancavano, con `foaf:homepage <>` e `dct:type <>`: i campi `email`, `url` e `type` vuoti dell'extra `source_catalog_publisher` (o del publisher di ripiego) venivano scritti lo stesso. Il ciclo saltava solo i valori assenti, non le stringhe vuote.
 - Correzione in `ckanext-dcat/.../processors.py`, nel ciclo `publisher_sources`: anche i valori vuoti vengono saltati. `foaf:name` non cambia, perche' viene ricavato prima se manca.
