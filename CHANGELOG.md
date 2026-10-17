@@ -1,5 +1,12 @@
 # Changelog
 
+## `2026-10-17` — validatore: indicazione di attesa; frammento senza titolo
+- Durante il download e la validazione mancava un segnale visibile: lo stato compariva sotto il bottone "Valida", spesso fuori dallo schermo, e l'esito precedente restava in piena vista. Ora:
+  - i bottoni "Valida" e "Scarica e valida" mostrano una rotella con "Attendi…" e sono bloccati;
+  - in cima ai risultati compare un avviso con la rotella e la fase in corso ("Scarico …", "Leggo il file…", "Valido N triple…"), che resta visibile scorrendo;
+  - l'esito precedente viene attenuato finche' il nuovo non e' pronto.
+- `dist/frammento.html`, la versione da incorporare in un'altra pagina, non ha piu' il titolo `<h1>`: la pagina che lo ospita (es. Drupal di dati.gov.it) ha gia' il suo. `index.html` lo mantiene.
+
 ## `2026-10-17` — validatore: mitigazioni di sicurezza
 - La pagina elabora tutto nel browser e non invia nulla a server propri. Restavano alcuni punti da chiudere:
   - **`@context` JSON-LD remoti**: il parser li scaricava, quindi un file poteva far fare al browser richieste verso indirizzi scelti da chi l'aveva scritto. Ora sono rifiutati con un messaggio chiaro; vale solo il contesto scritto nel file, come nel JSON-LD prodotto da CKAN.

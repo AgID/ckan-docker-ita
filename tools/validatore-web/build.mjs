@@ -29,5 +29,6 @@ ${body}
 mkdirSync('dist', { recursive: true })
 writeFileSync('dist/index.html', page)
 // Versione frammento, per ambienti che aggiungono da se' l'involucro del documento.
-writeFileSync('dist/frammento.html', body)
+// Senza il titolo <h1>: la pagina che lo ospita (es. Drupal di dati.gov.it) ha gia' il suo.
+writeFileSync('dist/frammento.html', body.replace(/\s*<h1>[^<]*<\/h1>/, ''))
 console.log('dist/index.html', (page.length / 1024).toFixed(0), 'KB')

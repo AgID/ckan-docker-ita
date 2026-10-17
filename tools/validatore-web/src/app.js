@@ -115,6 +115,29 @@ function setStatus (kind, text) {
   const el = $('#status')
   el.dataset.kind = kind
   el.textContent = text
+  if (kind === 'busy') {
+    el.insertAdjacentHTML('afterbegin', '<span class="spin" aria-hidden="true"></span>')
+    $('#busy-text').textContent = text
+  }
+  busy(kind === 'busy')
+}
+// durante download ed elaborazione: bottone bloccato con la rotella, esito precedente attenuato
+function busy (on) {
+  const wrap = document.querySelector('.wrap')
+  if (on) {
+    wrap.dataset.busy = '1'
+    wrap.setAttribute('aria-busy', 'true')
+  } else {
+    delete wrap.dataset.busy
+    wrap.removeAttribute('aria-busy')
+  }
+  // i tre bottoni che avviano il lavoro: bloccati e con la rotella
+  for (const [id, label] of [['run', 'Valida'], ['url-go', 'Scarica e valida'], ['ckan-go', 'Scarica e valida']]) {
+    const b = $('#' + id)
+    b.disabled = on
+    if (on) b.innerHTML = '<span class="spin" aria-hidden="true"></span>Attendi…'
+    else b.textContent = label
+  }
 }
 
 let running = false
