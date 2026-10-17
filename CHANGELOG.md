@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-17` — validatore: indirizzi non http nel campo URL
+- Con un indirizzo come `javascript:...` nel campo URL (o come base CKAN), il controllo rifiutava il download ma il messaggio d'errore conteneva un link "il file" con quell'indirizzo: cliccandolo, il codice veniva eseguito nella pagina. Era sfruttabile solo da chi scrive l'indirizzo da se' (la pagina non legge indirizzi dalla barra del browser), ma non deve succedere.
+- Correzione: l'indirizzo viene verificato con il parser URL del browser e sono ammessi solo `http:` e `https:`; per gli altri compare un messaggio senza link. Il link nel messaggio d'errore viene costruito solo da un indirizzo gia' verificato. Stesso controllo sui link mostrati nei risultati.
+- Il download da URL si interrompe dopo 2 minuti, cosi' un server che non risponde non lascia la pagina in attesa.
+- Provati nel browser: `javascript:`, `data:`, varianti maiuscole/minuscole, una pagina HTML con `<script>` e un Turtle con `<img onerror>` nei valori: nessuno script eseguito, nessun link non http.
+
 ## `2026-10-17` — validatore: indicazione di attesa; frammento senza titolo
 - Durante il download e la validazione mancava un segnale visibile: lo stato compariva sotto il bottone "Valida", spesso fuori dallo schermo, e l'esito precedente restava in piena vista. Ora:
   - i bottoni "Valida" e "Scarica e valida" mostrano una rotella con "Attendi…" e sono bloccati;

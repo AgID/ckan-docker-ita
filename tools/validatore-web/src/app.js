@@ -89,11 +89,20 @@ async function readCapped (r) {
   return new TextDecoder().decode(await new Blob(parts).arrayBuffer())
 }
 
+// solo http/https, verificato con il parser URL del browser (non con una regex sul testo)
+function isHttpUrl (u) {
+  try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' } catch { return false }
+}
+
 async function fetchUrl (url) {
   setStatus('busy', 'Scarico ' + url)
   try {
-    if (!/^https?:\/\//i.test(url)) throw new Error('indirizzo non http/https')
-    const r = await fetch(url, { referrerPolicy: 'no-referrer', credentials: 'omit', headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
+    if (!isHttpUrl(url)) {
+      setStatus('error', 'Indirizzo non valido: sono ammessi solo indirizzi http:// o https://')
+      return
+    }
+    // al massimo 2 minuti: un server che non risponde non blocca la pagina
+    const r = await fetch(url, { signal: AbortSignal.timeout(120000), referrerPolicy: 'no-referrer', credentials: 'omit', headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
     if (!r.ok) throw new Error('HTTP ' + r.status)
     const text = await readCapped(r)
     if (text === null) { setStatus('error', troppoGrande(MAX_BYTES + 1)); return }
@@ -102,8 +111,9 @@ async function fetchUrl (url) {
     validate()
   } catch (e) {
     setStatus('error', '')
-    $('#status').innerHTML = `<strong>Il browser non può leggere questo indirizzo.</strong> Quasi sempre è il server che non permette la lettura da altre pagine (CORS); dati.gov.it è tra questi. ` +
-      `Apri <a href="${esc(url)}" target="_blank" rel="noopener">il file</a>, salvalo e caricalo nella scheda File. <span class="mono">(${esc(e.message)})</span>`
+    // il link compare solo per indirizzi http/https gia' verificati: mai javascript:, data: ecc.
+    $('#status').innerHTML = `<strong>Il browser non può leggere questo indirizzo.</strong> Quasi sempre è il server che non permette la lettura da altre pagine (CORS). ` +
+      `Apri <a href="${esc(new URL(url).href)}" target="_blank" rel="noopener noreferrer">il file</a>, salvalo e caricalo nella scheda File. <span class="mono">(${esc(e.message)})</span>`
   }
 }
 
@@ -285,7 +295,7 @@ function showMore (btn) {
 
 const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Info' }[s] || s)
 function linkish (v) {
-  if (/^https?:\/\//.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener" class="mono">${esc(v)}</a>`
+  if (/^https?:\/\//.test(v) && isHttpUrl(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer" class="mono">${esc(v)}</a>`
   return `<span class="mono">${esc(v)}</span>`
 }
 
