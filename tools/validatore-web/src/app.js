@@ -207,7 +207,13 @@ function renderTable () {
 const FIRST = 10
 const STEP = 200
 function exampleRows (g, from, to) {
-  return g.examples.slice(from, to).map(e => `<tr><td>${linkish(e.focus)}</td><td>${e.value ? linkish(e.value) : '<span class="muted">assente</span>'}</td></tr>`).join('')
+  return g.examples.slice(from, to).map(e => `<tr><td>${focusCell(e)}</td><td>${e.value ? linkish(e.value) : '<span class="muted">assente</span>'}</td></tr>`).join('')
+}
+// nodo anonimo: si mostra chi lo contiene, es. "dct:publisher di <https://...>"
+function focusCell (e) {
+  if (!e.where) return linkish(e.focus)
+  const owner = e.where.owner ? ' ' + linkish(e.where.owner) : ''
+  return `<span class="mono">${esc(e.where.path)}</span> di${owner} <span class="muted mono">(${esc(e.focus)})</span>`
 }
 function moreBar (g, shown) {
   const rest = g.examples.length - shown
@@ -250,8 +256,8 @@ function reportJson () {
 function reportCsv () {
   const L = state.last
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"'
-  const head = ['profilo', 'gravita', 'proprieta', 'messaggio', 'vincolo', 'risorsa', 'valore']
-  return [head.join(','), ...L.results.map(r => [PROFILE_LABELS[r.profile], r.severity, r.path, r.message, r.component, r.focus, r.value].map(q).join(','))].join('\n')
+  const head = ['profilo', 'gravita', 'proprieta', 'messaggio', 'vincolo', 'risorsa', 'contenuta_in', 'valore']
+  return [head.join(','), ...L.results.map(r => [PROFILE_LABELS[r.profile], r.severity, r.path, r.message, r.component, r.focus, r.where ? (r.where.path + ' di ' + r.where.owner).trim() : '', r.value].map(q).join(','))].join('\n')
 }
 let downloadsP = null
 async function save (kind) {

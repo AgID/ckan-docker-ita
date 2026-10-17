@@ -153,10 +153,30 @@ export function spiega (message, component, value) {
   return message
 }
 
+// Per un nodo anonimo risale a chi lo contiene: "dct:publisher di <URI>".
+// Si ferma al primo URI o dopo 4 passaggi; null se il nodo non e' anonimo.
+function ownerOf (dataDs, node, cache) {
+  if (!node || node.termType !== 'BlankNode') return null
+  if (cache.has(node.value)) return cache.get(node.value)
+  const steps = []
+  let cur = node
+  for (let i = 0; i < 4 && cur.termType === 'BlankNode'; i++) {
+    let q = null
+    for (const x of dataDs.match(null, null, cur)) { q = x; break }
+    if (!q) break
+    steps.push(shorten(q.predicate.value))
+    cur = q.subject
+  }
+  const out = steps.length ? { path: steps.join(' di '), owner: cur.termType === 'NamedNode' ? cur.value : '' } : null
+  cache.set(node.value, out)
+  return out
+}
+
 export async function validateProfile (dataDs, shapesDs, profile) {
   const validator = new SHACLValidator(shapesDs, { factory: rdf, allowNamedNodeInList: true, importGraph: () => rdf.dataset(), maxNodeChecks: 0 })
   const report = await validator.validate(dataDs)
   const results = []
+  const owners = new Map()
   for (const r of report.results) {
     const sev = (r.severity && r.severity.value.split('#')[1]) || 'Violation'
     const comp = r.sourceConstraintComponent ? r.sourceConstraintComponent.value.split('#')[1].replace(/ConstraintComponent$/, '') : ''
@@ -169,6 +189,7 @@ export async function validateProfile (dataDs, shapesDs, profile) {
       original,
       component: comp,
       focus: termText(r.focusNode),
+      where: ownerOf(dataDs, r.focusNode, owners),
       value: termText(r.value),
       shape: r.sourceShape && r.sourceShape.termType === 'NamedNode' ? shorten(r.sourceShape.value) : '',
     })
@@ -184,7 +205,7 @@ export function groupResults (results, examples = 3) {
     if (!g) groups.set(k, g = { profile: r.profile, severity: r.severity, path: r.path, message: r.message, original: r.original, component: r.component, count: 0, focus: new Set(), examples: [] })
     g.count++
     g.focus.add(r.focus)
-    if (g.examples.length < examples) g.examples.push({ focus: r.focus, value: r.value })
+    if (g.examples.length < examples) g.examples.push({ focus: r.focus, where: r.where, value: r.value })
   }
   return [...groups.values()]
     .map(g => ({ ...g, nodes: g.focus.size, focus: undefined }))

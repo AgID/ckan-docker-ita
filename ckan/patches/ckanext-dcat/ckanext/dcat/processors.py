@@ -749,7 +749,8 @@ class RDFSerializer(RDFProcessor):
 
                     if val is None and required:
                         raise ValueError("Value for %s (%s) is required" % (src_key, predicate))
-                    elif val is None:
+                    elif val is None or val == '':
+                        # niente foaf:mbox "", foaf:homepage <> o dct:type <> vuoti
                         continue
                     g.add((agent, predicate, _type(val)))
 
