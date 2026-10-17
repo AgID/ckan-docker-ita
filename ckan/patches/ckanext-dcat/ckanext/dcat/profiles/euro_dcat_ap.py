@@ -52,10 +52,6 @@ RELATION_URL_DEFAULT = '{site_url}/dataset/?holder_name={holder}'
 
 def _holder_relation_url(dataset_dict):
     from urllib.parse import quote
-    # Prima l'extra: nei risultati di package_search (che alimentano
-    # catalog.ttl) holder_name di primo livello vale il titolo
-    # dell'organizzazione, il titolare vero sta negli extra. In package_show
-    # gli extra sono gia' portati al primo livello e la lista e' vuota.
     holder = None
     for extra in dataset_dict.get('extras') or []:
         if extra.get('key') == 'holder_name':
@@ -63,18 +59,24 @@ def _holder_relation_url(dataset_dict):
             break
     if not holder:
         holder = dataset_dict.get('holder_name')
+    org = dataset_dict.get('organization') or {}
+    if not isinstance(org, dict):
+        org = {}
     if not holder:
-        org = dataset_dict.get('organization') or {}
-        holder = org.get('title') if isinstance(org, dict) else None
+        holder = org.get('title')
     holder = (holder or '').strip()
+    org_name = (org.get('name') or '').strip()
     site_url = (config.get('ckan.site_url') or '').rstrip('/')
-    if not holder or not site_url:
-        return None
     template = config.get('ckanext.dcat.relation_url') or RELATION_URL_DEFAULT
+    # serve il titolare se il modello lo usa, il nome dell'organizzazione se usa {org}
+    if (('{holder}' in template or '{qholder}' in template) and not holder) \
+            or ('{org}' in template and not org_name):
+        return None
     try:
         return template.format(site_url=site_url,
                                holder=quote(holder, safe=''),
-                               qholder=quote('"%s"' % holder, safe=''))
+                               qholder=quote('"%s"' % holder, safe=''),
+                               org=quote(org_name, safe=''))
     except (KeyError, IndexError, ValueError):
         log.warning('[DCAT] ckanext.dcat.relation_url non valida: %r', template)
         return None
