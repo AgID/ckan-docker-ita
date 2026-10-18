@@ -28,6 +28,11 @@ ${body}
 `
 mkdirSync('dist', { recursive: true })
 writeFileSync('dist/index.html', page)
+// Versione per un <iframe> dentro un'altra pagina (es. Drupal di dati.gov.it): documento completo,
+// quindi con charset UTF-8, CSP e referrer propri, ma senza il titolo <h1> che la pagina ospite ha gia'.
+// Il charset nel file serve: se il server non lo dichiara, senza <meta charset> le lettere accentate
+// verrebbero lette come windows-1252 ("ProprietÃ ").
+writeFileSync('dist/incorporato.html', page.replace(/\s*<h1>[^<]*<\/h1>/, ''))
 // Versione frammento, per ambienti che aggiungono da se' l'involucro del documento.
 // Senza il titolo <h1>: la pagina che lo ospita (es. Drupal di dati.gov.it) ha gia' il suo.
 writeFileSync('dist/frammento.html', body.replace(/\s*<h1>[^<]*<\/h1>/, ''))

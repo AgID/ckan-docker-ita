@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-18` — validatore: versione per iframe con charset UTF-8
+- Su dati.gov.it il validatore e' in un `<iframe>` che carica `frammento.html` come file a se'. Il frammento non ha `<meta charset>` (e' pensato per essere incollato dentro una pagina) e il server lo serve come `text/html` senza charset, quindi il browser lo leggeva come windows-1252 e le lettere accentate uscivano come "ProprietÃ ".
+- Nuovo `dist/incorporato.html`: documento completo come `index.html` (charset UTF-8, CSP, referrer), senza il titolo `<h1>`. E' la versione da usare dentro un iframe. `frammento.html` resta per l'incolla nel corpo di una pagina.
+
 ## `2026-10-17` — `dct:relation` verso un'organizzazione inesistente su dati.gov.it
 - Il ripiego di `dct:relation` (metrica MQA `relationAvailability`) scriveva `https://www.dati.gov.it/view-dataset?organization=<org>`, con il dominio di dati.gov.it fisso e il nome dell'organizzazione locale. Due problemi:
   - su qualunque altra istanza il link puntava a dati.gov.it con un'organizzazione che li' non esiste. Esempio: dati.puglia.it esponeva `?organization=asset-puglia`; dati.gov.it lo salvava nell'extra `related_resource` all'harvest e lo ri-esponeva, e su data.europa.eu il dataset di ASSET Puglia rimandava a un'organizzazione inesistente (su dati.gov.it e' sotto `regione-puglia`);
