@@ -30,7 +30,9 @@ Opzioni:
                       vocabolari  valori dai vocabolari controllati EU
                       hvd         dati di elevato valore (Reg. UE 2023/138), solo sulle
                                   risorse che dichiarano l'ELI o una hvdCategory
-                      it          = dcatapit,vocabolari,hvd    tutti = edp,it
+                      agid        regole operative AgID per l'harvesting su dati.gov.it
+                                  (identificativi codiceIPA:identificativo, email non PEC)
+                      it          = dcatapit,vocabolari,hvd    tutti = edp,it,agid
   --dcatap 3.0.0    versione delle shape (default 3.0.0: il DQV di EDP riporta
                     "dcatap300level1", anche se la pagina violazioni dice 3.0.1)
   --examples N      esempi per ogni tipo di segnalazione (default 2)
@@ -53,7 +55,8 @@ import urllib.parse
 import urllib.request
 
 try:
-    from rdflib import Graph, URIRef
+    from rdflib import BNode, Graph, URIRef
+    from rdflib.collection import Collection
     from pyshacl import validate
 except ImportError:
     sys.exit("Servono rdflib e pyshacl: pip install rdflib pyshacl")
@@ -67,6 +70,11 @@ SH = "http://www.w3.org/ns/shacl#"
 SHAPES_IT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shapes")
 SHAPES_IT_BASE = "https://raw.githubusercontent.com/piersoft/ckan-docker-ita/main/tools/shapes/"
 PROFILES_IT = ("dcatapit", "vocabolari", "hvd")
+PROFILES_EXTRA = ("agid",)
+AGID_PREFIX_MSG = ("Il prefisso dell'identificativo del dataset non coincide con il codice IPA "
+                   "del titolare (dct:rightsHolder/dct:identifier)")
+HEAD_NOTE = ("Prima dell'harvesting verificare sempre che l'endpoint del catalogo e, a campione, "
+             "le risorse rispondano 200 a HEAD (curl -I <url>), senza WAF o altri blocchi.")
 HVD_ELI = "http://data.europa.eu/eli/reg_impl/2023/138/oj"
 DCAT = "http://www.w3.org/ns/dcat#"
 DCATAP = "http://data.europa.eu/r5r/"
@@ -110,10 +118,10 @@ def parse_profiles(value):
     for p in value.split(","):
         p = p.strip().lower()
         if p == "tutti":
-            out += ["edp", *PROFILES_IT]
+            out += ["edp", *PROFILES_IT, *PROFILES_EXTRA]
         elif p == "it":
             out += list(PROFILES_IT)
-        elif p in ("edp", *PROFILES_IT):
+        elif p in ("edp", *PROFILES_IT, *PROFILES_EXTRA):
             out.append(p)
         elif p:
             raise ValueError(f"profilo sconosciuto: {p}")
@@ -167,6 +175,37 @@ def catalog_urls(base, names, fqs, pages):
         return [f"{base}?fq=name:{urllib.parse.quote(n)}" for n in names]
     q = "&".join(f"fq={urllib.parse.quote(x)}" for x in fqs)
     return [f"{base}?{q + '&' if q else ''}page={p}" for p in range(1, pages + 1)]
+
+
+def agid_checks(data):
+    """Regola AgID non esprimibile in SHACL Core: prefisso dell'identificativo del dataset
+    uguale al codice IPA del titolare. Stessa logica di agidChecks() del validatore web."""
+    DCT = "http://purl.org/dc/terms/"
+    RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    ident, holder_p = URIRef(DCT + "identifier"), URIRef(DCT + "rightsHolder")
+    out = []
+    for d in set(data.subjects(RDF_TYPE, URIRef(DCAT + "Dataset"))):
+        i, h = data.value(d, ident), data.value(d, holder_p)
+        if i is None or h is None or ":" not in str(i):
+            continue
+        hid = data.value(h, ident)
+        if hid is None or not str(hid).strip():
+            continue
+        if str(i).split(":", 1)[0].lower() != str(hid).strip().lower():
+            out.append({"focus": str(d), "value": f'"{i}" != titolare "{hid}"'})
+    return out
+
+
+def path_text(g, p):
+    """Percorso SHACL leggibile, anche a sequenza (lista RDF)."""
+    if p is None:
+        return "-"
+    if isinstance(p, BNode):
+        try:
+            return "/".join(short(x) for x in Collection(g, p))
+        except Exception:
+            return "-"
+    return short(p)
 
 
 def short(u):
@@ -254,7 +293,7 @@ def main():
             _, rg, _ = validate(data, shacl_graph=shapes, inference="none", allow_warnings=True)
             for r in rg.objects(None, URIRef(SH + "result")):
                 sev = str(rg.value(r, URIRef(SH + "resultSeverity"))).split("#")[-1]
-                path = short(rg.value(r, URIRef(SH + "resultPath")) or "-")
+                path = path_text(rg, rg.value(r, URIRef(SH + "resultPath")))
                 msg = str(rg.value(r, URIRef(SH + "resultMessage")) or "")
                 if prof == "edp":
                     shape = rg.value(r, URIRef(SH + "sourceShape"))
@@ -272,7 +311,15 @@ def main():
                         "value": str(rg.value(r, URIRef(SH + "value")) or ""),
                         "message": msg,
                     })
+            if prof == "agid":
+                for x in agid_checks(data):
+                    key = ("Violation", "agid", "dct:identifier", AGID_PREFIX_MSG)
+                    counts[key] += 1
+                    if len(examples[key]) < a.examples:
+                        examples[key].append({"source": src, "message": AGID_PREFIX_MSG, **x})
     print(f"Dataset: {n_ds}  Distribuzioni: {n_dist}  Triple: {n_triples}")
+    if "agid" in profiles:
+        print(f"Nota: {HEAD_NOTE}")
     if "hvd" in profiles:
         print(f"Risorse HVD: {hvd_found[0]} dataset, {hvd_found[1]} distribuzioni, {hvd_found[2]} servizi")
 

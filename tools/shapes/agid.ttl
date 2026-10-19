@@ -1,0 +1,49 @@
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dcat:     <http://www.w3.org/ns/dcat#> .
+@prefix dct:      <http://purl.org/dc/terms/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix agid:     <urn:validatore-dcatapit:shapes:agid#> .
+
+# Regole operative AgID per un harvesting pulito su dati.gov.it.
+# Non sono regole DCAT-AP / DCAT-AP_IT: sono criteri di gestione del catalogo
+# nazionale (identificativi univoci e riconducibili all'ente, contatti utili).
+#
+# Il controllo "il prefisso dell'identificativo del dataset coincide con il
+# codice IPA del titolare" non e' esprimibile in SHACL Core: lo fanno a parte
+# il validatore web (engine.js, agidChecks) e lo script Python (agid_checks).
+
+# ---------------------------------------------------------------- DATASET
+agid:Dataset a sh:NodeShape ;
+  rdfs:label "Dataset - identificativo" ;
+  sh:targetClass dcat:Dataset ;
+  sh:property
+    [ sh:path dct:identifier ;
+      sh:pattern "^[A-Za-z0-9_]+:[A-Za-z0-9_-]+$" ;
+      sh:severity sh:Violation ;
+      sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (solo lettere, cifre, - e _; niente spazi, accenti o altri caratteri)" ] .
+
+# ---------------------------------------------------------------- TITOLARE
+agid:Holder a sh:NodeShape ;
+  rdfs:label "Titolare - codice IPA" ;
+  sh:targetObjectsOf dct:rightsHolder ;
+  sh:property
+    [ sh:path dct:identifier ;
+      sh:pattern "^[A-Za-z0-9_]+$" ;
+      sh:severity sh:Violation ;
+      sh:message "Identificativo del titolare non nel formato del codice IPA (solo lettere, cifre e _; niente due punti, spazi o altri caratteri)" ] .
+
+# ---------------------------------------------------------------- CATALOGO
+# L'email dell'editore del catalogo (e dei sottocataloghi) deve essere una casella
+# ordinaria (PEO), non una PEC: serve a contattare chi gestisce il catalogo.
+# Riconoscimento euristico: "pec" come parte separata dell'indirizzo, "cert."
+# e i principali gestori PEC.
+agid:Catalog a sh:NodeShape ;
+  rdfs:label "Catalogo - email dell'editore" ;
+  sh:targetClass dcat:Catalog ;
+  sh:property
+    [ sh:path ( dct:publisher foaf:mbox ) ;
+      sh:pattern "^(?!.*((^|[@.:_-])pec([.@_-]|$)|(^|[@.])(cert|postacert|pcert)\\.|legalmail\\.|arubapec\\.|postecert\\.|sicurezzapostale\\.|gigapec\\.|mypec\\.|casellapec\\.|pecmail\\.|cgn\\.legalmail|pec\\.it)).*$" ;
+      sh:flags "i" ;
+      sh:severity sh:Warning ;
+      sh:message "L'email dell'editore del catalogo sembra una PEC: indicare una casella ordinaria (PEO) di chi gestisce il catalogo" ] .

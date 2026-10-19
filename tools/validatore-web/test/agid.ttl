@@ -1,0 +1,27 @@
+# Prova delle regole operative AgID: identificativi e email dell'editore.
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+# PEC come email dell'editore del catalogo (avviso)
+<https://example.org/cat> a dcat:Catalog ;
+  dct:publisher [ dct:identifier "c_x" ; foaf:name "Comune X" ; foaf:mbox "protocollo@pec.comune.x.it" ] ;
+  dct:hasPart <https://example.org/sub> ;
+  dcat:dataset <https://example.org/ok>, <https://example.org/spazi>, <https://example.org/prefisso>, <https://example.org/trattini> .
+
+# Sottocatalogo con PEO (nessuna segnalazione) e un falso amico: "specchia" contiene "pec"
+<https://example.org/sub> a dcat:Catalog ;
+  dct:publisher [ dct:identifier "c_y" ; foaf:name "Comune Y" ; foaf:mbox <mailto:opendata@comune.specchia.le.it> ] .
+
+# corretto
+<https://example.org/ok> a dcat:Dataset ;
+  dct:identifier "c_x:dataset-scuole_2024" ; dct:rightsHolder [ dct:identifier "c_x" ] .
+# caratteri non ammessi (violazione formato)
+<https://example.org/spazi> a dcat:Dataset ;
+  dct:identifier "c_x:scuole città 2024" ; dct:rightsHolder [ dct:identifier "c_x" ] .
+# prefisso diverso dal titolare (violazione prefisso)
+<https://example.org/prefisso> a dcat:Dataset ;
+  dct:identifier "r_puglia:scuole" ; dct:rightsHolder [ dct:identifier "c_x" ] .
+# niente codice IPA prima dei due punti, titolare con due punti (2 violazioni formato)
+<https://example.org/trattini> a dcat:Dataset ;
+  dct:identifier "p-fg-provincia-di-foggia---scuole" ; dct:rightsHolder [ dct:identifier "p_fg:provincia" ] .

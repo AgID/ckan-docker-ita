@@ -129,6 +129,10 @@ dl#counts { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 0; }
 .psum[data-pass="false"] { border-left-color: var(--bad); }
 .psum[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -1px; }
 .pname { font-weight: 700; font-size: .9rem; }
+.callout { margin-top: 14px; padding: 10px 12px; border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 4px; font-size: .82rem; line-height: 1.45; }
+.callout b:first-child { display: block; margin-bottom: 2px; }
+.callout p { margin: 0; }
+.callout code { font-size: .78rem; }
 .pcount, .pnote { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pcount b.v { color: var(--bad); } .pcount b.w { color: var(--warn); }
 
@@ -227,9 +231,14 @@ details.row summary:hover { background: var(--bg); }
           <label><input type="checkbox" id="p-dcatapit" checked><span class="t">DCAT-AP_IT</span><span class="d">Titolare, frequenza, identificativo, soggetti, punto di contatto, licenza, classi dcatapit</span></label>
           <label><input type="checkbox" id="p-vocabolari" checked><span class="t">Vocabolari</span><span class="d">Temi, frequenze, lingue, formati, IANA, ELI, categorie HVD</span></label>
           <label><input type="checkbox" id="p-hvd" checked><span class="t">HVD</span><span class="d">Solo sulle risorse che dichiarano l'ELI 2023/138 o una categoria HVD</span></label>
+          <label><input type="checkbox" id="p-agid" checked><span class="t">Regole operative AgID</span><span class="d">Per un harvesting pulito su dati.gov.it: identificativi codiceIPA:identificativo, email del catalogo non PEC</span></label>
         </div>
         <button class="btn primary" id="run" type="button">Valida</button>
         <p id="status" role="status" aria-live="polite"></p>
+        <div class="callout" role="note">
+          <b>Prima dell'harvesting</b>
+          <p>Verificare sempre che l'endpoint del catalogo (<code>catalog.ttl</code>/<code>.rdf</code>) e, a campione, le risorse rispondano <b>200</b> alla richiesta <code>HEAD</code> (<code>curl -I &lt;url&gt;</code>), senza WAF, captcha, filtri su IP o User-Agent o altri blocchi: devono essere aperti. Il validatore non può farlo dal browser.</p>
+        </div>
       </section>
     </aside>
 
@@ -256,6 +265,7 @@ details.row summary:hover { background: var(--bg); }
           <li><b>DCAT-AP_IT</b>: Linee guida per i cataloghi dati (AgID). Obbligatorio → violazione, raccomandato → avviso.</li>
           <li><b>HVD</b>: Guida operativa AgID sulle serie di dati di elevato valore v1.0 (azione #hvd14) e DCAT-AP HVD 2.2.0.</li>
           <li><b>Vocabolari</b>: authority table EU; i temi sono controllati sull'elenco chiuso, gli altri sul namespace.</li>
+          <li><b>Regole operative AgID</b>: criteri di gestione di dati.gov.it, non regole DCAT. Identificativo del dataset <code>codiceIPA:identificativo</code> con il prefisso uguale al codice IPA del titolare (violazione); email dell'editore del catalogo e dei sottocataloghi ordinaria e non PEC (avviso, riconoscimento euristico).</li>
         </ul>
         <p>Un esempio con errori inseriti apposta viene caricato all'apertura. <button class="btn small" id="load-example" type="button">Ricarica l'esempio</button></p>
       </div>

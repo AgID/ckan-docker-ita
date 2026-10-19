@@ -5,10 +5,11 @@ import edpRecommended from '../../shapes/edp/shapes_recommended.ttl'
 import dcatapit from '../../shapes/dcatapit.ttl'
 import vocabolari from '../../shapes/vocabolari.ttl'
 import hvd from '../../shapes/hvd.ttl'
+import agid from '../../shapes/agid.ttl'
 import esempio from '../test/esempio.ttl'
 
-const SHAPES = { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, hvd }
-const ORDER = ['edp', 'edpRecommended', 'dcatapit', 'vocabolari', 'hvd']
+const SHAPES = { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, hvd, agid }
+const ORDER = ['edp', 'edpRecommended', 'dcatapit', 'vocabolari', 'hvd', 'agid']
 const $ = s => document.querySelector(s)
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 

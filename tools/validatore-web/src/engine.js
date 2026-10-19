@@ -126,13 +126,27 @@ function termText (t) {
   if (t.termType === 'BlankNode') return '_:' + t.value
   return t.value
 }
-function pathText (p) {
+function pathText (p, ds) {
   if (!p) return ''
-  if (Array.isArray(p)) return p.map(pathText).join('/')
-  if (p.termType === 'BlankNode') return ''
+  if (Array.isArray(p)) return p.map(x => pathText(x, ds)).join('/')
+  if (p.termType === 'BlankNode') return ds ? listPath(p, ds) : ''
   if (p.termType) return shorten(p.value)
   if (p.inverse) return '^' + pathText(p.inverse)
   return String(p)
+}
+// percorso a sequenza (es. dct:publisher/foaf:mbox): nel report e' una lista RDF
+function listPath (node, ds) {
+  const first = rdf.namedNode(NS.rdf + 'first'), rest = rdf.namedNode(NS.rdf + 'rest'), nil = NS.rdf + 'nil'
+  const parts = []
+  for (let n = node, i = 0; n && n.value !== nil && i < 10; i++) {
+    let f = null, r = null
+    for (const q of ds.match(n, first)) f = q.object
+    for (const q of ds.match(n, rest)) r = q.object
+    if (!f) break
+    parts.push(f.termType === 'NamedNode' ? shorten(f.value) : '')
+    n = r
+  }
+  return parts.join('/')
 }
 function messageText (m) {
   if (!m || !m.length) return ''
@@ -196,7 +210,7 @@ export async function validateProfile (dataDs, shapesDs, profile) {
     results.push({
       profile,
       severity: sev,
-      path: pathText(r.path),
+      path: pathText(r.path, report.dataset),
       message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value)) : original,
       original,
       component: comp,
@@ -225,7 +239,7 @@ export function groupResults (results, examples = 3) {
 }
 
 // ---- profili
-// shapeTexts: { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, hvd } (Turtle)
+// shapeTexts: { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, hvd, agid } (Turtle)
 export async function buildProfiles (shapeTexts) {
   const p = async t => rdf.dataset(await parseRdf(t, 'turtle', 'urn:x-shapes:'))
   return {
@@ -234,7 +248,37 @@ export async function buildProfiles (shapeTexts) {
     dcatapit: await p(shapeTexts.dcatapit),
     vocabolari: await p(shapeTexts.vocabolari),
     hvd: await p(shapeTexts.hvd),
+    agid: await p(shapeTexts.agid),
   }
+}
+
+// Regola operativa AgID non esprimibile in SHACL Core: il prefisso dell'identificativo
+// del dataset (codiceIPA:...) deve coincidere con il codice IPA del titolare.
+// Stessa logica di agid_checks() in tools/validate_edp_shacl.py.
+const DCT = 'http://purl.org/dc/terms/'
+export const AGID_PREFIX_MSG = "Il prefisso dell'identificativo del dataset non coincide con il codice IPA del titolare (dct:rightsHolder/dct:identifier)"
+export function agidChecks (dataDs) {
+  const out = []
+  const owners = new Map()
+  const ident = rdf.namedNode(DCT + 'identifier')
+  const holderP = rdf.namedNode(DCT + 'rightsHolder')
+  const first = (s, p) => { for (const q of dataDs.match(s, p)) return q.object; return null }
+  const datasets = new Set([...dataDs.match(null, rdf.namedNode(NS.rdf + 'type'), rdf.namedNode(NS.dcat + 'Dataset'))].map(q => q.subject))
+  for (const d of datasets) {
+    const id = first(d, ident)
+    const holder = first(d, holderP)
+    if (!id || id.termType !== 'Literal' || !holder) continue
+    const hid = first(holder, ident)
+    const m = /^([^:]+):/.exec(id.value)
+    if (!m || !hid || hid.termType !== 'Literal' || !hid.value) continue
+    if (m[1].toLowerCase() === hid.value.trim().toLowerCase()) continue
+    out.push({
+      profile: 'agid', severity: 'Violation', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
+      component: 'CodiceIPA', focus: termText(d), where: ownerOf(dataDs, d, owners),
+      value: `${JSON.stringify(id.value)} ≠ titolare ${JSON.stringify(hid.value)}`, shape: '',
+    })
+  }
+  return out
 }
 
 export const PROFILE_LABELS = {
@@ -243,6 +287,7 @@ export const PROFILE_LABELS = {
   dcatapit: 'DCAT-AP_IT',
   vocabolari: 'Vocabolari',
   hvd: 'HVD',
+  agid: 'Regole operative AgID',
 }
 
 // Esegue i profili selezionati sui dati. selected: array di chiavi di PROFILE_LABELS.
@@ -262,6 +307,7 @@ export async function runValidation (dataDs, profiles, selected) {
       ])
     }
     all.push(...await validateProfile(dataDs, shapes, key))
+    if (key === 'agid') all.push(...agidChecks(dataDs))
   }
   return { results: all, meta }
 }

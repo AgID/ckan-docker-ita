@@ -1,5 +1,15 @@
 # Changelog
 
+## `2026-10-19` — validatore: regole operative AgID per l'harvesting
+- Nuovo profilo `agid` ("Regole operative AgID"), nel validatore web e in `tools/validate_edp_shacl.py` (`--profile agid`, compreso in `tutti` ma non in `it`). Sono criteri di gestione di dati.gov.it, non regole DCAT-AP o DCAT-AP_IT:
+  - **identificativo del dataset** nel formato `codiceIPA:identificativo`, con solo lettere, cifre, `-` e `_` (violazione);
+  - **prefisso uguale al codice IPA del titolare** (`dct:rightsHolder/dct:identifier`): `r_puglia:scuole` con titolare `c_x` e' una violazione. Non e' esprimibile in SHACL Core, quindi e' un controllo in codice (`agidChecks` in `engine.js`, `agid_checks` nello script), con la stessa logica nei due strumenti;
+  - **codice IPA del titolare** senza due punti, spazi o altri caratteri (violazione);
+  - **email dell'editore del catalogo e dei sottocataloghi** ordinaria e non PEC (avviso). Riconoscimento euristico: `pec` come parte separata dell'indirizzo, `cert.`, `postacert`, gestori PEC noti (`legalmail`, `arubapec`, `postecert`, `sicurezzapostale`...). Non scatta su indirizzi come `comune.specchia.le.it` o `comune.certaldo.fi.it`.
+- Nella pagina un riquadro ricorda di verificare che l'endpoint del catalogo e, a campione, le risorse rispondano `200` a `HEAD` (`curl -I`), senza WAF o filtri: dal browser non si puo' controllare, e l'esito dipende da chi fa la richiesta. Lo script stampa la stessa nota.
+- I percorsi a sequenza (es. `dct:publisher/foaf:mbox`) ora sono mostrati per intero, nel web e nello script; prima comparivano vuoti.
+- Nuovo `test/agid.ttl`, controllato anche dal workflow delle Pages. Su una pagina di dati.puglia.it 70 dataset su 100 non rispettano il formato (es. `c-a893-comune-di-bitonto---...`, `ipres:/consumo-del-suolo...`), su una di dati.gov.it 46.
+
 ## `2026-10-18` — validatore: versione per iframe con charset UTF-8
 - Su dati.gov.it il validatore e' in un `<iframe>` che carica `frammento.html` come file a se'. Il frammento non ha `<meta charset>` (e' pensato per essere incollato dentro una pagina) e il server lo serve come `text/html` senza charset, quindi il browser lo leggeva come windows-1252 e le lettere accentate uscivano come "ProprietÃ ".
 - Nuovo `dist/incorporato.html`: documento completo come `index.html` (charset UTF-8, CSP, referrer), senza il titolo `<h1>`. E' la versione da usare dentro un iframe. `frammento.html` resta per l'incolla nel corpo di una pagina.

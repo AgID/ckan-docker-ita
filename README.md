@@ -236,6 +236,7 @@ shape stanno in `tools/shapes/` e non vengono scaricate.
 | `dcatapit` | identificativo, titolare (`dct:rightsHolder`), frequenza, temi, data di modifica; soggetti con `dct:identifier` e `foaf:name` non vuoti; punto di contatto con `vcard:fn` e `vcard:hasEmail`; formato, URL di accesso e licenza della distribuzione; tipi `dcatapit:*` | Linee guida AgID per i cataloghi dati |
 | `vocabolari` | temi sui 14 valori EU `data-theme`, frequenza, lingua, formato, diritti di accesso, media type IANA, URI ELI, categorie HVD | authority table EU |
 | `hvd` | `dcatap:applicableLegislation` con l'ELI del Reg. UE 2023/138 e `dcatap:hvdCategory` su dataset, distribuzioni e servizi | Guida operativa AgID sui dati di elevato valore v1.0 (azione #hvd14), DCAT-AP HVD 2.2.0 |
+| `agid` | identificativo del dataset `codiceIPA:identificativo` (solo lettere, cifre, `-` e `_`) con il prefisso uguale al codice IPA del titolare; codice IPA del titolare senza caratteri speciali; email dell'editore del catalogo e dei sottocataloghi non PEC (avviso) | Regole operative AgID per l'harvesting su dati.gov.it (non regole DCAT) |
 
 Nel profilo `dcatapit` le proprieta' obbligatorie producono una `Violation`, le
 raccomandate un `Warning`. Il profilo `hvd` si applica solo alle risorse che
@@ -244,8 +245,19 @@ servizi che le servono: le shape HVD ufficiali di SEMIC assumono invece un
 catalogo interamente HVD. Per i vocabolari i temi sono controllati sull'elenco
 chiuso, gli altri valori sul namespace dell'URI.
 
+Il profilo `agid` raccoglie criteri di gestione del catalogo nazionale, non
+regole DCAT: identificativi univoci e riconducibili all'ente, e un'email
+ordinaria (PEO) per contattare chi gestisce il catalogo. La PEC si riconosce in
+modo euristico (`pec` come parte dell'indirizzo, `cert.`, gestori PEC noti),
+quindi produce solo un avviso. Non e' incluso in `it`; lo e' in `tutti`.
+
+Prima dell'harvesting va sempre verificato che l'endpoint del catalogo e, a
+campione, le risorse rispondano `200` a una richiesta `HEAD` (`curl -I <url>`),
+senza WAF o filtri su IP e User-Agent. Il validatore non lo controlla: il
+risultato dipende da chi fa la richiesta, e quello che conta e' l'harvester.
+
 ```bash
-# EDP + tutti i profili italiani
+# EDP + tutti i profili italiani + regole operative AgID
 python3 tools/validate_edp_shacl.py --file catalog.ttl --profile tutti
 
 # solo i profili italiani (it = dcatapit,vocabolari,hvd)

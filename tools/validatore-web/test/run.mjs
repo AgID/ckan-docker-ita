@@ -7,11 +7,11 @@ const S = new URL('../../shapes/', import.meta.url)
 const r = f => readFileSync(new URL(f, S), 'utf8')
 const profiles = await buildProfiles({
   edp: r('edp/shapes.ttl'), edpDeprecated: r('edp/deprecateduris.ttl'), edpRecommended: r('edp/shapes_recommended.ttl'),
-  dcatapit: r('dcatapit.ttl'), vocabolari: r('vocabolari.ttl'), hvd: r('hvd.ttl'),
+  dcatapit: r('dcatapit.ttl'), vocabolari: r('vocabolari.ttl'), hvd: r('hvd.ttl'), agid: r('agid.ttl'),
 })
 const file = process.argv[2]
 if (!file) { console.error('Uso: node test/run.mjs FILE [profili]'); process.exit(2) }
-const sel = (process.argv[3] || 'edp,dcatapit,vocabolari,hvd').split(',')
+const sel = (process.argv[3] || 'edp,dcatapit,vocabolari,hvd,agid').split(',')
 const text = readFileSync(file, 'utf8')
 const ds = await datasetFromText(text, detectFormat(text, file))
 const { results, meta } = await runValidation(ds, profiles, sel)
