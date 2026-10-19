@@ -19,7 +19,7 @@ const getProfiles = () => (profilesP ||= buildProfiles(SHAPES))
 const state = {
   source: { kind: 'esempio', name: 'esempio-errori.ttl', text: esempio },
   last: null,          // { groups, results, stats, meta, selected, sourceName, ms }
-  filterSev: new Set(['Violation']),   // avvisi nascosti di default
+  filterSev: new Set(['Violation', 'Info']),   // avvisi nascosti di default; indicazioni AgID visibili
   filterProfile: 'tutti',
   query: '',
 }
@@ -209,7 +209,8 @@ function render () {
   // conforme = nessuna violazione; gli avvisi non cambiano l'esito
   $('#verdict-text').textContent = ok ? 'Conforme' : 'Non conforme'
   const avvisi = tot.Warning ? ` · ${tot.Warning.toLocaleString('it-IT')} avvisi` : ''
-  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple${avvisi}`
+  const indic = tot.Info ? ` · ${tot.Info.toLocaleString('it-IT')} indicazioni AgID` : ''
+  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple${avvisi}${indic}`
 
   const st = L.stats
   const hvdM = L.meta.hvd
@@ -221,10 +222,13 @@ function render () {
   $('#profiles-sum').innerHTML = L.selected.map(p => {
     const c = countBy(L.results, p)
     const skipped = p === 'hvd' && hvdM && !hvdM.datasets && !hvdM.services
-    const pass = c.Violation === 0
+    const pass = p === 'agid' ? (c.Info ? 'hint' : 'true') : String(c.Violation === 0)
+    const conta = p === 'agid'
+      ? `<span class="pcount"><b class="i">${c.Info}</b> indicazioni</span>`
+      : `<span class="pcount"><b class="v">${c.Violation}</b> violazioni · <b class="w">${c.Warning}</b> avvisi</span>`
     return `<button class="psum" data-profile="${p}" aria-pressed="${state.filterProfile === p}" data-pass="${pass}">
       <span class="pname">${PROFILE_LABELS[p]}</span>
-      ${skipped ? '<span class="pnote">nessuna risorsa HVD</span>' : `<span class="pcount"><b class="v">${c.Violation}</b> violazioni · <b class="w">${c.Warning}</b> avvisi</span>`}
+      ${skipped ? '<span class="pnote">nessuna risorsa HVD</span>' : conta}
     </button>`
   }).join('')
 
@@ -294,7 +298,7 @@ function showMore (btn) {
   bar.outerHTML = moreBar(g, to)
 }
 
-const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Info' }[s] || s)
+const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Indicazione' }[s] || s)
 function linkish (v) {
   if (/^https?:\/\//.test(v) && isHttpUrl(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer" class="mono">${esc(v)}</a>`
   return `<span class="mono">${esc(v)}</span>`

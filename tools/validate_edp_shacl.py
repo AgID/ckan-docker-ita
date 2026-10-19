@@ -30,8 +30,9 @@ Opzioni:
                       vocabolari  valori dai vocabolari controllati EU
                       hvd         dati di elevato valore (Reg. UE 2023/138), solo sulle
                                   risorse che dichiarano l'ELI o una hvdCategory
-                      agid        regole operative AgID per l'harvesting su dati.gov.it
-                                  (identificativi codiceIPA:identificativo, email non PEC)
+                      agid        indicazioni operative AgID per l'harvesting su dati.gov.it
+                                  (identificativi codiceIPA:identificativo, email non PEC);
+                                  escono come Info e non cambiano l'esito
                       it          = dcatapit,vocabolari,hvd    tutti = edp,it,agid
   --dcatap 3.0.0    versione delle shape (default 3.0.0: il DQV di EDP riporta
                     "dcatap300level1", anche se la pagina violazioni dice 3.0.1)
@@ -74,7 +75,8 @@ PROFILES_EXTRA = ("agid",)
 AGID_PREFIX_MSG = ("Il prefisso dell'identificativo del dataset non coincide con il codice IPA "
                    "del titolare (dct:rightsHolder/dct:identifier)")
 HEAD_NOTE = ("Prima dell'harvesting verificare sempre che l'endpoint del catalogo e, a campione, "
-             "le risorse rispondano 200 a HEAD (curl -I <url>), senza WAF o altri blocchi.")
+             "le risorse rispondano 200 a HEAD (curl -I <url>), senza WAF o altri blocchi: devono "
+             "essere aperti. I dati aperti devono essere accessibili e interoperabili.")
 HVD_ELI = "http://data.europa.eu/eli/reg_impl/2023/138/oj"
 DCAT = "http://www.w3.org/ns/dcat#"
 DCATAP = "http://data.europa.eu/r5r/"
@@ -313,7 +315,7 @@ def main():
                     })
             if prof == "agid":
                 for x in agid_checks(data):
-                    key = ("Violation", "agid", "dct:identifier", AGID_PREFIX_MSG)
+                    key = ("Info", "agid", "dct:identifier", AGID_PREFIX_MSG)
                     counts[key] += 1
                     if len(examples[key]) < a.examples:
                         examples[key].append({"source": src, "message": AGID_PREFIX_MSG, **x})

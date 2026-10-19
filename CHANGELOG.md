@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-19` — validatore: le regole AgID diventano indicazioni
+- Le regole operative AgID non sono regole DCAT, quindi non devono rendere un catalogo "Non conforme". Tutte le segnalazioni del profilo (formato e prefisso dell'identificativo, codice IPA del titolare, email PEC) ora hanno gravita' `sh:Info`, mostrata come **Indicazione** in viola, distinta da violazioni (rosso) e avvisi (giallo). Il profilo si chiama "Indicazioni AgID".
+- Nella pagina: filtro "Indicazioni AgID" attivo per impostazione predefinita, riepilogo del profilo con il numero di indicazioni, conteggio accanto all'esito. Nello script le segnalazioni escono come `[Info]` e non cambiano l'esito ne' il codice di uscita.
+- Il riquadro "Prima dell'harvesting", ora dello stesso viola, termina con "I dati aperti devono essere accessibili e interoperabili."; stessa frase nella nota dello script.
+
 ## `2026-10-19` — validatore: regole operative AgID per l'harvesting
 - Nuovo profilo `agid` ("Regole operative AgID"), nel validatore web e in `tools/validate_edp_shacl.py` (`--profile agid`, compreso in `tutti` ma non in `it`). Sono criteri di gestione di dati.gov.it, non regole DCAT-AP o DCAT-AP_IT:
   - **identificativo del dataset** nel formato `codiceIPA:identificativo`, con solo lettere, cifre, `-` e `_` (violazione);

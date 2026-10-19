@@ -5,9 +5,11 @@
 @prefix foaf:     <http://xmlns.com/foaf/0.1/> .
 @prefix agid:     <urn:validatore-dcatapit:shapes:agid#> .
 
-# Regole operative AgID per un harvesting pulito su dati.gov.it.
+# Indicazioni operative AgID per un harvesting pulito su dati.gov.it.
 # Non sono regole DCAT-AP / DCAT-AP_IT: sono criteri di gestione del catalogo
 # nazionale (identificativi univoci e riconducibili all'ente, contatti utili).
+# Per questo hanno tutte gravita' sh:Info ("indicazione"): non rendono il
+# catalogo non conforme.
 #
 # Il controllo "il prefisso dell'identificativo del dataset coincide con il
 # codice IPA del titolare" non e' esprimibile in SHACL Core: lo fanno a parte
@@ -20,7 +22,7 @@ agid:Dataset a sh:NodeShape ;
   sh:property
     [ sh:path dct:identifier ;
       sh:pattern "^[A-Za-z0-9_]+:[A-Za-z0-9_-]+$" ;
-      sh:severity sh:Violation ;
+      sh:severity sh:Info ;
       sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (solo lettere, cifre, - e _; niente spazi, accenti o altri caratteri)" ] .
 
 # ---------------------------------------------------------------- TITOLARE
@@ -30,7 +32,7 @@ agid:Holder a sh:NodeShape ;
   sh:property
     [ sh:path dct:identifier ;
       sh:pattern "^[A-Za-z0-9_]+$" ;
-      sh:severity sh:Violation ;
+      sh:severity sh:Info ;
       sh:message "Identificativo del titolare non nel formato del codice IPA (solo lettere, cifre e _; niente due punti, spazi o altri caratteri)" ] .
 
 # ---------------------------------------------------------------- CATALOGO
@@ -45,5 +47,5 @@ agid:Catalog a sh:NodeShape ;
     [ sh:path ( dct:publisher foaf:mbox ) ;
       sh:pattern "^(?!.*((^|[@.:_-])pec([.@_-]|$)|(^|[@.])(cert|postacert|pcert)\\.|legalmail\\.|arubapec\\.|postecert\\.|sicurezzapostale\\.|gigapec\\.|mypec\\.|casellapec\\.|pecmail\\.|cgn\\.legalmail|pec\\.it)).*$" ;
       sh:flags "i" ;
-      sh:severity sh:Warning ;
+      sh:severity sh:Info ;
       sh:message "L'email dell'editore del catalogo sembra una PEC: indicare una casella ordinaria (PEO) di chi gestisce il catalogo" ] .

@@ -273,7 +273,7 @@ export function agidChecks (dataDs) {
     if (!m || !hid || hid.termType !== 'Literal' || !hid.value) continue
     if (m[1].toLowerCase() === hid.value.trim().toLowerCase()) continue
     out.push({
-      profile: 'agid', severity: 'Violation', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
+      profile: 'agid', severity: 'Info', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
       component: 'CodiceIPA', focus: termText(d), where: ownerOf(dataDs, d, owners),
       value: `${JSON.stringify(id.value)} ≠ titolare ${JSON.stringify(hid.value)}`, shape: '',
     })
@@ -287,7 +287,7 @@ export const PROFILE_LABELS = {
   dcatapit: 'DCAT-AP_IT',
   vocabolari: 'Vocabolari',
   hvd: 'HVD',
-  agid: 'Regole operative AgID',
+  agid: 'Indicazioni AgID',
 }
 
 // Esegue i profili selezionati sui dati. selected: array di chiavi di PROFILE_LABELS.
