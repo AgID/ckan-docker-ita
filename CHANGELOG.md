@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-20` — validatore: punto ammesso nell'identificativo del dataset
+- L'indicazione AgID sull'identificativo `codiceIPA:identificativo` ora accetta anche il punto dopo i due punti (es. `c_e506:scuole.2026`): CKAN e dcatapit non limitano i caratteri dell'identificativo (lo richiedono solo non vuoto e unico). Restano esclusi spazi, accenti, barre e altri caratteri; il codice IPA prima dei due punti resta lettere, cifre e `_`.
+
 ## `2026-10-20` — report settimanale: limite di richieste per server
 - Nella seconda esecuzione completa 10 comuni su opendata.maggioli.cloud risultavano non validabili per HTTP 503: sullo stesso fornitore ci sono oltre 100 harvest source e le richieste in parallelo lo sovraccaricavano. Ora si fanno al massimo 2 richieste alla volta per server, e sugli errori 429/5xx si riprova dopo 30 e 90 secondi.
 - Le PA elaborate in parallelo passano da 4 a 6, cosi' i server diversi continuano a lavorare in contemporanea. Durata attesa dell'esecuzione completa: circa un'ora.

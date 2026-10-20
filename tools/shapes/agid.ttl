@@ -21,9 +21,9 @@ agid:Dataset a sh:NodeShape ;
   sh:targetClass dcat:Dataset ;
   sh:property
     [ sh:path dct:identifier ;
-      sh:pattern "^[A-Za-z0-9_]+:[A-Za-z0-9_-]+$" ;
+      sh:pattern "^[A-Za-z0-9_]+:[A-Za-z0-9_.-]+$" ;
       sh:severity sh:Info ;
-      sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (solo lettere, cifre, - e _; niente spazi, accenti o altri caratteri)" ] .
+      sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (dopo i due punti solo lettere, cifre, punto, - e _; niente spazi, accenti o altri caratteri)" ] .
 
 # ---------------------------------------------------------------- TITOLARE
 agid:Holder a sh:NodeShape ;
