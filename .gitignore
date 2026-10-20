@@ -20,3 +20,7 @@ nginx/certs/
 # validatore web
 tools/validatore-web/node_modules/
 tools/validatore-web/dist/
+
+# pacchetto del report settimanale (tools/build_report_pyz.sh)
+tools/build/
+tools/dist/

@@ -1,5 +1,13 @@
 # Changelog
 
+## `2026-10-20` — report settimanale di validazione per PA
+- Nuovo `tools/report_settimanale.py`: per ogni organizzazione di dati.gov.it con dataset valida il catalogo sorgente (pagina 1, o un campione di 6 pagine distribuite oltre 2.000 dataset) oppure, per le PA senza sorgente DCAT-RDF, il catalogo esposto da dati.gov.it per l'organizzazione. Profili: EDP, DCAT-AP_IT, Vocabolari, HVD, Indicazioni AgID con verifica su IndicePA.
+- Uscita: `index.html` generale, `riepilogo.csv` (una riga per PA) e, per ogni PA, la cartella `<slug>/` con `index.html` e `<slug>.csv`. Ogni report riporta anche la raggiungibilita' dell'endpoint del catalogo e di tre risorse a campione (HTTP 200 a HEAD).
+- Riepilogo opzionale su Telegram (`--telegram`), solo con la libreria standard.
+- `tools/build_report_pyz.sh` produce `report_settimanale.pyz`, un unico file con script, regole e librerie (rdflib, pyshacl e dipendenze in puro Python) eseguibile con Python 3.9+ senza installare nulla. Provato con Python 3.9 e 3.13.
+- `tools/script_validazione/run_validazione.sh`: avvio da cron, con sostituzione atomica della cartella del report.
+- Prova su 10 PA (Maggioli, Regione Toscana, Regione Puglia, Regione Lazio con sorgente CKAN, MEF con sorgente SPARQL, ACI con sorgente JSON, PA senza harvest source): circa 2 minuti; il report di Regione Toscana con 600 dataset pesa 190 KB (HTML) e 1,3 MB (CSV).
+
 ## `2026-10-20` — validatore: filtro per profilo dopo una nuova validazione
 - Se si filtrava l'elenco su un profilo (clic sul suo riquadro) e poi lo si deselezionava e si validava di nuovo, l'elenco restava vuoto senza un riquadro su cui ricliccare. Ora il filtro torna su tutti i profili quando quello filtrato non e' piu' selezionato.
 

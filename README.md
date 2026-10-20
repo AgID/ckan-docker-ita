@@ -295,6 +295,35 @@ python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --pages 2 --pro
 
 `--file` accetta anche RDF/XML e JSON-LD.
 
+### Report settimanale per PA
+
+`tools/report_settimanale.py` valida ogni settimana i cataloghi di tutte le PA presenti su dati.gov.it, con gli stessi profili del validatore web, e scrive una cartella con un report per PA:
+
+```
+validazione/
+├── index.html            pagina generale, ordinata per gravita'
+├── riepilogo.csv         una riga per PA
+└── <slug>/
+    ├── index.html        report della PA
+    └── <slug>.csv        elenco puntuale delle segnalazioni
+```
+
+- Per le PA con una harvest source DCAT-RDF valida il catalogo **sorgente**: la pagina 1, oppure, oltre 2.000 dataset, un campione di 6 pagine distribuite (prima, seconda, meta', ultima e alcune a caso, con un seme che cambia ogni settimana). Per le PA senza sorgente RDF (dataset inseriti dal front end, sorgenti CKAN o JSON) valida il catalogo esposto da dati.gov.it per l'organizzazione.
+- Controlla anche che l'endpoint del catalogo e tre risorse a caso rispondano 200 (HEAD, oppure GET con Range se HEAD non e' ammesso).
+- I codici IPA dei titolari di tutte le PA vengono verificati su IndicePA con un'unica serie di query.
+- L'avviso noto su `adms:status` (StatusRestrictionADMS) non entra nei CSV: viene solo contato.
+- Con `--telegram FILE` (JSON con `token` e `chat_id`) invia un riepilogo e il `riepilogo.csv` a un bot Telegram.
+
+Per un server senza librerie Python installabili, `tools/build_report_pyz.sh` crea `tools/dist/report_settimanale.pyz`, un unico file con lo script, le regole e le librerie (rdflib, pyshacl e dipendenze, tutte in puro Python): basta Python 3.9 o successivo.
+
+```bash
+tools/build_report_pyz.sh
+python3 report_settimanale.pyz --out validazione --limit 10      # prova sulle prime 10 PA
+python3 report_settimanale.pyz --out validazione --org regione-toscana
+```
+
+`tools/script_validazione/run_validazione.sh` e' lo script da mettere in cron: scrive in una cartella temporanea e la sostituisce solo a esecuzione riuscita, cosi' durante il lavoro resta visibile il report precedente.
+
 ### Validatore nel browser
 
 `tools/validatore-web/` contiene la stessa validazione come pagina web: si
