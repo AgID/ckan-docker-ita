@@ -71,6 +71,7 @@ GRANDE = 2000          # oltre questa soglia di dataset si valida un campione di
 PAGINE_CAMPIONE = 6
 RISORSE_CAMPIONE = 3
 TIMEOUT = 90
+TIMEOUT_CATALOGO = 240   # alcuni cataloghi impiegano oltre un minuto e mezzo a generare la pagina
 
 
 # ---------------------------------------------------------------- shape (anche dentro lo .pyz)
@@ -123,7 +124,7 @@ def http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
 def get(url, tries=2):
     """GET con un nuovo tentativo dopo 20 s sugli errori di rete o 5xx."""
     for i in range(tries):
-        st, body, info = http(url)
+        st, body, info = http(url, timeout=TIMEOUT_CATALOGO)
         if st == 200 or (st and st < 500) or i == tries - 1:
             return st, body, info
         time.sleep(20)
@@ -348,16 +349,17 @@ def process_org(org, sources, base, profiles, rnd):
         rep["endpoints"].append({"url": ep, **pr})
         first = with_page(ep, 1) if "catalog." in urllib.parse.urlsplit(ep).path else ep
         st, body, info = get(first)
+        # l'errore resta sul singolo endpoint: se la PA ha piu' sorgenti, le altre si validano comunque
         if st != 200 or not body:
-            rep["errore"] = rep["errore"] or f"catalogo non scaricabile ({info.get('error') or st})"
+            rep["endpoints"][-1]["errore_catalogo"] = f"catalogo non scaricabile ({info.get('error') or st})"
             continue
         if len(body) > 100 * 1024 * 1024:
-            rep["errore"] = "catalogo oltre 100 MB"
+            rep["endpoints"][-1]["errore_catalogo"] = "catalogo oltre 100 MB"
             continue
         try:
             g = parse(body, first)
         except Exception as e:
-            rep["errore"] = rep["errore"] or f"catalogo non RDF valido: {str(e)[:150]}"
+            rep["endpoints"][-1]["errore_catalogo"] = f"catalogo non RDF valido: {str(e)[:150]}"
             continue
         pages = [(first, g)]
         lp = last_page(g)
@@ -389,6 +391,11 @@ def process_org(org, sources, base, profiles, rnd):
             urls = [x for x in dict.fromkeys(urls) if x.startswith("http")]
             for x in rnd.sample(urls, min(RISORSE_CAMPIONE, len(urls))) if len(rep["risorse"]) < RISORSE_CAMPIONE else []:
                 rep["risorse"].append({"url": x, **probe(x)})
+    falliti = [e["errore_catalogo"] for e in rep["endpoints"] if e.get("errore_catalogo")]
+    if falliti and not rep["pagine"]:
+        rep["errore"] = falliti[0]
+    elif falliti:
+        rep["avviso"] = f"{len(falliti)} sorgente/i su {len(rep['endpoints'])} non validabile/i: {falliti[0]}"
     if rep["totale"] is None:
         rep["totale"] = org.get("package_count")
     return rep
@@ -460,7 +467,9 @@ def org_html(rep, generato):
         more = f'<p class="mu">Mostrate 50 di {len(items)}: l\'elenco completo è nel CSV.</p>' if len(items) > 50 else ""
         rows.append(f'<details><summary><span class="tag {sev}">{SEV_IT.get(sev, sev)}</span><span class="m">{esc(msg)}<br><span class="mu">{esc(LABEL[prof])} · <code>{esc(path)}</code></span></span><b>{len(items)}</b></summary>'
                     f'<div><table><tr><th>Risorsa</th><th>Valore</th></tr>{ex}</table>{more}</div></details>')
-    eps = "".join(f"<tr><td>{link(e['url'])}</td><td>{status_cell(e)}</td></tr>" for e in rep["endpoints"])
+    def ep_err(e):
+        return ('<br><span class="tag ko">errore</span> ' + esc(e["errore_catalogo"])) if e.get("errore_catalogo") else ""
+    eps = "".join(f"<tr><td>{link(e['url'])}</td><td>{status_cell(e)}{ep_err(e)}</td></tr>" for e in rep["endpoints"])
     ris = "".join(f"<tr><td>{link(e['url'])}</td><td>{status_cell(e)}</td></tr>" for e in rep["risorse"]) or '<tr><td colspan=2 class="mu">nessuna risorsa controllata</td></tr>'
     np_ = len(rep["pagine"])
     camp = f"{rep['dataset']} dataset validati su {rep['totale'] if rep['totale'] is not None else '?'} ({np_} {'pagina' if np_ == 1 else 'pagine'})"
@@ -474,7 +483,7 @@ def org_html(rep, generato):
 <div class="kv" style="margin-top:10px"><div><b>{c['Violation']}</b>violazioni</div><div><b>{c['Warning']}</b>avvisi</div><div><b>{c['Info']}</b>indicazioni AgID</div><div><b>{rep['dataset']}</b>dataset validati</div><div><b>{rep['distribuzioni']}</b>distribuzioni</div></div>
 <p class="mu">{esc(camp)}. È un campione: l'intero catalogo si controlla con il <a href="{VALIDATORE_WEB}" target="_blank" rel="noopener">validatore di dati.gov.it</a>.
 {rumore}</p>
-{('<p><span class="tag ko">errore</span> ' + esc(rep['errore']) + '</p>') if rep['errore'] else ''}
+{('<p><span class="tag ko">errore</span> ' + esc(rep['errore']) + '</p>') if rep['errore'] else ''}{('<p><span class="tag Warning">attenzione</span> ' + esc(rep.get('avviso', '')) + '</p>') if rep.get('avviso') else ''}
 <p><a href="{esc(o['name'])}.csv" download>Scarica il CSV con l'elenco puntuale</a></p></div>
 <h2>Raggiungibilità</h2>
 <p class="mu">L'endpoint del catalogo e le risorse devono rispondere 200 alla richiesta HEAD (curl -I), senza WAF o altri blocchi.</p>
@@ -512,8 +521,8 @@ def summary_row(rep):
             "origine": rep["origine"], "endpoint": ep.get("url", ""), "endpoint_http": (ep.get("get") or ep.get("head") or "") if ep else "",
             "dataset_totali": rep["totale"] if rep["totale"] is not None else "", "dataset_validati": rep["dataset"],
             "violazioni": c["Violation"], "avvisi": c["Warning"], "indicazioni": c["Info"],
-            "risorse_non_raggiungibili": f"{ris_ko}/{len(rep['risorse'])}", "errore": rep["errore"],
-            "conforme": "sì" if c["Violation"] == 0 and not rep["errore"] else "no"}
+            "risorse_non_raggiungibili": f"{ris_ko}/{len(rep['risorse'])}", "errore": rep["errore"] or rep.get("avviso", ""),
+            "conforme": "sì" if c["Violation"] == 0 and not rep["errore"] else "no", "_bloccante": bool(rep["errore"])}
 
 
 SUM_COLS = ["slug", "organizzazione", "origine", "endpoint", "endpoint_http", "dataset_totali", "dataset_validati",
@@ -521,8 +530,8 @@ SUM_COLS = ["slug", "organizzazione", "origine", "endpoint", "endpoint_http", "d
 
 
 def index_html(rows, generato, durata, ipa_note):
-    rows = sorted(rows, key=lambda r: (r["errore"] == "", -r["violazioni"], -r["indicazioni"]))
-    n_err = sum(1 for r in rows if r["errore"])
+    rows = sorted(rows, key=lambda r: (not r["_bloccante"], -r["violazioni"], -r["indicazioni"]))
+    n_err = sum(1 for r in rows if r["_bloccante"])
     n_conf = sum(1 for r in rows if r["conforme"] == "sì")
     tr = "".join(
         f'<tr data-q="{esc((r["slug"] + " " + r["organizzazione"]).lower())}"><td><a href="{esc(r["slug"])}/index.html">{esc(r["organizzazione"])}</a><br><span class="mu mono">{esc(r["slug"])}</span></td>'
@@ -537,7 +546,7 @@ def index_html(rows, generato, durata, ipa_note):
 <div><b>{sum(r['violazioni'] for r in rows)}</b>violazioni</div><div><b>{sum(r['avvisi'] for r in rows)}</b>avvisi</div><div><b>{sum(r['indicazioni'] for r in rows)}</b>indicazioni</div></div>
 <p class="mu">Per ogni PA si valida un campione: la pagina 1 del catalogo sorgente, o più pagine distribuite per i cataloghi con oltre {GRANDE} dataset. <a href="riepilogo.csv" download>Scarica il riepilogo CSV</a>.</p>
 <p><input type="search" id="q" placeholder="Cerca una PA" oninput="for(const t of document.querySelectorAll('tbody tr'))t.hidden=!t.dataset.q.includes(this.value.toLowerCase())"></p>
-<div style="overflow-x:auto"><table><thead><tr><th>PA</th><th>Origine</th><th>Endpoint</th><th>Dataset validati / totali</th><th>Violazioni</th><th>Avvisi</th><th>Indicazioni</th><th>Risorse KO</th><th>Errore</th></tr></thead><tbody>{tr}</tbody></table></div>
+<div style="overflow-x:auto"><table><thead><tr><th>PA</th><th>Origine</th><th>Endpoint</th><th>Dataset validati / totali</th><th>Violazioni</th><th>Avvisi</th><th>Indicazioni</th><th>Risorse KO</th><th>Errore / note</th></tr></thead><tbody>{tr}</tbody></table></div>
 """
     return page("Validazione settimanale dei cataloghi", body)
 
@@ -659,8 +668,8 @@ def main():
     tv = sum(r["violazioni"] for r in rows)
     ta = sum(r["avvisi"] for r in rows)
     ti = sum(r["indicazioni"] for r in rows)
-    nerr = [r for r in rows if r["errore"]]
-    peggiori = sorted([r for r in rows if not r["errore"]], key=lambda r: -r["violazioni"])[:10]
+    nerr = [r for r in rows if r["_bloccante"]]
+    peggiori = sorted([r for r in rows if not r["_bloccante"]], key=lambda r: -r["violazioni"])[:10]
     print(f"\nFatto in {durata}: {len(rows)} PA, {tv} violazioni, {ta} avvisi, {ti} indicazioni, {len(nerr)} cataloghi non validabili. {ipa_note}")
     if a.telegram:
         msg = (f"<b>Validazione settimanale cataloghi</b> – {esc(generato)}\n"

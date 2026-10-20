@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-20` — report settimanale: PA con piu' sorgenti e cataloghi lenti
+- Prima esecuzione completa: 406 PA in 40 minuti, 12 cataloghi non validabili. Due casi erano dovuti allo script:
+  - **cataloghi lenti**: Comune di Matera ed Emilia-Romagna rispondono in 60-105 secondi, oltre il limite di 90. Il timeout per lo scaricamento del catalogo sale a 240 secondi;
+  - **PA con piu' harvest source**: Ministero della Salute e Regione Lombardia hanno due sorgenti; se la prima falliva, la PA risultava non validabile anche se la seconda funziona. Ora l'errore resta sulla singola sorgente, la PA si valida con quelle raggiungibili e il report riporta una nota ("1 sorgente su 2 non validabile"). Una PA conta tra i "non validabili" solo se nessuna sorgente e' validabile.
+- Nel report della PA ogni endpoint mostra il proprio errore; nella pagina generale la colonna si chiama «Errore / note».
+
 ## `2026-10-20` — report settimanale: log senza traceback di rdflib
 - Per ogni letterale non valido nei cataloghi (per esempio una `xsd:date` scritta `20/10/2026`) rdflib scriveva nel log un traceback di parecchie righe. Non e' un errore dello script: il valore viene comunque segnalato dalla validazione. Ora i messaggi di rdflib sotto il livello ERROR non compaiono piu'.
 
