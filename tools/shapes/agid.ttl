@@ -4,6 +4,8 @@
 @prefix dct:      <http://purl.org/dc/terms/> .
 @prefix foaf:     <http://xmlns.com/foaf/0.1/> .
 @prefix agid:     <urn:validatore-dcatapit:shapes:agid#> .
+@prefix ft:       <http://publications.europa.eu/resource/authority/file-type/> .
+@prefix theme:    <http://publications.europa.eu/resource/authority/data-theme/> .
 
 # Indicazioni operative AgID per un harvesting pulito su dati.gov.it.
 # Non sono regole DCAT-AP / DCAT-AP_IT: sono criteri di gestione del catalogo
@@ -49,3 +51,30 @@ agid:Catalog a sh:NodeShape ;
       sh:flags "i" ;
       sh:severity sh:Info ;
       sh:message "L'email dell'editore del catalogo sembra una PEC: indicare una casella ordinaria (PEO) di chi gestisce il catalogo" ] .
+
+# ---------------------------------------------------------------- VALORI SEGNAPOSTO
+# OP_DATPRO ("dati provvisori") e' un valore valido dei vocabolari EU, quindi passa
+# la validazione, ma non dice nulla: CKAN/dcatapit lo assegnano quando il tema manca,
+# e come formato e' un ripiego. ARC (archivio dell'Internet Archive) e' quasi sempre
+# scelto per errore. Ogni valore e' contato nel riepilogo.
+agid:ThemeSegnaposto a sh:NodeShape ;
+  rdfs:label "Dataset - tema segnaposto" ;
+  sh:targetClass dcat:Dataset ;
+  sh:property
+    [ sh:path dcat:theme ;
+      sh:not [ sh:in ( theme:OP_DATPRO ) ] ;
+      sh:severity sh:Info ;
+      sh:message "Tema OP_DATPRO («dati provvisori»): e' il valore che CKAN assegna quando il tema manca. Indicare uno dei 13 temi del vocabolario data-theme (es. GOVE, ENVI, EDUC)" ] .
+
+agid:FormatoSegnaposto a sh:NodeShape ;
+  rdfs:label "Distribuzione - formato segnaposto o errato" ;
+  sh:targetClass dcat:Distribution ;
+  sh:property
+    [ sh:path dct:format ;
+      sh:not [ sh:in ( ft:OP_DATPRO ) ] ;
+      sh:severity sh:Info ;
+      sh:message "Formato OP_DATPRO («dati provvisori»): e' un segnaposto, indicare il formato reale del file (es. CSV, JSON, PDF, ZIP)" ] ,
+    [ sh:path dct:format ;
+      sh:not [ sh:in ( ft:ARC ) ] ;
+      sh:severity sh:Info ;
+      sh:message "Formato ARC: e' il formato d'archivio dell'Internet Archive, quasi sempre scelto per errore. Verificare il formato reale del file (es. ZIP, SHP, GeoJSON)" ] .

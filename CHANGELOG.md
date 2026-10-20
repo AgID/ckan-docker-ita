@@ -1,5 +1,12 @@
 # Changelog
 
+## `2026-10-20` — indicazioni AgID: temi e formati segnaposto
+- Nuove indicazioni (Info, fuori dalle regole DCAT) nel profilo AgID, contate nel riepilogo:
+  - tema `OP_DATPRO` («dati provvisori»): e' valido nel vocabolario data-theme ma e' il valore che CKAN/dcatapit assegnano quando il tema manca;
+  - formato `OP_DATPRO`: segnaposto al posto del formato reale;
+  - formato `ARC` (archivio dell'Internet Archive): quasi sempre scelto per errore, di solito al posto di ZIP o di un formato geografico.
+- Valgono nel validatore web, in `validate_edp_shacl.py` e nel report settimanale.
+
 ## `2026-10-20` — validatore: punto ammesso nell'identificativo del dataset
 - L'indicazione AgID sull'identificativo `codiceIPA:identificativo` ora accetta anche il punto dopo i due punti (es. `c_e506:scuole.2026`): CKAN e dcatapit non limitano i caratteri dell'identificativo (lo richiedono solo non vuoto e unico). Restano esclusi spazi, accenti, barre e altri caratteri; il codice IPA prima dei due punti resta lettere, cifre e `_`.
 

@@ -7,7 +7,7 @@
 <https://example.org/cat> a dcat:Catalog ;
   dct:publisher [ dct:identifier "c_x" ; foaf:name "Comune X" ; foaf:mbox "protocollo@pec.comune.x.it" ] ;
   dct:hasPart <https://example.org/sub> ;
-  dcat:dataset <https://example.org/ok>, <https://example.org/spazi>, <https://example.org/prefisso>, <https://example.org/trattini> .
+  dcat:dataset <https://example.org/ok>, <https://example.org/spazi>, <https://example.org/prefisso>, <https://example.org/trattini>, <https://example.org/segnaposto> .
 
 # Sottocatalogo con PEO (nessuna segnalazione) e un falso amico: "specchia" contiene "pec"
 <https://example.org/sub> a dcat:Catalog ;
@@ -25,3 +25,11 @@
 # niente codice IPA prima dei due punti, titolare con due punti (2 violazioni formato)
 <https://example.org/trattini> a dcat:Dataset ;
   dct:identifier "p-fg-provincia-di-foggia---scuole" ; dct:rightsHolder [ dct:identifier "p_fg:provincia" ] .
+# valori segnaposto: tema OP_DATPRO, formati OP_DATPRO e ARC (3 indicazioni), CSV corretto
+<https://example.org/segnaposto> a dcat:Dataset ;
+  dct:identifier "c_x:segnaposto" ; dct:rightsHolder [ dct:identifier "c_x" ] ;
+  dcat:theme <http://publications.europa.eu/resource/authority/data-theme/OP_DATPRO> ;
+  dcat:distribution <https://example.org/d1>, <https://example.org/d2>, <https://example.org/d3> .
+<https://example.org/d1> a dcat:Distribution ; dct:format <http://publications.europa.eu/resource/authority/file-type/OP_DATPRO> .
+<https://example.org/d2> a dcat:Distribution ; dct:format <http://publications.europa.eu/resource/authority/file-type/ARC> .
+<https://example.org/d3> a dcat:Distribution ; dct:format <http://publications.europa.eu/resource/authority/file-type/CSV> .
