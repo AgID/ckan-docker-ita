@@ -283,6 +283,18 @@ def path_text(g, p):
     return short(p)
 
 
+# Base per gli IRI relativi del catalogo (es. vcard:hasEmail <nome@ente.it> senza mailto:).
+# Senza una base rdflib li completa con la cartella o l'URL di chi legge il file,
+# e nel report comparirebbe un percorso che non c'entra. .invalid non esiste (RFC 2606).
+REL_BASE = "https://iri-relativo.invalid/"
+
+
+def rel(s):
+    """Mostra un IRI relativo com'e' scritto nel file, segnalandolo."""
+    s = str(s)
+    return s.replace(REL_BASE, "") + " (IRI relativo: manca lo schema, es. mailto: o https://)" if REL_BASE in s else s
+
+
 def short(u):
     u = str(u)
     for k, v in (("http://www.w3.org/ns/dcat#", "dcat:"), ("http://www.w3.org/ns/", ""), ("http://purl.org/dc/terms/", "dct:"),
@@ -356,7 +368,7 @@ def main():
     ipa_meta = {"checked": 0, "notFound": 0, "error": ""}
     for src, text in sources:
         data = Graph()
-        data.parse(data=text, format=guess_format(text, src))
+        data.parse(data=text, format=guess_format(text, src), publicID=REL_BASE)
         n_ds += len(set(data.subjects(RDF_TYPE, URIRef("http://www.w3.org/ns/dcat#Dataset"))))
         n_dist += len(set(data.subjects(RDF_TYPE, URIRef("http://www.w3.org/ns/dcat#Distribution"))))
         n_triples += len(data)
@@ -384,8 +396,8 @@ def main():
                 if len(examples[key]) < a.examples:
                     examples[key].append({
                         "source": src,
-                        "focus": str(rg.value(r, URIRef(SH + "focusNode"))),
-                        "value": str(rg.value(r, URIRef(SH + "value")) or ""),
+                        "focus": rel(rg.value(r, URIRef(SH + "focusNode"))),
+                        "value": rel(rg.value(r, URIRef(SH + "value")) or ""),
                         "message": msg,
                     })
             if prof == "agid" and not a.no_ipa:

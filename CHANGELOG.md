@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-20` — IRI relativi mostrati come scritti nel catalogo
+- Un IRI relativo nel catalogo (es. `vcard:hasEmail <opendatamilano@comune.milano.it>`, senza `mailto:`) veniva completato con la cartella di chi esegue lo script: nel report compariva `file:///home/.../opendatamilano@comune.milano.it`, un percorso del server che non c'entra con l'ente. Ora i dati si leggono con una base fittizia (`https://iri-relativo.invalid/`) e il valore si mostra com'e' scritto, con la nota "(IRI relativo: manca lo schema, es. mailto: o https://)".
+- Vale per il validatore web, `validate_edp_shacl.py` e il report settimanale.
+
 ## `2026-10-20` — indicazioni AgID: temi e formati segnaposto
 - Nuove indicazioni (Info, fuori dalle regole DCAT) nel profilo AgID, contate nel riepilogo:
   - tema `OP_DATPRO` («dati provvisori»): e' valido nel vocabolario data-theme ma e' il valore che CKAN/dcatapit assegnano quando il tema manca;

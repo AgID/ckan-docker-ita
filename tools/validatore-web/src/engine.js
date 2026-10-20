@@ -65,7 +65,14 @@ const noRemoteContexts = {
 // Dimensione massima accettata per file, testo incollato e URL.
 export const MAX_BYTES = 100 * 1024 * 1024
 
-export async function parseRdf (text, format, baseIRI = 'urn:x-base:') {
+// Base per gli IRI relativi del catalogo (es. vcard:hasEmail <nome@ente.it> senza mailto:):
+// nel report si mostrano come scritti nel file, segnalati. .invalid non esiste (RFC 2606).
+export const REL_BASE = 'https://iri-relativo.invalid/'
+export function rel (s) {
+  return s && s.includes(REL_BASE) ? s.split(REL_BASE).join('') + ' (IRI relativo: manca lo schema, es. mailto: o https://)' : s
+}
+
+export async function parseRdf (text, format, baseIRI = REL_BASE) {
   if (format === 'rdfxml') return streamToQuads(new RdfXmlParser({ baseIRI, dataFactory: rdf }), text)
   if (format === 'jsonld') return streamToQuads(new JsonLdParser({ baseIRI, dataFactory: rdf, documentLoader: noRemoteContexts }), text)
   const fmt = format === 'ntriples' ? 'N-Triples' : 'Turtle'
@@ -124,7 +131,7 @@ function termText (t) {
   if (!t) return ''
   if (t.termType === 'Literal') return JSON.stringify(t.value.length > 120 ? t.value.slice(0, 117) + '...' : t.value)
   if (t.termType === 'BlankNode') return '_:' + t.value
-  return t.value
+  return rel(t.value)
 }
 function pathText (p, ds) {
   if (!p) return ''
@@ -193,7 +200,7 @@ function ownerOf (dataDs, node, cache) {
     steps.push(shorten(q.predicate.value))
     cur = q.subject
   }
-  const out = steps.length ? { path: steps.join(' di '), owner: cur.termType === 'NamedNode' ? cur.value : '' } : null
+  const out = steps.length ? { path: steps.join(' di '), owner: cur.termType === 'NamedNode' ? rel(cur.value) : '' } : null
   cache.set(node.value, out)
   return out
 }

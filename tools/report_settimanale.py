@@ -221,7 +221,7 @@ def term_text(t):
         return json.dumps(s[:117] + "..." if len(s) > 120 else s, ensure_ascii=False)
     if isinstance(t, BNode):
         return "_:" + str(t)
-    return str(t)
+    return V.rel(t)
 
 
 def owner_of(data, node):
@@ -267,7 +267,7 @@ def validate_graph(data, profiles):
                 counts["rumore"] += 1
                 continue
             out.append({"profilo": prof, "gravita": sev, "proprieta": V.path_text(rg, rg.value(r, URIRef(SH + "resultPath"))).replace("dcat#", "dcat:"),
-                        "messaggio": msg_it, "vincolo": comp, "risorsa": term_text(focus), "contenuta_in": owner_of(data, focus), "valore": value})
+                        "messaggio": msg_it, "vincolo": comp, "risorsa": term_text(focus), "contenuta_in": V.rel(owner_of(data, focus)), "valore": value})
         if prof == "agid":
             for x in V.agid_checks(data):
                 counts[("agid", "Info")] += 1
@@ -354,7 +354,7 @@ def total_items(data):
 def parse(body, url):
     text = body.decode("utf-8", errors="replace")
     g = Graph()
-    g.parse(data=text, format=V.guess_format(text, urllib.parse.urlsplit(url).path))
+    g.parse(data=text, format=V.guess_format(text, urllib.parse.urlsplit(url).path), publicID=V.REL_BASE)
     return g
 
 
