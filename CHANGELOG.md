@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-20` — report settimanale: limite di richieste per server
+- Nella seconda esecuzione completa 10 comuni su opendata.maggioli.cloud risultavano non validabili per HTTP 503: sullo stesso fornitore ci sono oltre 100 harvest source e le richieste in parallelo lo sovraccaricavano. Ora si fanno al massimo 2 richieste alla volta per server, e sugli errori 429/5xx si riprova dopo 30 e 90 secondi.
+- Le PA elaborate in parallelo passano da 4 a 6, cosi' i server diversi continuano a lavorare in contemporanea. Durata attesa dell'esecuzione completa: circa un'ora.
+
 ## `2026-10-20` — report settimanale: PA con piu' sorgenti e cataloghi lenti
 - Prima esecuzione completa: 406 PA in 40 minuti, 12 cataloghi non validabili. Due casi erano dovuti allo script:
   - **cataloghi lenti**: Comune di Matera ed Emilia-Romagna rispondono in 60-105 secondi, oltre il limite di 90. Il timeout per lo scaricamento del catalogo sale a 240 secondi;

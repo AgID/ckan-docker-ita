@@ -40,6 +40,7 @@ import os
 import random
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -105,7 +106,25 @@ def load_profiles():
 
 
 # ---------------------------------------------------------------- rete
+# al massimo due richieste alla volta per server: molte PA stanno sullo stesso fornitore
+# (oltre 100 sorgenti su opendata.maggioli.cloud) e con piu' richieste in parallelo rispondono 503
+PER_HOST = 2
+_host_locks = collections.defaultdict(lambda: threading.BoundedSemaphore(PER_HOST))
+_host_guard = threading.Lock()
+
+
+def _host_lock(url):
+    host = urllib.parse.urlsplit(url).netloc.lower()
+    with _host_guard:
+        return _host_locks[host]
+
+
 def http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
+    with _host_lock(url):
+        return _http(url, method, timeout, headers, data)
+
+
+def _http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
     """Restituisce (status, body|None, info) senza sollevare eccezioni."""
     h = {"User-Agent": V.UA, "Accept": "text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1"}
     h.update(headers or {})
@@ -121,13 +140,13 @@ def http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
         return 0, None, {"ms": int((time.time() - t0) * 1000), "error": type(e).__name__ + ": " + str(e)[:150]}
 
 
-def get(url, tries=2):
-    """GET con un nuovo tentativo dopo 20 s sugli errori di rete o 5xx."""
+def get(url, tries=3):
+    """GET con nuovi tentativi (dopo 30 e 90 s) sugli errori di rete, 429 e 5xx."""
     for i in range(tries):
         st, body, info = http(url, timeout=TIMEOUT_CATALOGO)
-        if st == 200 or (st and st < 500) or i == tries - 1:
+        if st == 200 or (st and st < 500 and st != 429) or i == tries - 1:
             return st, body, info
-        time.sleep(20)
+        time.sleep(30 if i == 0 else 90)
 
 
 def api(base, action, **params):
@@ -578,7 +597,7 @@ def main():
     ap.add_argument("--base", default="https://dati.gov.it/opendata", help="CKAN di dati.gov.it (senza www: la WAF blocca i client non browser)")
     ap.add_argument("--org", action="append", default=[], help="solo queste organizzazioni (ripetibile)")
     ap.add_argument("--limit", type=int, default=0, help="solo le prime N organizzazioni (prova)")
-    ap.add_argument("--workers", type=int, default=4, help="PA elaborate in parallelo (default 4)")
+    ap.add_argument("--workers", type=int, default=6, help="PA elaborate in parallelo (default 6; sullo stesso server al massimo 2 richieste alla volta)")
     ap.add_argument("--no-ipa", action="store_true", help="non interrogare IndicePA")
     ap.add_argument("--telegram", help="file JSON con token e chat_id del bot")
     ap.add_argument("--url-report", default="", help="indirizzo pubblico della pagina generale, da citare nel messaggio Telegram")
