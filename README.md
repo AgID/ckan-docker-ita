@@ -322,7 +322,7 @@ python3 report_settimanale.pyz --out validazione --limit 10      # prova sulle p
 python3 report_settimanale.pyz --out validazione --org regione-toscana
 ```
 
-`tools/script_validazione/run_validazione.sh` e' lo script da mettere in cron: scrive in una cartella temporanea e la sostituisce solo a esecuzione riuscita, cosi' durante il lavoro resta visibile il report precedente.
+`tools/script_validazione/run_validazione.sh` e' lo script da mettere in cron: scrive in una cartella temporanea e la sostituisce solo a esecuzione riuscita, cosi' durante il lavoro resta visibile il report precedente. La cartella di uscita (`OUT`, obbligatoria) e l'indirizzo pubblico del report (`URL`, facoltativo) si scrivono in `run_validazione.conf` accanto allo script, che resta fuori dalla repo (`.gitignore`) come il file Telegram.
 
 ### Validatore nel browser
 
