@@ -312,7 +312,7 @@ validazione/
 - Controlla anche che l'endpoint del catalogo e tre risorse a caso rispondano 200 (HEAD, oppure GET con Range se HEAD non e' ammesso).
 - I codici IPA dei titolari di tutte le PA vengono verificati su IndicePA con un'unica serie di query.
 - L'avviso noto su `adms:status` (StatusRestrictionADMS) non entra nei CSV: viene solo contato.
-- Con `--telegram FILE` (JSON con `token` e `chat_id`) invia un riepilogo e il `riepilogo.csv` a un bot Telegram.
+- Con `--telegram FILE` (JSON con `token` e `chat_id`) invia un riepilogo e il `riepilogo.csv` a un bot Telegram. `run_validazione.sh` lo cerca come `report-validazione.json` nella propria cartella; va tenuto con permessi 600 e fuori dalla web root.
 
 Per un server senza librerie Python installabili, `tools/build_report_pyz.sh` crea `tools/dist/report_settimanale.pyz`, un unico file con lo script, le regole e le librerie (rdflib, pyshacl e dipendenze, tutte in puro Python): basta Python 3.9 o successivo.
 

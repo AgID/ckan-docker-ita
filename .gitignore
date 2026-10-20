@@ -24,3 +24,6 @@ tools/validatore-web/dist/
 # pacchetto del report settimanale (tools/build_report_pyz.sh)
 tools/build/
 tools/dist/
+
+# credenziali del bot del report settimanale: mai in repo
+report-validazione.json

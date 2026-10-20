@@ -7,7 +7,7 @@
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT="${OUT:-/home/ubuntu/portale-datigov/volume-drupal/default/files/monitoraggio/files/validazione}"
-TG="${TG:-$HOME/.config/report-validazione.json}"      # {"token": "...", "chat_id": "..."}, permessi 600
+TG="${TG:-$DIR/report-validazione.json}"      # {"token": "...", "chat_id": "..."}, permessi 600 (fuori dalla web root)
 URL="${URL:-https://www.dati.gov.it/sites/default/files/monitoraggio/files/validazione/index.html}"
 LOG="$DIR/validazione.log"
 
