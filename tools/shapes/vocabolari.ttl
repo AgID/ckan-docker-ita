@@ -64,12 +64,8 @@ voc:Distribution a sh:NodeShape ;
   rdfs:label "Vocabolari della distribuzione" ;
   sh:targetClass dcat:Distribution ;
   sh:property
-    [ sh:path dct:format ; sh:severity sh:Violation ;
-      sh:pattern "^http://publications\\.europa\\.eu/resource/authority/file-type/[A-Z0-9_]+$" ;
-      sh:message "Formato non preso dal vocabolario EU file-type" ] ,
-    [ sh:path dcat:mediaType ; sh:severity sh:Warning ;
-      sh:pattern "^https?://(www\\.)?iana\\.org/assignments/media-types/[a-z]+/[^\\s/]+$" ;
-      sh:message "Media type non preso dal registro IANA (atteso .../assignments/media-types/tipo/sottotipo)" ] ,
+    # dct:format e dcat:mediaType: controllati sugli elenchi chiusi di data.europa.eu
+    # in vocabolari-elenchi.ttl (generato da tools/aggiorna_vocabolari.py)
     [ sh:path dcat:compressFormat ; sh:severity sh:Warning ;
       sh:pattern "^http://www\\.iana\\.org/assignments/media-types/" ;
       sh:message "Formato di compressione non nella forma IANA" ] ,

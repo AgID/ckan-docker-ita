@@ -239,14 +239,15 @@ export function groupResults (results, examples = 3) {
 }
 
 // ---- profili
-// shapeTexts: { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, hvd, agid } (Turtle)
+// shapeTexts: { edp, edpDeprecated, edpRecommended, dcatapit, vocabolari, vocabolariElenchi, hvd, agid } (Turtle)
 export async function buildProfiles (shapeTexts) {
   const p = async t => rdf.dataset(await parseRdf(t, 'turtle', 'urn:x-shapes:'))
   return {
     edp: rdf.dataset([...(await p(shapeTexts.edp)), ...(await p(shapeTexts.edpDeprecated))]),
     edpRecommended: await p(shapeTexts.edpRecommended),
     dcatapit: await p(shapeTexts.dcatapit),
-    vocabolari: await p(shapeTexts.vocabolari),
+    // regole sui vocabolari + elenchi chiusi di data.europa.eu (formati, media type)
+    vocabolari: rdf.dataset([...(await p(shapeTexts.vocabolari)), ...(await p(shapeTexts.vocabolariElenchi || ''))]),
     hvd: await p(shapeTexts.hvd),
     agid: await p(shapeTexts.agid),
   }

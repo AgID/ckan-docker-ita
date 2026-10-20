@@ -243,7 +243,23 @@ raccomandate un `Warning`. Il profilo `hvd` si applica solo alle risorse che
 dichiarano l'ELI 2023/138 o una categoria HVD, alle loro distribuzioni e ai
 servizi che le servono: le shape HVD ufficiali di SEMIC assumono invece un
 catalogo interamente HVD. Per i vocabolari i temi sono controllati sull'elenco
-chiuso, gli altri valori sul namespace dell'URI.
+chiuso dei 14 valori, gli altri valori sul namespace dell'URI; formati e media
+type sugli elenchi chiusi di data.europa.eu, gli stessi usati dall'MQA.
+
+Gli elenchi di formati (vocabolario EU `file-type`) e media type (registro
+IANA) stanno in `tools/shapes/vocabolari-elenchi.ttl`, generato da
+`tools/aggiorna_vocabolari.py` a partire dalle API
+`https://data.europa.eu/api/hub/search/vocabularies/{file-type,iana-media-types}`.
+Non si aggiorna da solo: si lancia a mano e poi si ricostruisce la pagina web.
+
+```bash
+python3 tools/aggiorna_vocabolari.py      # riscrive tools/shapes/vocabolari-elenchi.ttl
+cd tools/validatore-web && npm run build  # per il validatore web
+```
+
+I media type si confrontano su `tipo/sottotipo`, senza distinguere `http`/`https`,
+`www` e maiuscole (EDP accetta anche gli `https://iana.org/...` di CKAN); i
+formati sull'URI esatto.
 
 Il profilo `agid` raccoglie criteri di gestione del catalogo nazionale, non
 regole DCAT: identificativi univoci e riconducibili all'ente, e un'email

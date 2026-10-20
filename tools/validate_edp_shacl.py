@@ -106,12 +106,16 @@ def load_shapes(version, level):
 
 
 def load_it_shapes(name):
-    path = os.path.join(SHAPES_IT_DIR, name + ".ttl")
+    # il profilo vocabolari comprende anche gli elenchi chiusi di data.europa.eu
+    # (formati e media type), generati da aggiorna_vocabolari.py
+    files = [name + ".ttl"] + (["vocabolari-elenchi.ttl"] if name == "vocabolari" else [])
     g = Graph()
-    if os.path.exists(path):
-        g.parse(path, format="turtle")
-    else:
-        g.parse(data=fetch(SHAPES_IT_BASE + name + ".ttl"), format="turtle")
+    for f in files:
+        path = os.path.join(SHAPES_IT_DIR, f)
+        if os.path.exists(path):
+            g.parse(path, format="turtle")
+        else:
+            g.parse(data=fetch(SHAPES_IT_BASE + f), format="turtle")
     return g
 
 
@@ -212,7 +216,7 @@ def path_text(g, p):
 
 def short(u):
     u = str(u)
-    for k, v in (("http://www.w3.org/ns/", ""), ("http://purl.org/dc/terms/", "dct:"),
+    for k, v in (("http://www.w3.org/ns/dcat#", "dcat:"), ("http://www.w3.org/ns/", ""), ("http://purl.org/dc/terms/", "dct:"),
                  ("http://data.europa.eu/r5r/", "dcatap:"), ("http://xmlns.com/foaf/0.1/", "foaf:")):
         u = u.replace(k, v)
     return u

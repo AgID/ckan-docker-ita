@@ -1,5 +1,13 @@
 # Changelog
 
+## `2026-10-20` — validatore: formati e media type sugli elenchi di data.europa.eu
+- Finora `dct:format` e `dcat:mediaType` erano controllati solo nella forma dell'URI: `file-type/CSVX` o `media-types/text/comma-separated` passavano. Ora il valore deve essere una voce esistente dei vocabolari usati dall'MQA:
+  - **formato**: vocabolario EU `file-type` (233 voci), confronto sull'URI esatto; fuori elenco e' una violazione, come prima;
+  - **media type**: registro IANA (2.209 voci), confronto su `tipo/sottotipo` senza distinguere `http`/`https`, `www` e maiuscole; fuori elenco e' un avviso, come prima.
+- Gli elenchi stanno in `tools/shapes/vocabolari-elenchi.ttl`, generato dal nuovo `tools/aggiorna_vocabolari.py` dalle API `https://data.europa.eu/api/hub/search/vocabularies/{file-type,iana-media-types}` (`--base https://ppe.data.europa.eu` per la pre-produzione). Lo script si lancia a mano; dopo va ricostruita la pagina web (`npm run build`). Il file riporta la data di aggiornamento, che compare anche nel messaggio della segnalazione. Se la risposta delle API e' incompleta o anomala il file non viene toccato.
+- Lo usano il validatore web (la pagina cresce di circa 70 KB) e `validate_edp_shacl.py --profile vocabolari`, con lo stesso esito. Su una pagina di dati.puglia.it e una di dati.gov.it tutti i valori sono gia' negli elenchi.
+- Nello script il percorso `dcat#mediaType` ora esce come `dcat:mediaType`.
+
 ## `2026-10-19` — validatore: le regole AgID diventano indicazioni
 - Le regole operative AgID non sono regole DCAT, quindi non devono rendere un catalogo "Non conforme". Tutte le segnalazioni del profilo (formato e prefisso dell'identificativo, codice IPA del titolare, email PEC) ora hanno gravita' `sh:Info`, mostrata come **Indicazione** in viola, distinta da violazioni (rosso) e avvisi (giallo). Il profilo si chiama "Indicazioni AgID".
 - Nella pagina: filtro "Indicazioni AgID" attivo per impostazione predefinita, riepilogo del profilo con il numero di indicazioni, conteggio accanto all'esito. Nello script le segnalazioni escono come `[Info]` e non cambiano l'esito ne' il codice di uscita.
