@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-20` — report settimanale: log senza traceback di rdflib
+- Per ogni letterale non valido nei cataloghi (per esempio una `xsd:date` scritta `20/10/2026`) rdflib scriveva nel log un traceback di parecchie righe. Non e' un errore dello script: il valore viene comunque segnalato dalla validazione. Ora i messaggi di rdflib sotto il livello ERROR non compaiono piu'.
+
 ## `2026-10-20` — report settimanale di validazione per PA
 - Nuovo `tools/report_settimanale.py`: per ogni organizzazione di dati.gov.it con dataset valida il catalogo sorgente (pagina 1, o un campione di 6 pagine distribuite oltre 2.000 dataset) oppure, per le PA senza sorgente DCAT-RDF, il catalogo esposto da dati.gov.it per l'organizzazione. Profili: EDP, DCAT-AP_IT, Vocabolari, HVD, Indicazioni AgID con verifica su IndicePA.
 - Uscita: `index.html` generale, `riepilogo.csv` (una riga per PA) e, per ogni PA, la cartella `<slug>/` con `index.html` e `<slug>.csv`. Ogni report riporta anche la raggiungibilita' dell'endpoint del catalogo e di tre risorse a campione (HTTP 200 a HEAD).

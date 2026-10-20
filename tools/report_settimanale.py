@@ -35,6 +35,7 @@ import datetime
 import html
 import io
 import json
+import logging
 import os
 import random
 import re
@@ -49,6 +50,10 @@ import zipfile
 import validate_edp_shacl as V
 from rdflib import BNode, Graph, Literal, URIRef
 from pyshacl import validate
+
+# rdflib scrive nel log un traceback per ogni letterale non valido (es. una xsd:date
+# "20/10/2026"): sono errori del catalogo, gia' segnalati dalla validazione, non dello script
+logging.getLogger("rdflib").setLevel(logging.ERROR)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DCAT, DCT, SH = V.DCAT, "http://purl.org/dc/terms/", V.SH
