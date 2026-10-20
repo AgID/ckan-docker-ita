@@ -32,7 +32,9 @@ Opzioni:
                                   risorse che dichiarano l'ELI o una hvdCategory
                       agid        indicazioni operative AgID per l'harvesting su dati.gov.it
                                   (identificativi codiceIPA:identificativo, email non PEC);
-                                  escono come Info e non cambiano l'esito
+                                  escono come Info e non cambiano l'esito; verifica in
+                                  linea dei codici IPA dei titolari su IndicePA
+  --no-ipa          con il profilo agid, non interroga IndicePA
                       it          = dcatapit,vocabolari,hvd    tutti = edp,it,agid
   --dcatap 3.0.0    versione delle shape (default 3.0.0: il DQV di EDP riporta
                     "dcatap300level1", anche se la pagina violazioni dice 3.0.1)
@@ -74,6 +76,11 @@ PROFILES_IT = ("dcatapit", "vocabolari", "hvd")
 PROFILES_EXTRA = ("agid",)
 AGID_PREFIX_MSG = ("Il prefisso dell'identificativo del dataset non coincide con il codice IPA "
                    "del titolare (dct:rightsHolder/dct:identifier)")
+IPA_API = "https://indicepa.gov.it/ipa-dati/api/3/action/datastore_search_sql"
+IPA_ENTI = "d09adf99-dc10-4349-8c53-27b1e5aa97b6"   # dataset "enti" di IndicePA
+IPA_UO = "b0aa1f6c-f135-4c8a-b416-396fed4e1a5d"     # dataset "unita-organizzative"
+IPA_MSG = ("Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA: "
+           "nessun ente con questo codice")
 HEAD_NOTE = ("Prima dell'harvesting verificare sempre che l'endpoint del catalogo e, a campione, "
              "le risorse rispondano 200 a HEAD (curl -I <url>), senza WAF o altri blocchi: devono "
              "essere aperti. I dati aperti devono essere accessibili e interoperabili.")
@@ -202,6 +209,64 @@ def agid_checks(data):
     return out
 
 
+def ipa_query(codes, build):
+    out = []
+    for i in range(0, len(codes), 150):
+        lst = ",".join(f"'{c}'" for c in codes[i:i + 150])   # codici gia' [A-Za-z0-9_]
+        url = IPA_API + "?sql=" + urllib.parse.quote(build(lst))
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            j = json.load(r)
+        if not j.get("success"):
+            raise RuntimeError("risposta non valida da IndicePA")
+        out += j["result"]["records"]
+    return out
+
+
+def ipa_check(data):
+    """Codice IPA del titolare presente nell'elenco enti di IndicePA.
+    Stessa logica di ipaCheck() del validatore web. Restituisce (risultati, meta)."""
+    import re
+    DCT = "http://purl.org/dc/terms/"
+    by_code = {}
+    for d, h in data.subject_objects(URIRef(DCT + "rightsHolder")):
+        for i in data.objects(h, URIRef(DCT + "identifier")):
+            c = str(i).strip()
+            if re.fullmatch(r"[A-Za-z0-9_]{2,40}", c):
+                by_code.setdefault(c.lower(), (c, []))[1].append(d)
+    meta = {"checked": len(by_code), "notFound": 0, "error": ""}
+    if not by_code:
+        return [], meta
+    hint = {}
+    try:
+        found = {str(r["c"]) for r in ipa_query(list(by_code), lambda l: (
+            f'SELECT lower("Codice_IPA") AS c FROM "{IPA_ENTI}" WHERE lower("Codice_IPA") IN ({l})'))}
+        missing = [k for k in by_code if k not in found]
+        if missing:
+            for r in ipa_query([k.upper() for k in missing], lambda l: (
+                    f'SELECT upper("Codice_uni_uo") AS c, "Codice_IPA" AS ipa, "Descrizione_uo" AS d '
+                    f'FROM "{IPA_UO}" WHERE upper("Codice_uni_uo") IN ({l})')):
+                hint[str(r["c"]).lower()] = (f"è il codice dell'unità organizzativa «{r['d']}» "
+                                             f"dell'ente {r['ipa']}: usare {r['ipa']}")
+            cf = [k for k in missing if re.fullmatch(r"\d{11}", k)]
+            if cf:
+                for r in ipa_query(cf, lambda l: (
+                        f'SELECT "Codice_fiscale_ente" AS c, "Codice_IPA" AS ipa, "Denominazione_ente" AS d '
+                        f'FROM "{IPA_ENTI}" WHERE "Codice_fiscale_ente" IN ({l})')):
+                    hint[str(r["c"])] = f"è il codice fiscale di «{r['d']}»: usare il codice IPA {r['ipa']}"
+    except Exception as e:
+        meta["error"] = str(e)
+        return [], meta
+    out = []
+    for k, (code, nodes) in by_code.items():
+        if k in found:
+            continue
+        meta["notFound"] += 1
+        for d in nodes:
+            out.append({"focus": str(d), "value": f'"{code}"' + (f" — {hint[k]}" if k in hint else "")})
+    return out, meta
+
+
 def path_text(g, p):
     """Percorso SHACL leggibile, anche a sequenza (lista RDF)."""
     if p is None:
@@ -234,6 +299,7 @@ def main():
     ap.add_argument("--examples", type=int, default=2)
     ap.add_argument("--profile", default="edp")
     ap.add_argument("--json")
+    ap.add_argument("--no-ipa", action="store_true", help="non verificare i codici IPA su IndicePA (serve la rete)")
     a = ap.parse_args()
     if not a.base and not a.file:
         ap.error("serve l'URL base del CKAN oppure --file")
@@ -283,6 +349,7 @@ def main():
     examples = collections.defaultdict(list)
     n_ds = n_dist = n_triples = 0
     hvd_found = [0, 0, 0]
+    ipa_meta = {"checked": 0, "notFound": 0, "error": ""}
     for src, text in sources:
         data = Graph()
         data.parse(data=text, format=guess_format(text, src))
@@ -317,6 +384,16 @@ def main():
                         "value": str(rg.value(r, URIRef(SH + "value")) or ""),
                         "message": msg,
                     })
+            if prof == "agid" and not a.no_ipa:
+                res, m = ipa_check(data)
+                ipa_meta["checked"] += m["checked"]
+                ipa_meta["notFound"] += m["notFound"]
+                ipa_meta["error"] = ipa_meta["error"] or m["error"]
+                for x in res:
+                    key = ("Info", "agid", "dct:rightsHolder/dct:identifier", IPA_MSG)
+                    counts[key] += 1
+                    if len(examples[key]) < a.examples:
+                        examples[key].append({"source": src, "message": IPA_MSG, **x})
             if prof == "agid":
                 for x in agid_checks(data):
                     key = ("Info", "agid", "dct:identifier", AGID_PREFIX_MSG)
@@ -325,6 +402,12 @@ def main():
                         examples[key].append({"source": src, "message": AGID_PREFIX_MSG, **x})
     print(f"Dataset: {n_ds}  Distribuzioni: {n_dist}  Triple: {n_triples}")
     if "agid" in profiles:
+        if a.no_ipa:
+            print("IndicePA: verifica dei codici IPA saltata (--no-ipa)")
+        elif ipa_meta["error"]:
+            print(f"IndicePA non raggiungibile, codici IPA non verificati: {ipa_meta['error']}")
+        else:
+            print(f"IndicePA: {ipa_meta['checked']} codici IPA verificati, {ipa_meta['notFound']} non trovati")
         print(f"Nota: {HEAD_NOTE}")
     if "hvd" in profiles:
         print(f"Risorse HVD: {hvd_found[0]} dataset, {hvd_found[1]} distribuzioni, {hvd_found[2]} servizi")

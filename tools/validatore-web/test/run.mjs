@@ -1,5 +1,5 @@
 // Validazione da riga di comando con lo stesso motore della pagina.
-// Uso: node test/run.mjs FILE [profili]   (profili: edp,edpRecommended,dcatapit,vocabolari,hvd)
+// Uso: [IPA=0] node test/run.mjs FILE [profili]   (profili: edp,edpRecommended,dcatapit,vocabolari,hvd)
 import { readFileSync } from 'node:fs'
 import { buildProfiles, datasetFromText, detectFormat, runValidation, groupResults, stats } from '../src/engine.js'
 
@@ -14,7 +14,8 @@ if (!file) { console.error('Uso: node test/run.mjs FILE [profili]'); process.exi
 const sel = (process.argv[3] || 'edp,dcatapit,vocabolari,hvd,agid').split(',')
 const text = readFileSync(file, 'utf8')
 const ds = await datasetFromText(text, detectFormat(text, file))
-const { results, meta } = await runValidation(ds, profiles, sel)
+// IPA=0 salta la verifica dei codici IPA su IndicePA (serve la rete)
+const { results, meta } = await runValidation(ds, profiles, sel, { ipa: process.env.IPA !== '0' })
 console.log(JSON.stringify(stats(ds)), JSON.stringify(meta))
 const tot = {}
 for (const x of results) { const k = x.profile + ' ' + x.severity; tot[k] = (tot[k] || 0) + 1 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## `2026-10-20` — validatore: codice IPA del titolare verificato su IndicePA
+- Nuova indicazione AgID: il codice IPA del titolare (`dct:rightsHolder/dct:identifier`) deve esistere nell'elenco degli enti di IndicePA. Se non c'e': "Il codice IPA del titolare non e' allineato a IndicePA".
+- Fonte: dataset "enti" di `https://indicepa.gov.it/ipa-dati` (CKAN, API `datastore_search_sql`, CORS aperto), confronto senza distinguere maiuscole e minuscole. Il dataset "amministrazioni" non si usa: e' nel formato precedente al 31 marzo 2021, il suo datastore e' vuoto e IndicePA stesso consiglia "enti".
+- Quando il codice non e' di un ente, la segnalazione dice cosa e' e quale codice usare:
+  - codice di un'unita' organizzativa (dataset "unita-organizzative"): `"B25CX1" — e' il codice dell'unita' organizzativa «Lavori Pubblici e Patrimonio» dell'ente c_g480: usare c_g480`;
+  - codice fiscale di un ente: `"00514490010" — e' il codice fiscale di «Comune di Torino»: usare il codice IPA c_l219`.
+- A IndicePA si inviano solo i codici, a blocchi di 150, e solo quelli gia' nel formato del codice IPA (lettere, cifre e `_`), quindi la query non puo' contenere altro. Se IndicePA non risponde, la verifica viene saltata e il riepilogo lo dice ("IndicePA non raggiungibile"); altrimenti riporta quanti codici sono stati verificati e quanti non trovati.
+- Nello script: stessa verifica nel profilo `agid`, con `--no-ipa` per saltarla. Nel workflow delle Pages il test gira senza rete (`IPA=0`).
+- Su dati.gov.it oggi: 1.691 codici distinti in `holder_identifier`; 376 fuori formato (per esempio "Comune di Treviso"), 43 nel formato giusto ma assenti da IndicePA (2.645 dataset), tra cui codici di unita' organizzative e codici fiscali.
+- Nota: IndicePA risponde 500 alle richieste con User-Agent `HeadlessChrome`; dai browser normali la verifica funziona.
+
 ## `2026-10-20` — validatore: formati e media type sugli elenchi di data.europa.eu
 - Finora `dct:format` e `dcat:mediaType` erano controllati solo nella forma dell'URI: `file-type/CSVX` o `media-types/text/comma-separated` passavano. Ora il valore deve essere una voce esistente dei vocabolari usati dall'MQA:
   - **formato**: vocabolario EU `file-type` (233 voci), confronto sull'URI esatto; fuori elenco e' una violazione, come prima;

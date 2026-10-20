@@ -224,8 +224,12 @@ function render () {
     const c = countBy(L.results, p)
     const skipped = p === 'hvd' && hvdM && !hvdM.datasets && !hvdM.services
     const pass = p === 'agid' ? (c.Info ? 'hint' : 'true') : String(c.Violation === 0)
+    const ipa = L.meta.ipa
+    const ipaNote = !ipa ? '' : ipa.error
+      ? `<span class="pnote">IndicePA non raggiungibile: codici IPA non verificati</span>`
+      : ipa.checked ? `<span class="pnote">IndicePA: ${ipa.checked} codici verificati, ${ipa.notFound} non trovati</span>` : ''
     const conta = p === 'agid'
-      ? `<span class="pcount"><b class="i">${c.Info}</b> indicazioni</span>`
+      ? `<span class="pcount"><b class="i">${c.Info}</b> indicazioni</span>${ipaNote}`
       : `<span class="pcount"><b class="v">${c.Violation}</b> violazioni · <b class="w">${c.Warning}</b> avvisi</span>`
     return `<button class="psum" data-profile="${p}" aria-pressed="${state.filterProfile === p}" data-pass="${pass}">
       <span class="pname">${PROFILE_LABELS[p]}</span>
@@ -313,7 +317,7 @@ function reportJson () {
     file: L.sourceName, formato: L.format, generato: L.at.toISOString(),
     profili: L.selected.map(p => PROFILE_LABELS[p]),
     conforme: countBy(L.results).Violation === 0,
-    conteggi: L.stats, hvd: L.meta.hvd || null,
+    conteggi: L.stats, hvd: L.meta.hvd || null, indicepa: L.meta.ipa || null,
     totali: Object.fromEntries(L.selected.map(p => [PROFILE_LABELS[p], countBy(L.results, p)])),
     risultati: L.results,
   }, null, 2)

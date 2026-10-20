@@ -236,7 +236,7 @@ shape stanno in `tools/shapes/` e non vengono scaricate.
 | `dcatapit` | identificativo, titolare (`dct:rightsHolder`), frequenza, temi, data di modifica; soggetti con `dct:identifier` e `foaf:name` non vuoti; punto di contatto con `vcard:fn` e `vcard:hasEmail`; formato, URL di accesso e licenza della distribuzione; tipi `dcatapit:*` | Linee guida AgID per i cataloghi dati |
 | `vocabolari` | temi sui 14 valori EU `data-theme`, frequenza, lingua, formato, diritti di accesso, media type IANA, URI ELI, categorie HVD | authority table EU |
 | `hvd` | `dcatap:applicableLegislation` con l'ELI del Reg. UE 2023/138 e `dcatap:hvdCategory` su dataset, distribuzioni e servizi | Guida operativa AgID sui dati di elevato valore v1.0 (azione #hvd14), DCAT-AP HVD 2.2.0 |
-| `agid` | identificativo del dataset `codiceIPA:identificativo` (solo lettere, cifre, `-` e `_`) con il prefisso uguale al codice IPA del titolare; codice IPA del titolare senza caratteri speciali; email dell'editore del catalogo e dei sottocataloghi non PEC | Indicazioni operative AgID per l'harvesting su dati.gov.it (non regole DCAT): escono come `Info` e non cambiano l'esito |
+| `agid` | identificativo del dataset `codiceIPA:identificativo` (solo lettere, cifre, `-` e `_`) con il prefisso uguale al codice IPA del titolare; codice IPA del titolare senza caratteri speciali e presente nell'elenco enti di IndicePA (verifica in linea, `--no-ipa` per saltarla); email dell'editore del catalogo e dei sottocataloghi non PEC | Indicazioni operative AgID per l'harvesting su dati.gov.it (non regole DCAT): escono come `Info` e non cambiano l'esito |
 
 Nel profilo `dcatapit` le proprieta' obbligatorie producono una `Violation`, le
 raccomandate un `Warning`. Il profilo `hvd` si applica solo alle risorse che
@@ -268,6 +268,15 @@ tutte le segnalazioni sono `Info` ("indicazioni", in viola nella pagina) e non
 rendono il catalogo non conforme. La PEC si riconosce in modo euristico (`pec`
 come parte dell'indirizzo, `cert.`, gestori PEC noti). Non e' incluso in `it`;
 lo e' in `tutti`.
+
+Il codice IPA del titolare (`dct:rightsHolder/dct:identifier`) viene cercato,
+senza distinguere maiuscole e minuscole, nel dataset "enti" di IndicePA
+(`https://indicepa.gov.it/ipa-dati`, API `datastore_search_sql`); il vecchio
+dataset "amministrazioni" e' nel formato precedente al 2021 e IndicePA stesso
+rimanda a "enti". A IndicePA si inviano solo i codici, gia' filtrati sul
+formato. Se il codice non e' di un ente ma di una sua unita' organizzativa, o
+e' un codice fiscale, la segnalazione indica il codice IPA da usare. Se
+IndicePA non risponde la verifica viene saltata e lo si dice nel risultato.
 
 Prima dell'harvesting va sempre verificato che l'endpoint del catalogo e, a
 campione, le risorse rispondano `200` a una richiesta `HEAD` (`curl -I <url>`),

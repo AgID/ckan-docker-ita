@@ -292,7 +292,80 @@ export const PROFILE_LABELS = {
 }
 
 // Esegue i profili selezionati sui dati. selected: array di chiavi di PROFILE_LABELS.
-export async function runValidation (dataDs, profiles, selected) {
+// ---- IndicePA: il codice IPA del titolare deve esistere nell'elenco degli enti
+// (https://indicepa.gov.it/ipa-dati, CKAN con datastore, CORS aperto).
+// Si inviano solo i codici, gia' filtrati sul formato del codice IPA, quindi la
+// query SQL non puo' contenere altro. Stessa logica di ipa_check() nello script.
+export const IPA_API = 'https://indicepa.gov.it/ipa-dati/api/3/action/datastore_search_sql'
+export const IPA_ENTI = 'd09adf99-dc10-4349-8c53-27b1e5aa97b6'   // dataset "enti"
+export const IPA_UO = 'b0aa1f6c-f135-4c8a-b416-396fed4e1a5d'     // dataset "unita-organizzative"
+export const IPA_MSG = "Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA: nessun ente con questo codice"
+export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
+  const ident = rdf.namedNode(DCT + 'identifier')
+  const byCode = new Map()   // codice minuscolo -> nodi titolare
+  for (const q of dataDs.match(null, rdf.namedNode(DCT + 'rightsHolder'))) {
+    for (const i of dataDs.match(q.object, ident)) {
+      const c = i.object.termType === 'Literal' ? i.object.value.trim() : ''
+      if (!/^[A-Za-z0-9_]{2,40}$/.test(c)) continue   // fuori formato: lo segnala gia' la regola sul formato
+      const k = c.toLowerCase()
+      if (!byCode.has(k)) byCode.set(k, { code: c, nodes: [] })
+      byCode.get(k).nodes.push(q.subject)
+    }
+  }
+  const meta = { checked: byCode.size, notFound: 0, error: '' }
+  if (!byCode.size) return { results: [], meta }
+  const found = new Set()
+  const hint = new Map()   // codice minuscolo -> suggerimento (UO o codice fiscale di un ente)
+  // a blocchi di 150 codici; ogni codice e' gia' [A-Za-z0-9_], quindi sicuro dentro la stringa SQL
+  const query = async (codes, build) => {
+    const out = []
+    for (let i = 0; i < codes.length; i += 150) {
+      const list = codes.slice(i, i + 150).map(c => `'${c}'`).join(',')
+      const r = await fetchFn(IPA_API + '?sql=' + encodeURIComponent(build(list)), { signal: AbortSignal.timeout(30000), referrerPolicy: 'no-referrer', credentials: 'omit' })
+      if (!r.ok) throw new Error('HTTP ' + r.status)
+      const j = await r.json()
+      if (!j.success) throw new Error('risposta non valida')
+      out.push(...j.result.records)
+    }
+    return out
+  }
+  try {
+    for (const rec of await query([...byCode.keys()], l => `SELECT lower("Codice_IPA") AS c FROM "${IPA_ENTI}" WHERE lower("Codice_IPA") IN (${l})`)) found.add(String(rec.c))
+    const missing = [...byCode.keys()].filter(k => !found.has(k))
+    // spesso al posto del codice dell'ente c'e' il codice di una sua unita' organizzativa o il codice fiscale
+    if (missing.length) {
+      for (const rec of await query(missing.map(k => k.toUpperCase()), l => `SELECT upper("Codice_uni_uo") AS c, "Codice_IPA" AS ipa, "Descrizione_uo" AS d FROM "${IPA_UO}" WHERE upper("Codice_uni_uo") IN (${l})`)) {
+        hint.set(String(rec.c).toLowerCase(), `è il codice dell'unità organizzativa «${rec.d}» dell'ente ${rec.ipa}: usare ${rec.ipa}`)
+      }
+      const cf = missing.filter(k => /^\d{11}$/.test(k))
+      if (cf.length) {
+        for (const rec of await query(cf, l => `SELECT "Codice_fiscale_ente" AS c, "Codice_IPA" AS ipa, "Denominazione_ente" AS d FROM "${IPA_ENTI}" WHERE "Codice_fiscale_ente" IN (${l})`)) {
+          hint.set(String(rec.c), `è il codice fiscale di «${rec.d}»: usare il codice IPA ${rec.ipa}`)
+        }
+      }
+    }
+  } catch (e) {
+    meta.error = e.message || String(e)
+    return { results: [], meta }
+  }
+  const owners = new Map()
+  const results = []
+  for (const [k, { code, nodes }] of byCode) {
+    if (found.has(k)) continue
+    meta.notFound++
+    for (const d of nodes) {
+      results.push({
+        profile: 'agid', severity: 'Info', path: 'dct:rightsHolder/dct:identifier', message: IPA_MSG, original: IPA_MSG,
+        component: 'IndicePA', focus: termText(d), where: ownerOf(dataDs, d, owners),
+        value: JSON.stringify(code) + (hint.has(k) ? ' — ' + hint.get(k) : ''), shape: '',
+      })
+    }
+  }
+  return { results, meta }
+}
+
+// opts.ipa === false salta la verifica su IndicePA (es. test senza rete)
+export async function runValidation (dataDs, profiles, selected, opts = {}) {
   const all = []
   const meta = {}
   for (const key of selected) {
@@ -308,7 +381,14 @@ export async function runValidation (dataDs, profiles, selected) {
       ])
     }
     all.push(...await validateProfile(dataDs, shapes, key))
-    if (key === 'agid') all.push(...agidChecks(dataDs))
+    if (key === 'agid') {
+      all.push(...agidChecks(dataDs))
+      if (opts.ipa !== false) {
+        const r = await ipaCheck(dataDs)
+        meta.ipa = r.meta
+        all.push(...r.results)
+      }
+    }
   }
   return { results: all, meta }
 }

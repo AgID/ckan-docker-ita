@@ -40,7 +40,7 @@ jobs:
           cat risultato.txt
           grep -q '"hvd Violation":7' risultato.txt
           grep -q '"dcatapit Violation":10' risultato.txt
-          node test/run.mjs test/agid.ttl agid > agid.txt || true
+          IPA=0 node test/run.mjs test/agid.ttl agid > agid.txt || true
           cat agid.txt
           grep -q '"agid Info":5' agid.txt
       - run: npm run build
