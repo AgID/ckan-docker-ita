@@ -272,7 +272,7 @@ export function agidChecks (dataDs) {
     const hid = first(holder, ident)
     const m = /^([^:]+):/.exec(id.value)
     if (!m || !hid || hid.termType !== 'Literal' || !hid.value) continue
-    if (m[1].toLowerCase() === hid.value.trim().toLowerCase()) continue
+    if (m[1] === hid.value.trim()) continue   // confronto esatto: i codici IPA vanno scritti come in IndicePA
     out.push({
       profile: 'agid', severity: 'Info', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
       component: 'CodiceIPA', focus: termText(d), where: ownerOf(dataDs, d, owners),
@@ -299,7 +299,7 @@ export const PROFILE_LABELS = {
 export const IPA_API = 'https://indicepa.gov.it/ipa-dati/api/3/action/datastore_search_sql'
 export const IPA_ENTI = 'd09adf99-dc10-4349-8c53-27b1e5aa97b6'   // dataset "enti"
 export const IPA_UO = 'b0aa1f6c-f135-4c8a-b416-396fed4e1a5d'     // dataset "unita-organizzative"
-export const IPA_MSG = "Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA: nessun ente con questo codice"
+export const IPA_MSG = "Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA"
 export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
   const ident = rdf.namedNode(DCT + 'identifier')
   const byCode = new Map()   // codice minuscolo -> nodi titolare
@@ -308,13 +308,14 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
       const c = i.object.termType === 'Literal' ? i.object.value.trim() : ''
       if (!/^[A-Za-z0-9_]{2,40}$/.test(c)) continue   // fuori formato: lo segnala gia' la regola sul formato
       const k = c.toLowerCase()
-      if (!byCode.has(k)) byCode.set(k, { code: c, nodes: [] })
-      byCode.get(k).nodes.push(q.subject)
+      if (!byCode.has(k)) byCode.set(k, { codes: new Set(), nodes: [] })
+      byCode.get(k).codes.add(c)
+      byCode.get(k).nodes.push([q.subject, c])
     }
   }
   const meta = { checked: byCode.size, notFound: 0, error: '' }
   if (!byCode.size) return { results: [], meta }
-  const found = new Set()
+  const official = new Map()
   const hint = new Map()   // codice minuscolo -> suggerimento (UO o codice fiscale di un ente)
   // a blocchi di 150 codici; ogni codice e' gia' [A-Za-z0-9_], quindi sicuro dentro la stringa SQL
   const query = async (codes, build) => {
@@ -330,8 +331,14 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
     return out
   }
   try {
-    for (const rec of await query([...byCode.keys()], l => `SELECT lower("Codice_IPA") AS c FROM "${IPA_ENTI}" WHERE lower("Codice_IPA") IN (${l})`)) found.add(String(rec.c))
-    const missing = [...byCode.keys()].filter(k => !found.has(k))
+    // ricerca senza distinguere maiuscole, poi confronto esatto: "unito" non e' "UNITO"
+    // official: minuscolo -> codice come scritto in IndicePA
+    for (const rec of await query([...byCode.keys()], l => `SELECT "Codice_IPA" AS c FROM "${IPA_ENTI}" WHERE lower("Codice_IPA") IN (${l})`)) official.set(String(rec.c).toLowerCase(), String(rec.c))
+    for (const [k, { codes }] of byCode) {
+      const ok = official.get(k)
+      if (ok && [...codes].some(c => c !== ok)) hint.set(k, `maiuscole/minuscole diverse da IndicePA: il codice è ${ok}`)
+    }
+    const missing = [...byCode.keys()].filter(k => !official.has(k))
     // spesso al posto del codice dell'ente c'e' il codice di una sua unita' organizzativa o il codice fiscale
     if (missing.length) {
       for (const rec of await query(missing.map(k => k.toUpperCase()), l => `SELECT upper("Codice_uni_uo") AS c, "Codice_IPA" AS ipa, "Descrizione_uo" AS d FROM "${IPA_UO}" WHERE upper("Codice_uni_uo") IN (${l})`)) {
@@ -350,14 +357,16 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
   }
   const owners = new Map()
   const results = []
-  for (const [k, { code, nodes }] of byCode) {
-    if (found.has(k)) continue
+  for (const [k, { nodes }] of byCode) {
+    const ok = official.get(k)
+    const bad = nodes.filter(([, c]) => c !== ok)
+    if (!bad.length) continue
     meta.notFound++
-    for (const d of nodes) {
+    for (const [d, code] of bad) {
       results.push({
         profile: 'agid', severity: 'Info', path: 'dct:rightsHolder/dct:identifier', message: IPA_MSG, original: IPA_MSG,
         component: 'IndicePA', focus: termText(d), where: ownerOf(dataDs, d, owners),
-        value: JSON.stringify(code) + (hint.has(k) ? ' — ' + hint.get(k) : ''), shape: '',
+        value: JSON.stringify(code) + ' — ' + (hint.get(k) || 'nessun ente con questo codice'), shape: '',
       })
     }
   }

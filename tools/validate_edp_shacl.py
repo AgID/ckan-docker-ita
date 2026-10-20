@@ -79,8 +79,7 @@ AGID_PREFIX_MSG = ("Il prefisso dell'identificativo del dataset non coincide con
 IPA_API = "https://indicepa.gov.it/ipa-dati/api/3/action/datastore_search_sql"
 IPA_ENTI = "d09adf99-dc10-4349-8c53-27b1e5aa97b6"   # dataset "enti" di IndicePA
 IPA_UO = "b0aa1f6c-f135-4c8a-b416-396fed4e1a5d"     # dataset "unita-organizzative"
-IPA_MSG = ("Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA: "
-           "nessun ente con questo codice")
+IPA_MSG = "Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA"
 HEAD_NOTE = ("Prima dell'harvesting verificare sempre che l'endpoint del catalogo e, a campione, "
              "le risorse rispondano 200 a HEAD (curl -I <url>), senza WAF o altri blocchi: devono "
              "essere aperti. I dati aperti devono essere accessibili e interoperabili.")
@@ -204,7 +203,7 @@ def agid_checks(data):
         hid = data.value(h, ident)
         if hid is None or not str(hid).strip():
             continue
-        if str(i).split(":", 1)[0].lower() != str(hid).strip().lower():
+        if str(i).split(":", 1)[0] != str(hid).strip():   # esatto: i codici IPA vanno scritti come in IndicePA
             out.append({"focus": str(d), "value": f'"{i}" != titolare "{hid}"'})
     return out
 
@@ -233,15 +232,19 @@ def ipa_check(data):
         for i in data.objects(h, URIRef(DCT + "identifier")):
             c = str(i).strip()
             if re.fullmatch(r"[A-Za-z0-9_]{2,40}", c):
-                by_code.setdefault(c.lower(), (c, []))[1].append(d)
+                by_code.setdefault(c.lower(), []).append((d, c))
     meta = {"checked": len(by_code), "notFound": 0, "error": ""}
     if not by_code:
         return [], meta
     hint = {}
     try:
-        found = {str(r["c"]) for r in ipa_query(list(by_code), lambda l: (
-            f'SELECT lower("Codice_IPA") AS c FROM "{IPA_ENTI}" WHERE lower("Codice_IPA") IN ({l})'))}
-        missing = [k for k in by_code if k not in found]
+        # ricerca senza distinguere maiuscole, poi confronto esatto: "unito" non e' "UNITO"
+        official = {str(r["c"]).lower(): str(r["c"]) for r in ipa_query(list(by_code), lambda l: (
+            f'SELECT "Codice_IPA" AS c FROM "{IPA_ENTI}" WHERE lower("Codice_IPA") IN ({l})'))}
+        for k, nodes in by_code.items():
+            if k in official and any(c != official[k] for _, c in nodes):
+                hint[k] = f"maiuscole/minuscole diverse da IndicePA: il codice è {official[k]}"
+        missing = [k for k in by_code if k not in official]
         if missing:
             for r in ipa_query([k.upper() for k in missing], lambda l: (
                     f'SELECT upper("Codice_uni_uo") AS c, "Codice_IPA" AS ipa, "Descrizione_uo" AS d '
@@ -258,12 +261,13 @@ def ipa_check(data):
         meta["error"] = str(e)
         return [], meta
     out = []
-    for k, (code, nodes) in by_code.items():
-        if k in found:
+    for k, nodes in by_code.items():
+        bad = [(d, c) for d, c in nodes if c != official.get(k)]
+        if not bad:
             continue
         meta["notFound"] += 1
-        for d in nodes:
-            out.append({"focus": str(d), "value": f'"{code}"' + (f" — {hint[k]}" if k in hint else "")})
+        for d, code in bad:
+            out.append({"focus": str(d), "value": f'"{code}" — ' + hint.get(k, "nessun ente con questo codice")})
     return out, meta
 
 

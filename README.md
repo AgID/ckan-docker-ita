@@ -269,8 +269,9 @@ rendono il catalogo non conforme. La PEC si riconosce in modo euristico (`pec`
 come parte dell'indirizzo, `cert.`, gestori PEC noti). Non e' incluso in `it`;
 lo e' in `tutti`.
 
-Il codice IPA del titolare (`dct:rightsHolder/dct:identifier`) viene cercato,
-senza distinguere maiuscole e minuscole, nel dataset "enti" di IndicePA
+Il codice IPA del titolare (`dct:rightsHolder/dct:identifier`) deve comparire,
+scritto esattamente allo stesso modo (maiuscole comprese: `UNITO`, non `unito`),
+nel dataset "enti" di IndicePA
 (`https://indicepa.gov.it/ipa-dati`, API `datastore_search_sql`); il vecchio
 dataset "amministrazioni" e' nel formato precedente al 2021 e IndicePA stesso
 rimanda a "enti". A IndicePA si inviano solo i codici, gia' filtrati sul

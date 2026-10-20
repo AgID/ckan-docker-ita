@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-20` — validatore: codice IPA confrontato con maiuscole e minuscole
+- Il confronto con IndicePA non distingueva maiuscole e minuscole, quindi `unito` passava anche se in IndicePA il codice dell'Universita' di Torino e' `UNITO`. Ora il codice deve essere scritto esattamente come in IndicePA; se differisce solo per le maiuscole l'indicazione dice quale e' quello giusto: `"unito" — maiuscole/minuscole diverse da IndicePA: il codice e' UNITO`. Gli altri casi riportano il motivo (unita' organizzativa, codice fiscale, "nessun ente con questo codice").
+- Anche il controllo "prefisso dell'identificativo uguale al codice IPA del titolare" ora e' esatto: `unito:dataset` con titolare `UNITO` viene segnalato.
+- Su dati.gov.it oggi 21 codici di titolari (444 dataset) differiscono da IndicePA solo per le maiuscole, per esempio `R_SARDEG` (in IndicePA `r_sardeg`), `istat` (`ISTAT`), `pcm` (`PCM`), `avepa` (`AVEPA`).
+- Stessa modifica nello script (`validate_edp_shacl.py --profile agid`).
+
 ## `2026-10-20` — validatore: codice IPA del titolare verificato su IndicePA
 - Nuova indicazione AgID: il codice IPA del titolare (`dct:rightsHolder/dct:identifier`) deve esistere nell'elenco degli enti di IndicePA. Se non c'e': "Il codice IPA del titolare non e' allineato a IndicePA".
 - Fonte: dataset "enti" di `https://indicepa.gov.it/ipa-dati` (CKAN, API `datastore_search_sql`, CORS aperto), confronto senza distinguere maiuscole e minuscole. Il dataset "amministrazioni" non si usa: e' nel formato precedente al 31 marzo 2021, il suo datastore e' vuoto e IndicePA stesso consiglia "enti".
