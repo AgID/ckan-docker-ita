@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-20` — validatore: filtro per profilo dopo una nuova validazione
+- Se si filtrava l'elenco su un profilo (clic sul suo riquadro) e poi lo si deselezionava e si validava di nuovo, l'elenco restava vuoto senza un riquadro su cui ricliccare. Ora il filtro torna su tutti i profili quando quello filtrato non e' piu' selezionato.
+
 ## `2026-10-20` — validatore: nota della scheda CKAN
 - La nota sotto «Scarica e valida» diceva che dati.gov.it non permette la lettura da altre pagine: non e' piu' vero. Ora spiega in generale che serve il CORS e cosa fare se manca.
 

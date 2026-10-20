@@ -179,6 +179,8 @@ async function validate () {
     const { results, meta } = await runValidation(ds, profiles, sel)
     const ms = Math.round(performance.now() - t0)
     state.last = { results, groups: groupResults(results, Infinity), stats: st, meta, selected: sel, sourceName: src.name, format: fmt, ms, at: new Date() }
+    // il filtro per profilo non sopravvive se quel profilo non e' piu' selezionato
+    if (!sel.includes(state.filterProfile)) state.filterProfile = 'tutti'
     setStatus('done', `Validato in ${(ms / 1000).toFixed(1)} s`)
     render()
   } catch (e) {
