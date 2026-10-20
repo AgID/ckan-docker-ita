@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-20` — validatore: nota della scheda CKAN
+- La nota sotto «Scarica e valida» diceva che dati.gov.it non permette la lettura da altre pagine: non e' piu' vero. Ora spiega in generale che serve il CORS e cosa fare se manca.
+
 ## `2026-10-20` — validatore: codice IPA confrontato con maiuscole e minuscole
 - Il confronto con IndicePA non distingueva maiuscole e minuscole, quindi `unito` passava anche se in IndicePA il codice dell'Universita' di Torino e' `UNITO`. Ora il codice deve essere scritto esattamente come in IndicePA; se differisce solo per le maiuscole l'indicazione dice quale e' quello giusto: `"unito" — maiuscole/minuscole diverse da IndicePA: il codice e' UNITO`. Gli altri casi riportano il motivo (unita' organizzativa, codice fiscale, "nessun ente con questo codice").
 - Anche il controllo "prefisso dell'identificativo uguale al codice IPA del titolare" ora e' esatto: `unito:dataset` con titolare `UNITO` viene segnalato.
