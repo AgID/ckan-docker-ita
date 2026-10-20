@@ -18,7 +18,7 @@ Uscita (la cartella viene riscritta a ogni esecuzione, senza storico):
   <out>/<slug>/<slug>.csv elenco puntuale delle segnalazioni della PA
 
 Uso:
-  python3 report_settimanale.py --out /home/ubuntu/portale-datigov/volume-drupal/default/files/monitoraggio/files/validazione
+  python3 report_settimanale.py --out /path
   python3 report_settimanale.py --out out --org regione-toscana --org comune-di-bitonto
   python3 report_settimanale.py --out out --limit 10            # prime 10 PA (prova)
   python3 report_settimanale.py --out out --telegram ~/.config/report-validazione.json
