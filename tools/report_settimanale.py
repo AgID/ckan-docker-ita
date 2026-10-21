@@ -119,14 +119,31 @@ def _host_lock(url):
         return _host_locks[host]
 
 
+# Alcuni server (es. un filtro anti-bot della Regione FVG) rispondono 403 a chi si presenta
+# come browser senza esserlo, ma accettano l'user agent dell'harvester di dati.gov.it; altri
+# (WAF di dati.gov.it, IndicePA) vogliono quello da browser. Su un 403 si riprova una volta con
+# l'user agent dell'harvester e, se passa, per quel server si usa quello fino alla fine.
+HARVESTER_UA = "dati.gov.it-harvester/1.0 (+https://dati.gov.it/it/harvester; segnalazioni@dati.gov.it) Mozilla/5.0 (compatible)"
+_ua_host = {}
+
+
 def http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
+    host = urllib.parse.urlsplit(url).netloc.lower()
     with _host_lock(url):
-        return _http(url, method, timeout, headers, data)
+        ua = _ua_host.get(host, V.UA)
+        st, body, info = _http(url, method, timeout, headers, data, ua)
+        if st == 403 and ua != HARVESTER_UA:
+            st2, body2, info2 = _http(url, method, timeout, headers, data, HARVESTER_UA)
+            if st2 != 403:
+                _ua_host[host] = HARVESTER_UA
+                info2["ua"] = "harvester"
+                return st2, body2, info2
+        return st, body, info
 
 
-def _http(url, method="GET", timeout=TIMEOUT, headers=None, data=None):
+def _http(url, method="GET", timeout=TIMEOUT, headers=None, data=None, ua=None):
     """Restituisce (status, body|None, info) senza sollevare eccezioni."""
-    h = {"User-Agent": V.UA, "Accept": "text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1"}
+    h = {"User-Agent": ua or V.UA, "Accept": "text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1"}
     h.update(headers or {})
     req = urllib.request.Request(url, method=method, headers=h, data=data)
     t0 = time.time()

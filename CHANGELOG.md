@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-21` — report settimanale: secondo tentativo con l'user agent dell'harvester sui 403
+- Alcuni server rispondono 403 a chi si presenta come browser senza esserlo (es. il catalogo della Regione FVG: 403 con l'user agent di Chrome, 200 con curl o con l'user agent dell'harvester di dati.gov.it). Su un 403 lo script riprova una volta con `dati.gov.it-harvester/1.0` e, se passa, usa quello per tutte le richieste successive a quel server. Gli altri server restano con l'user agent da browser, che serve per il WAF di dati.gov.it e per IndicePA.
+
 ## `2026-10-21` — dcatapit: distribuzione non piu' sdoppiata quando manca l'URI originale
 - Se una risorsa harvestata non conserva il proprio URI, l'indirizzo della distribuzione si costruisce come ripiego. Il profilo europeo (`euro_dcat_ap.py`) e il profilo dcatapit applicano pero' due elenchi diversi di sostituzioni di dominio per titolare (es. il Comune di Lecce, `c_e506`, solo nel primo). Il risultato erano due nodi: quello collegato al dataset senza formato, licenza e titolo, e un secondo nodo con quei dati ma non collegato. Il validatore segnalava formato e licenza mancanti.
 - Ora il profilo dcatapit, se il proprio indirizzo non e' tra le distribuzioni del dataset, usa il nodo gia' collegato con lo stesso id di risorsa.
