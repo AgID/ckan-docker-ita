@@ -75,6 +75,8 @@ input[type=text], input[type=url], input[type=number], select, textarea {
   width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; background: var(--bg); color: var(--ink); }
 textarea { min-height: 150px; font-family: var(--f-mono); font-size: .8rem; resize: vertical; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: .88rem; cursor: pointer; }
+.check input { accent-color: var(--accent); margin: 0; }
 .preview { font-family: var(--f-mono); font-size: .75rem; color: var(--muted); background: var(--bg); padding: 6px 8px; border-radius: 4px; overflow-wrap: anywhere; }
 .note { font-size: .82rem; color: var(--muted); }
 
@@ -210,6 +212,8 @@ details.row summary:hover { background: var(--bg); }
             <label class="f">Pagina<input type="number" id="ckan-page" min="1" value="1"></label>
             <label class="f">Formato<select id="ckan-format"><option value="ttl">Turtle</option><option value="rdf">RDF/XML</option><option value="jsonld">JSON-LD</option></select></label>
           </div>
+          <label class="check"><input type="checkbox" id="ckan-all"> Tutte le pagine del catalogo</label>
+          <p class="note" id="ckan-all-note" hidden>Le pagine (100 dataset ciascuna) si scaricano e si validano una dopo l'altra, come fa data.europa.eu; il report le unisce. Le segnalazioni ripetute identiche in ogni pagina, come quelle sul catalogo radice, si contano una volta.</p>
           <label class="f">Nome del dataset (facoltativo)<input type="text" id="ckan-name" placeholder="es. interventi-aerei-aib"></label>
           <label class="f">Filtro Solr (facoltativo)<input type="text" id="ckan-fq" placeholder="es. organization:regione-puglia"></label>
           <div class="preview" id="ckan-preview"></div>

@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-21` — validazione di tutto il catalogo
+- Validatore web, scheda CKAN: nuova opzione «Tutte le pagine del catalogo». Le pagine del `catalog.ttl` (100 dataset ciascuna) si scaricano e si validano una dopo l'altra seguendo `hydra:lastPage`/`hydra:nextPage`, con l'avanzamento a schermo e il bottone «Interrompi»; il report e le esportazioni JSON/CSV le uniscono. I codici IPA si chiedono a IndicePA una volta sola per tutto il catalogo.
+- `validate_edp_shacl.py`: `--pages tutte` (o `all`) legge il numero di pagine dall'`hydra:lastPage` della prima.
+- In entrambi, ogni pagina resta validata da sola, come fa data.europa.eu; si conta una volta sola la segnalazione identica ripetuta in ogni pagina su una risorsa con IRI (es. `dct:language` del catalogo radice). Anche il conteggio dei codici IPA verificati non si somma piu' pagina per pagina. Su dati.comune.lecce.it (5 pagine): da 24 a 16 violazioni, 13 ripetizioni fuse, 1 codice IPA invece di 5.
+
 ## `2026-10-20` — script cron senza percorsi del server
 - `run_validazione.sh` non contiene piu' percorsi di installazione: cartella di uscita (`OUT`, obbligatoria) e indirizzo pubblico del report (`URL`) si leggono da `run_validazione.conf` nella cartella dello script, escluso dalla repo. Senza `OUT` lo script si ferma con un messaggio.
 

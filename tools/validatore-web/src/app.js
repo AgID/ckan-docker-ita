@@ -1,4 +1,4 @@
-import { MAX_BYTES, buildProfiles, datasetFromText, detectFormat, runValidation, groupResults, stats, PROFILE_LABELS } from './engine.js'
+import { MAX_BYTES, buildProfiles, datasetFromText, detectFormat, runValidation, groupResults, stats, pagingInfo, catalogIris, mergePages, PROFILE_LABELS } from './engine.js'
 import edp from '../../shapes/edp/shapes.ttl'
 import edpDeprecated from '../../shapes/edp/deprecateduris.ttl'
 import edpRecommended from '../../shapes/edp/shapes_recommended.ttl'
@@ -46,6 +46,8 @@ function fmtBytes (n) {
 }
 
 const troppoGrande = n => `File troppo grande (${fmtBytes(n)}): il limite è ${fmtBytes(MAX_BYTES)}. Valida una pagina alla volta (?page=N) o un sottoinsieme.`
+// tetto di sicurezza per «Tutte le pagine»: oltre si interrompe (dati.gov.it ne ha ~650)
+const MAX_PAGES = 2000
 
 async function readFile (file) {
   if (file.size > MAX_BYTES) { setStatus('error', troppoGrande(file.size)); return }
@@ -54,13 +56,14 @@ async function readFile (file) {
   validate()
 }
 
-function ckanUrl () {
+// pageOverride: numero di pagina imposto (modalita' «Tutte le pagine»)
+function ckanUrl (pageOverride) {
   const base = $('#ckan-base').value.trim().replace(/\/+$/, '')
   if (!base) return ''
   const fmt = $('#ckan-format').value
   const params = new URLSearchParams()
-  const page = $('#ckan-page').value.trim()
-  if (page && page !== '1') params.set('page', page)
+  const page = pageOverride ? String(pageOverride) : $('#ckan-page').value.trim()
+  if (pageOverride || (page && page !== '1')) params.set('page', page)
   const name = $('#ckan-name').value.trim()
   const fq = $('#ckan-fq').value.trim()
   if (name) params.set('fq', 'name:' + name)
@@ -68,9 +71,13 @@ function ckanUrl () {
   const q = params.toString()
   return `${base}/catalog.${fmt}${q ? '?' + q : ''}`
 }
+const allPages = () => $('#ckan-all').checked
 function refreshCkanPreview () {
-  const u = ckanUrl()
-  $('#ckan-preview').textContent = u || 'https://…/catalog.ttl'
+  const all = allPages()
+  $('#ckan-page').disabled = all
+  $('#ckan-all-note').hidden = !all
+  const u = all ? ckanUrl(1) : ckanUrl()
+  $('#ckan-preview').textContent = u ? (all ? u.replace(/page=1$/, 'page=1, 2, 3 … fino all\'ultima') : u) : 'https://…/catalog.ttl'
 }
 
 // legge la risposta fermandosi oltre MAX_BYTES (null se superato)
@@ -96,26 +103,116 @@ function isHttpUrl (u) {
   try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' } catch { return false }
 }
 
+class TooBig extends Error {}
+// scarica un indirizzo http/https; null se l'indirizzo non e' valido
+async function fetchText (url) {
+  if (!isHttpUrl(url)) return null
+  // al massimo 2 minuti: un server che non risponde non blocca la pagina
+  const r = await fetch(url, { signal: AbortSignal.timeout(120000), referrerPolicy: 'no-referrer', credentials: 'omit', headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
+  if (!r.ok) throw new Error('HTTP ' + r.status)
+  const text = await readCapped(r)
+  if (text === null) throw new TooBig()
+  return text
+}
+const indirizzoNonValido = () => setStatus('error', 'Indirizzo non valido: sono ammessi solo indirizzi http:// o https://')
+function fetchError (url, e) {
+  if (e instanceof TooBig) { setStatus('error', troppoGrande(MAX_BYTES + 1)); return }
+  setStatus('error', '')
+  // il link compare solo per indirizzi http/https gia' verificati: mai javascript:, data: ecc.
+  $('#status').innerHTML = `<strong>Il browser non può leggere questo indirizzo.</strong> Quasi sempre è il server che non permette la lettura da altre pagine (CORS). ` +
+    `Apri <a href="${esc(new URL(url).href)}" target="_blank" rel="noopener noreferrer">il file</a>, salvalo e caricalo nella scheda File. <span class="mono">(${esc(e.message)})</span>`
+}
+
 async function fetchUrl (url) {
   setStatus('busy', 'Scarico ' + url)
   try {
-    if (!isHttpUrl(url)) {
-      setStatus('error', 'Indirizzo non valido: sono ammessi solo indirizzi http:// o https://')
-      return
-    }
-    // al massimo 2 minuti: un server che non risponde non blocca la pagina
-    const r = await fetch(url, { signal: AbortSignal.timeout(120000), referrerPolicy: 'no-referrer', credentials: 'omit', headers: { Accept: 'text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, */*;q=0.1' } })
-    if (!r.ok) throw new Error('HTTP ' + r.status)
-    const text = await readCapped(r)
-    if (text === null) { setStatus('error', troppoGrande(MAX_BYTES + 1)); return }
+    const text = await fetchText(url)
+    if (text === null) { indirizzoNonValido(); return }
     const name = url.split('/').pop() || url
     setSource({ kind: 'url', name, text, url })
     validate()
   } catch (e) {
-    setStatus('error', '')
-    // il link compare solo per indirizzi http/https gia' verificati: mai javascript:, data: ecc.
-    $('#status').innerHTML = `<strong>Il browser non può leggere questo indirizzo.</strong> Quasi sempre è il server che non permette la lettura da altre pagine (CORS). ` +
-      `Apri <a href="${esc(new URL(url).href)}" target="_blank" rel="noopener noreferrer">il file</a>, salvalo e caricalo nella scheda File. <span class="mono">(${esc(e.message)})</span>`
+    fetchError(url, e)
+  }
+}
+
+// «Tutte le pagine»: scarica e valida le pagine una alla volta seguendo hydra:lastPage/nextPage
+// del catalogo; ogni pagina si valida da sola (come EDP) e i risultati si uniscono alla fine.
+let stopRequested = false
+async function fetchAllPages () {
+  if (running) return
+  const sel = selectedProfiles()
+  if (!sel.length) { setStatus('error', 'Seleziona almeno un profilo.'); return }
+  const first = ckanUrl(1)
+  if (!isHttpUrl(first)) { indirizzoNonValido(); return }
+  running = true
+  stopRequested = false
+  const t0 = performance.now()
+  const pages = []
+  const ipaCache = new Map()
+  let last = null
+  let total = null
+  let bytes = 0
+  let fmt = ''
+  let stopped = ''
+  try {
+    const profiles = await getProfiles()
+    for (let n = 1; n <= MAX_PAGES; n++) {
+      if (stopRequested) { stopped = 'interrotta'; break }
+      const url = ckanUrl(n)
+      const di = last ? ` di ${last}` : ''
+      const fatti = pages.length ? ` · ${pages.reduce((a, p) => a + p.stats.datasets, 0).toLocaleString('it-IT')} dataset finora` : ''
+      setStatus('busy', `Pagina ${n}${di}: scarico…${fatti}`, true)
+      let text
+      try {
+        text = await fetchText(url)
+      } catch (e) {
+        if (!pages.length) { fetchError(url, e); return }
+        stopped = `pagina ${n} non scaricata (${e instanceof TooBig ? 'troppo grande' : e.message})`
+        break
+      }
+      bytes += text.length
+      setStatus('busy', `Pagina ${n}${di}: valido…${fatti}`, true)
+      await new Promise(r => setTimeout(r, 0))
+      if ($('#fmt').value === 'auto') fmt = detectFormat(text, url.split('?')[0])
+      else fmt = $('#fmt').value
+      let ds
+      try {
+        ds = await datasetFromText(text, fmt)
+      } catch (e) {
+        throw new Error(`La pagina ${n} non è RDF valido (${fmtLabel(fmt)}): ${e.message}`)
+      }
+      text = null
+      const st = stats(ds)
+      const pg = pagingInfo(ds)
+      if (n === 1) { last = pg.last; total = pg.total }
+      // pagina vuota oltre la fine (portali senza hydra): ci si ferma senza contarla
+      if (n > 1 && !st.datasets && !st.services) break
+      const { results, meta } = await runValidation(ds, profiles, sel, { ipaCache })
+      pages.push({ results, meta, stats: st, catalogs: catalogIris(ds) })
+      const hasNext = last ? n < last : pg.next != null && pg.next > n
+      if (!hasNext) break
+      if (n === MAX_PAGES) stopped = `fermata al tetto di ${MAX_PAGES} pagine`
+    }
+    const merged = mergePages(pages)
+    const ms = Math.round(performance.now() - t0)
+    const base = $('#ckan-base').value.trim().replace(/\/+$/, '')
+    const nome = `${base.replace(/^https?:\/\//, '')} · catalog.${$('#ckan-format').value} · ${pages.length} ${pages.length === 1 ? 'pagina' : 'pagine'}`
+    setSource({ kind: 'ckan-tutte', name: nome, text: '' })
+    $('#src-size').textContent = fmtBytes(bytes)
+    state.last = { results: merged.results, groups: groupResults(merged.results, Infinity), stats: merged.stats, meta: merged.meta, selected: sel, sourceName: nome, format: fmt, ms, at: new Date(),
+      pages: { count: pages.length, last, total, duplicates: merged.duplicates, stopped } }
+    if (!sel.includes(state.filterProfile)) state.filterProfile = 'tutti'
+    const nota = stopped ? ` · ${stopped}` : ''
+    setStatus(stopped ? 'error' : 'done', `Validate ${pages.length}${last ? ' di ' + last : ''} pagine in ${(ms / 1000).toFixed(1)} s${nota}`)
+    render()
+  } catch (e) {
+    $('#results').hidden = true
+    state.last = null
+    setStatus('error', e.message)
+  } finally {
+    running = false
+    $('#run').disabled = false
   }
 }
 
@@ -123,12 +220,14 @@ async function fetchUrl (url) {
 function selectedProfiles () {
   return ORDER.filter(k => document.getElementById('p-' + k).checked)
 }
-function setStatus (kind, text) {
+// stoppable: aggiunge il bottone «Interrompi» (validazione di tutte le pagine)
+function setStatus (kind, text, stoppable = false) {
   const el = $('#status')
   el.dataset.kind = kind
   el.textContent = text
   if (kind === 'busy') {
     el.insertAdjacentHTML('afterbegin', '<span class="spin" aria-hidden="true"></span>')
+    if (stoppable) el.insertAdjacentHTML('beforeend', stopRequested ? ' <span class="muted">· mi fermo dopo questa pagina</span>' : ' <button class="btn small" type="button" id="stop">Interrompi</button>')
     $('#busy-text').textContent = text
   }
   busy(kind === 'busy')
@@ -156,6 +255,7 @@ let running = false
 async function validate () {
   if (running) return
   const src = state.source
+  if (src.kind === 'ckan-tutte') return fetchAllPages()
   if (!src.text || !src.text.trim()) { setStatus('error', 'Nessun contenuto da validare.'); return }
   const sel = selectedProfiles()
   if (!sel.length) { setStatus('error', 'Seleziona almeno un profilo.'); return }
@@ -213,7 +313,10 @@ function render () {
   $('#verdict-text').textContent = ok ? 'Conforme' : 'Non conforme'
   const avvisi = tot.Warning ? ` · ${tot.Warning.toLocaleString('it-IT')} avvisi` : ''
   const indic = tot.Info ? ` · ${tot.Info.toLocaleString('it-IT')} indicazioni AgID` : ''
-  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple${avvisi}${indic}`
+  const P = L.pages
+  const dup = P && P.duplicates ? ` · ${P.duplicates.toLocaleString('it-IT')} segnalazioni ripetute fra le pagine contate una volta` : ''
+  const parz = P && P.stopped ? ` · validazione parziale: ${P.stopped}` : ''
+  $('#verdict-sub').textContent = `${L.sourceName} · ${fmtLabel(L.format)} · ${L.stats.triples.toLocaleString('it-IT')} triple${avvisi}${indic}${dup}${parz}`
 
   const st = L.stats
   const hvdM = L.meta.hvd
@@ -320,6 +423,7 @@ function reportJson () {
     profili: L.selected.map(p => PROFILE_LABELS[p]),
     conforme: countBy(L.results).Violation === 0,
     conteggi: L.stats, hvd: L.meta.hvd || null, indicepa: L.meta.ipa || null,
+    pagine: L.pages ? { validate: L.pages.count, ultima: L.pages.last, dataset_dichiarati: L.pages.total, ripetute_fuse: L.pages.duplicates, interruzione: L.pages.stopped || null } : null,
     totali: Object.fromEntries(L.selected.map(p => [PROFILE_LABELS[p], countBy(L.results, p)])),
     risultati: L.results,
   }, null, 2)
@@ -334,7 +438,7 @@ function reportCsv () {
 let downloadsP = null
 async function save (kind) {
   if (!state.last) return
-  const base = state.last.sourceName.replace(/\.[^.]+$/, '') + '-validazione'
+  const base = (state.last.pages ? state.last.sourceName.split(' · ')[0].replace(/[^\w.-]+/g, '_') + '-catalogo' : state.last.sourceName.replace(/\.[^.]+$/, '')) + '-validazione'
   const data = kind === 'json' ? reportJson() : reportCsv()
   const filename = base + '.' + kind
   if (!window.claude?.use) {
@@ -375,8 +479,18 @@ function init () {
     return true
   }
   $('#paste').addEventListener('input', usePaste)
-  for (const id of ['ckan-base', 'ckan-page', 'ckan-name', 'ckan-fq', 'ckan-format']) $('#' + id).addEventListener('input', refreshCkanPreview)
-  $('#ckan-go').addEventListener('click', () => { const u = ckanUrl(); if (u) fetchUrl(u) })
+  for (const id of ['ckan-base', 'ckan-page', 'ckan-name', 'ckan-fq', 'ckan-format', 'ckan-all']) $('#' + id).addEventListener('input', refreshCkanPreview)
+  $('#ckan-all').addEventListener('change', refreshCkanPreview)
+  const goCkan = () => {
+    const u = ckanUrl(); if (!u) { setStatus('error', "Indica l'indirizzo base del portale CKAN."); return }
+    return allPages() ? fetchAllPages() : fetchUrl(u)
+  }
+  $('#ckan-go').addEventListener('click', goCkan)
+  $('#status').addEventListener('click', e => {
+    if (e.target.id !== 'stop') return
+    stopRequested = true
+    e.target.replaceWith(Object.assign(document.createElement('span'), { className: 'muted', textContent: '· mi fermo dopo questa pagina' }))
+  })
   $('#url-go').addEventListener('click', () => { const u = $('#url').value.trim(); if (u) fetchUrl(u) })
   // "Valida" lavora sulla scheda aperta
   $('#run').addEventListener('click', () => {
@@ -384,8 +498,7 @@ function init () {
       if (!$('#paste').value.trim()) { setStatus('error', 'Incolla prima il testo RDF nel riquadro.'); return }
       if (!usePaste()) return
     } else if (activeTab === 'ckan') {
-      const u = ckanUrl(); if (!u) { setStatus('error', "Indica l'indirizzo base del portale CKAN."); return }
-      return fetchUrl(u)
+      return goCkan()
     } else if (activeTab === 'url') {
       const u = $('#url').value.trim(); if (!u) { setStatus('error', "Indica l'indirizzo del file RDF."); return }
       return fetchUrl(u)

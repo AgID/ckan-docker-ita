@@ -14,6 +14,7 @@ Uso:
   python3 validate_edp_shacl.py https://dati.gov.it/opendata
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --name interventi-aerei-aib-protezione-civile
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --pages 3
+  python3 validate_edp_shacl.py https://dati.comune.lecce.it --pages tutte   # tutto il catalogo
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --fq organization:regione-puglia --pages 2
   python3 validate_edp_shacl.py --file catalog.ttl   # TTL gia' scaricato in locale
   python3 validate_edp_shacl.py https://dati.gov.it/opendata --level 2   # anche le raccomandate
@@ -22,7 +23,10 @@ Uso:
 Opzioni:
   --name NOME       uno o piu' dataset (ripetibile), via catalog.ttl?fq=name:NOME
   --fq FILTRO       filtro Solr libero sul catalog.ttl (ripetibile)
-  --pages N         pagine del catalog.ttl da validare (default 1, 100 dataset/pagina)
+  --pages N         pagine del catalog.ttl da validare (default 1, 100 dataset/pagina);
+                    "tutte" (o "all") le legge tutte, fino all'hydra:lastPage della prima.
+                    Le segnalazioni identiche ripetute in ogni pagina su una risorsa con IRI
+                    (es. il catalogo radice) si contano una volta
   --level 1|2       1 = profilo EDP (default), 2 = aggiunge le shape raccomandate
   --profile LISTA   profili separati da virgola (default: edp):
                       edp         shape piveau usate da data.europa.eu
@@ -52,6 +56,7 @@ import argparse
 import collections
 import json
 import os
+import re
 import sys
 import tempfile
 import urllib.parse
@@ -233,7 +238,7 @@ def ipa_check(data):
             c = str(i).strip()
             if re.fullmatch(r"[A-Za-z0-9_]{2,40}", c):
                 by_code.setdefault(c.lower(), []).append((d, c))
-    meta = {"checked": len(by_code), "notFound": 0, "error": ""}
+    meta = {"checked": len(by_code), "notFound": 0, "error": "", "codes": set(by_code), "missing": set()}
     if not by_code:
         return [], meta
     hint = {}
@@ -266,6 +271,7 @@ def ipa_check(data):
         if not bad:
             continue
         meta["notFound"] += 1
+        meta["missing"].add(k)
         for d, code in bad:
             out.append({"focus": str(d), "value": f'"{code}" — ' + hint.get(k, "nessun ente con questo codice")})
     return out, meta
@@ -309,7 +315,7 @@ def main():
     ap.add_argument("--file", help="valida un file TTL locale invece di scaricarlo")
     ap.add_argument("--name", action="append", default=[])
     ap.add_argument("--fq", action="append", default=[])
-    ap.add_argument("--pages", type=int, default=1)
+    ap.add_argument("--pages", default="1")
     ap.add_argument("--level", type=int, default=1, choices=(1, 2))
     ap.add_argument("--dcatap", default="3.0.0")
     ap.add_argument("--examples", type=int, default=2)
@@ -319,6 +325,14 @@ def main():
     a = ap.parse_args()
     if not a.base and not a.file:
         ap.error("serve l'URL base del CKAN oppure --file")
+    all_pages = str(a.pages).lower() in ("tutte", "all")
+    if not all_pages:
+        try:
+            a.pages = int(a.pages)
+            if a.pages < 1:
+                raise ValueError
+        except ValueError:
+            ap.error("--pages vuole un numero >= 1 oppure 'tutte'")
     try:
         profiles = parse_profiles(a.profile)
     except ValueError as e:
@@ -350,7 +364,21 @@ def main():
             return 2
         sources.append((a.file, open(a.file, encoding="utf-8").read()))
     else:
-        for u in catalog_urls(a.base, a.name, a.fq, a.pages):
+        urls = catalog_urls(a.base, a.name, a.fq, 1 if all_pages else a.pages)
+        if all_pages and not a.name:
+            # numero di pagine dall'hydra:lastPage della prima (Turtle, RDF/XML o JSON-LD)
+            try:
+                first = fetch(urls[0])
+            except Exception as e:
+                print(f"  ERR {urls[0]}: {e}", file=sys.stderr)
+                return 2
+            m = re.search(r"lastPage\W[^\n]*?[?&]page=(\d+)", first)
+            last = int(m.group(1)) if m else 1
+            print(f"  Catalogo paginato: {last} pagine")
+            sources.append((urls[0], first))
+            print(f"  OK  {urls[0]}")
+            urls = catalog_urls(a.base, a.name, a.fq, last)[1:]
+        for u in urls:
             try:
                 sources.append((u, fetch(u)))
                 print(f"  OK  {u}")
@@ -366,7 +394,11 @@ def main():
     n_ds = n_dist = n_triples = 0
     hvd_found = [0, 0, 0]
     ipa_meta = {"checked": 0, "notFound": 0, "error": ""}
+    ipa_codes, ipa_missing = set(), set()
+    # segnalazioni gia' viste in una pagina precedente, su risorse con IRI (non nodi anonimi)
+    seen, duplicates = set(), 0
     for src, text in sources:
+        mine = set()
         data = Graph()
         data.parse(data=text, format=guess_format(text, src), publicID=REL_BASE)
         n_ds += len(set(data.subjects(RDF_TYPE, URIRef("http://www.w3.org/ns/dcat#Dataset"))))
@@ -392,18 +424,26 @@ def main():
                 else:
                     rule = msg
                 key = (sev, prof, path, rule)
+                fn = rg.value(r, URIRef(SH + "focusNode"))
+                if not isinstance(fn, BNode):
+                    dk = (key, msg, str(fn), str(rg.value(r, URIRef(SH + "value")) or ""))
+                    if dk in seen:
+                        duplicates += 1
+                        continue
+                    mine.add(dk)
                 counts[key] += 1
                 if len(examples[key]) < a.examples:
                     examples[key].append({
                         "source": src,
-                        "focus": rel(rg.value(r, URIRef(SH + "focusNode"))),
+                        "focus": rel(fn),
                         "value": rel(rg.value(r, URIRef(SH + "value")) or ""),
                         "message": msg,
                     })
             if prof == "agid" and not a.no_ipa:
                 res, m = ipa_check(data)
-                ipa_meta["checked"] += m["checked"]
-                ipa_meta["notFound"] += m["notFound"]
+                ipa_codes |= m["codes"]
+                ipa_missing |= m["missing"]
+                ipa_meta["checked"], ipa_meta["notFound"] = len(ipa_codes), len(ipa_missing)
                 ipa_meta["error"] = ipa_meta["error"] or m["error"]
                 for x in res:
                     key = ("Info", "agid", "dct:rightsHolder/dct:identifier", IPA_MSG)
@@ -416,7 +456,10 @@ def main():
                     counts[key] += 1
                     if len(examples[key]) < a.examples:
                         examples[key].append({"source": src, "message": AGID_PREFIX_MSG, **x})
+        seen |= mine
     print(f"Dataset: {n_ds}  Distribuzioni: {n_dist}  Triple: {n_triples}")
+    if duplicates:
+        print(f"Segnalazioni ripetute identiche fra le pagine, contate una volta: {duplicates}")
     if "agid" in profiles:
         if a.no_ipa:
             print("IndicePA: verifica dei codici IPA saltata (--no-ipa)")

@@ -97,6 +97,67 @@ export function stats (ds) {
   }
 }
 
+// ---- paginazione del catalogo (hydra:PagedCollection di ckanext-dcat)
+// Numero dell'ultima pagina e della successiva, letti dal ?page=N degli URL hydra;
+// null se il file non e' paginato.
+const HYDRA = 'http://www.w3.org/ns/hydra/core#'
+export function pagingInfo (ds) {
+  const pageOf = p => {
+    for (const q of ds.match(null, rdf.namedNode(HYDRA + p))) {
+      const m = /[?&]page=(\d+)/.exec(q.object.value)
+      if (m) return +m[1]
+    }
+    return null
+  }
+  let total = null
+  for (const q of ds.match(null, rdf.namedNode(HYDRA + 'totalItems'))) total = +q.object.value
+  return { last: pageOf('lastPage'), next: pageOf('nextPage'), total: Number.isFinite(total) ? total : null }
+}
+
+// IRI dei cataloghi: in un catalogo paginato il catalogo radice si ripete in ogni pagina
+export function catalogIris (ds) {
+  return [...new Set([...ds.match(null, rdf.namedNode(NS.rdf + 'type'), rdf.namedNode(NS.dcat + 'Catalog'))].map(q => q.subject.value))]
+}
+
+// Unisce le validazioni di piu' pagine dello stesso catalogo. Ogni pagina si valida da sola
+// (unendo i grafi, i nodi anonimi ripetuti come il dct:publisher darebbero falsi MaxCount);
+// qui si toglie solo cio' che le pagine ripetono identico: una segnalazione su una risorsa
+// con IRI gia' segnalata in una pagina precedente (tipicamente il catalogo radice).
+// I nodi anonimi hanno etichette diverse in ogni pagina e non vengono mai fusi.
+// pages: [{ results, meta, stats, catalogs }]
+export function mergePages (pages) {
+  const seen = new Set()
+  const results = []
+  let duplicates = 0
+  for (const p of pages) {
+    const mine = new Set()
+    for (const r of p.results) {
+      const key = r.focus && !r.focus.startsWith('_:') ? [r.profile, r.severity, r.path, r.message, r.focus, r.value].join('\u0001') : null
+      if (key && seen.has(key)) { duplicates++; continue }
+      if (key) mine.add(key)
+      results.push(r)
+    }
+    for (const k of mine) seen.add(k)
+  }
+  const cats = new Set()
+  const st = { triples: 0, catalogs: 0, datasets: 0, distributions: 0, services: 0 }
+  for (const p of pages) {
+    for (const k of ['triples', 'datasets', 'distributions', 'services']) st[k] += p.stats[k]
+    for (const c of p.catalogs || []) cats.add(c)
+  }
+  st.catalogs = cats.size
+  const meta = {}
+  const hvds = pages.map(p => p.meta.hvd).filter(Boolean)
+  if (hvds.length) meta.hvd = hvds.reduce((a, h) => ({ datasets: a.datasets + h.datasets, distributions: a.distributions + h.distributions, services: a.services + h.services }), { datasets: 0, distributions: 0, services: 0 })
+  const ipas = pages.map(p => p.meta.ipa).filter(Boolean)
+  if (ipas.length) {
+    const codes = new Set(); const missing = new Set()
+    for (const m of ipas) { (m.codes || []).forEach(c => codes.add(c)); (m.missing || []).forEach(c => missing.add(c)) }
+    meta.ipa = { checked: codes.size, notFound: missing.size, error: ipas.map(m => m.error).find(Boolean) || '' }
+  }
+  return { results, meta, stats: st, duplicates }
+}
+
 // ---- individuazione delle risorse HVD (le shape HVD non hanno target propri)
 export function hvdTargets (ds) {
   const t = p => rdf.namedNode(p)
@@ -307,7 +368,9 @@ export const IPA_API = 'https://indicepa.gov.it/ipa-dati/api/3/action/datastore_
 export const IPA_ENTI = 'd09adf99-dc10-4349-8c53-27b1e5aa97b6'   // dataset "enti"
 export const IPA_UO = 'b0aa1f6c-f135-4c8a-b416-396fed4e1a5d'     // dataset "unita-organizzative"
 export const IPA_MSG = "Il codice IPA del titolare (dct:rightsHolder/dct:identifier) non è allineato a IndicePA"
-export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
+// cache (facoltativa, Map codice minuscolo -> { ok, hint }): condivisa fra le pagine di uno
+// stesso catalogo, cosi' ogni codice si chiede a IndicePA una volta sola.
+export async function ipaCheck (dataDs, fetchFn = globalThis.fetch, cache = null) {
   const ident = rdf.namedNode(DCT + 'identifier')
   const byCode = new Map()   // codice minuscolo -> nodi titolare
   for (const q of dataDs.match(null, rdf.namedNode(DCT + 'rightsHolder'))) {
@@ -320,8 +383,9 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
       byCode.get(k).nodes.push([q.subject, c])
     }
   }
-  const meta = { checked: byCode.size, notFound: 0, error: '' }
+  const meta = { checked: byCode.size, notFound: 0, error: '', codes: [...byCode.keys()], missing: [] }
   if (!byCode.size) return { results: [], meta }
+  const todo = cache ? [...byCode.keys()].filter(k => !cache.has(k)) : [...byCode.keys()]
   const official = new Map()
   const hint = new Map()   // codice minuscolo -> suggerimento (UO o codice fiscale di un ente)
   // a blocchi di 150 codici; ogni codice e' gia' [A-Za-z0-9_], quindi sicuro dentro la stringa SQL
@@ -340,12 +404,8 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
   try {
     // ricerca senza distinguere maiuscole, poi confronto esatto: "unito" non e' "UNITO"
     // official: minuscolo -> codice come scritto in IndicePA
-    for (const rec of await query([...byCode.keys()], l => `SELECT "Codice_IPA" AS c FROM "${IPA_ENTI}" WHERE lower("Codice_IPA") IN (${l})`)) official.set(String(rec.c).toLowerCase(), String(rec.c))
-    for (const [k, { codes }] of byCode) {
-      const ok = official.get(k)
-      if (ok && [...codes].some(c => c !== ok)) hint.set(k, `maiuscole/minuscole diverse da IndicePA: il codice è ${ok}`)
-    }
-    const missing = [...byCode.keys()].filter(k => !official.has(k))
+    if (todo.length) for (const rec of await query(todo, l => `SELECT "Codice_IPA" AS c FROM "${IPA_ENTI}" WHERE lower("Codice_IPA") IN (${l})`)) official.set(String(rec.c).toLowerCase(), String(rec.c))
+    const missing = todo.filter(k => !official.has(k))
     // spesso al posto del codice dell'ente c'e' il codice di una sua unita' organizzativa o il codice fiscale
     if (missing.length) {
       for (const rec of await query(missing.map(k => k.toUpperCase()), l => `SELECT upper("Codice_uni_uo") AS c, "Codice_IPA" AS ipa, "Descrizione_uo" AS d FROM "${IPA_UO}" WHERE upper("Codice_uni_uo") IN (${l})`)) {
@@ -362,6 +422,18 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
     meta.error = e.message || String(e)
     return { results: [], meta }
   }
+  if (cache) {
+    for (const k of todo) cache.set(k, { ok: official.get(k) || null, hint: hint.get(k) || '' })
+    for (const k of byCode.keys()) {
+      const c = cache.get(k)
+      if (c.ok) official.set(k, c.ok)
+      if (c.hint) hint.set(k, c.hint)
+    }
+  }
+  for (const [k, { codes }] of byCode) {
+    const ok = official.get(k)
+    if (ok && [...codes].some(c => c !== ok)) hint.set(k, `maiuscole/minuscole diverse da IndicePA: il codice è ${ok}`)
+  }
   const owners = new Map()
   const results = []
   for (const [k, { nodes }] of byCode) {
@@ -369,6 +441,7 @@ export async function ipaCheck (dataDs, fetchFn = globalThis.fetch) {
     const bad = nodes.filter(([, c]) => c !== ok)
     if (!bad.length) continue
     meta.notFound++
+    meta.missing.push(k)
     for (const [d, code] of bad) {
       results.push({
         profile: 'agid', severity: 'Info', path: 'dct:rightsHolder/dct:identifier', message: IPA_MSG, original: IPA_MSG,
@@ -400,7 +473,7 @@ export async function runValidation (dataDs, profiles, selected, opts = {}) {
     if (key === 'agid') {
       all.push(...agidChecks(dataDs))
       if (opts.ipa !== false) {
-        const r = await ipaCheck(dataDs)
+        const r = await ipaCheck(dataDs, globalThis.fetch, opts.ipaCache || null)
         meta.ipa = r.meta
         all.push(...r.results)
       }

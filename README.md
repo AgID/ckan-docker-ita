@@ -192,6 +192,9 @@ python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --name NOME-DAT
 # le prime 3 pagine del catalogo (100 dataset per pagina)
 python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --pages 3
 
+# tutto il catalogo: legge tutte le pagine fino all'hydra:lastPage
+python3 tools/validate_edp_shacl.py https://dati.comune.lecce.it --pages tutte
+
 # solo un ente
 python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --fq organization:NOME-ENTE
 
@@ -330,7 +333,9 @@ python3 report_settimanale.pyz --out validazione --org regione-toscana
 carica un file (Turtle, RDF/XML, N-Triples, JSON-LD), si scelgono i profili e
 si ottiene l'elenco delle segnalazioni raggruppate per regola, con esempi ed
 esportazione in JSON o CSV. Tutto avviene nel browser, il file non viene inviato
-a nessun server. Le shape EDP sono incluse nella pagina (licenza Apache 2.0,
+a nessun server. Nella scheda CKAN l'opzione «Tutte le pagine del catalogo»
+scarica e valida una dopo l'altra tutte le pagine del `catalog.ttl` (si puo'
+interrompere a meta') e restituisce un unico report. Le shape EDP sono incluse nella pagina (licenza Apache 2.0,
 Fraunhofer FOKUS) invece di essere scaricate.
 
 La pagina e' pubblicata su GitHub Pages dal workflow
