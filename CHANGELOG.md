@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-21` — validatore: dataset con piu' titolari (DCAT 3)
+- DCAT-AP_IT: `dct:rightsHolder` del dataset ora e' 1..N, come previsto con DCAT 3 (dataset aggregati con piu' enti titolari). Prima la regola ne ammetteva uno solo e segnalava una violazione per ogni dataset con piu' titolari.
+- Indicazione AgID sul prefisso dell'identificativo: con piu' titolari basta che il prefisso coincida con il codice IPA di uno di loro (prima si guardava solo il primo letto).
+
 ## `2026-10-21` — dcatapit: il vocabolario licenze non viene piu' alterato dall'harvest
 - Nella lettura della licenza (parse della distribuzione) il codice modificava `document_uri` e `uri` della riga del vocabolario licenze restituita da `get_license_from_dcat()`. Quella riga e' un oggetto SQLAlchemy della sessione: al commit dell'harvest la modifica restava nel database e valeva da quel momento per tutti i dataset con quella licenza. Esempi visti: su dati.puglia.it CC BY-SA esce come `http://creativecommons.org/licenses/by/4.0/` (con tipo e nomi BY-SA); su dati.gov.it lo stesso indirizzo descrive insieme CC BY e IODL 1.0. Il ramo DGA poteva trasformare in OtherRestrictiveClauses la licenza di tutti i dataset.
 - Ora le sostituzioni si fanno su variabili locali (`lic_uri`, `doc_uri`); il risultato per il singolo dataset non cambia.

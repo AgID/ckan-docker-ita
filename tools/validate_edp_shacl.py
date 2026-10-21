@@ -202,14 +202,16 @@ def agid_checks(data):
     ident, holder_p = URIRef(DCT + "identifier"), URIRef(DCT + "rightsHolder")
     out = []
     for d in set(data.subjects(RDF_TYPE, URIRef(DCAT + "Dataset"))):
-        i, h = data.value(d, ident), data.value(d, holder_p)
-        if i is None or h is None or ":" not in str(i):
+        i = data.value(d, ident)
+        if i is None or ":" not in str(i):
             continue
-        hid = data.value(h, ident)
-        if hid is None or not str(hid).strip():
+        # il titolare puo' essere piu' d'uno (1..N): basta che il prefisso sia il codice di uno di loro
+        hids = [str(x).strip() for h in data.objects(d, holder_p) for x in data.objects(h, ident) if str(x).strip()]
+        if not hids:
             continue
-        if str(i).split(":", 1)[0] != str(hid).strip():   # esatto: i codici IPA vanno scritti come in IndicePA
-            out.append({"focus": str(d), "value": f'"{i}" != titolare "{hid}"'})
+        if str(i).split(":", 1)[0] not in hids:   # esatto: i codici IPA vanno scritti come in IndicePA
+            tit = " / ".join(f'"{x}"' for x in sorted(set(hids)))
+            out.append({"focus": str(d), "value": f'"{i}" != titolare {tit}'})
     return out
 
 

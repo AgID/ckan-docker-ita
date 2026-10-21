@@ -69,8 +69,9 @@ it:Dataset a sh:NodeShape ;
       sh:message "Dataset: dct:modified deve essere xsd:date o xsd:dateTime" ] ,
     [ sh:path dcat:theme ; sh:minCount 1 ; sh:severity sh:Violation ;
       sh:message "Dataset: almeno un tema (dcat:theme) obbligatorio" ] ,
-    [ sh:path dct:rightsHolder ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;
-      sh:message "Dataset: titolare (dct:rightsHolder) obbligatorio, una sola occorrenza" ] ,
+    # DCAT-AP_IT su DCAT 3: il titolare e' 1..N (dataset con piu' titolari, es. aggregati)
+    [ sh:path dct:rightsHolder ; sh:minCount 1 ; sh:severity sh:Violation ;
+      sh:message "Dataset: titolare (dct:rightsHolder) obbligatorio, almeno uno" ] ,
     [ sh:path dct:rightsHolder ; sh:node it:Agent ; sh:severity sh:Violation ;
       sh:message "Dataset: il titolare non è un Soggetto DCAT-AP_IT valido (dct:identifier o foaf:name mancante o vuoto)" ] ,
     [ sh:path dct:accrualPeriodicity ; sh:minCount 1 ; sh:maxCount 1 ; sh:severity sh:Violation ;

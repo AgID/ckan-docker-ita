@@ -335,16 +335,19 @@ export function agidChecks (dataDs) {
   const datasets = new Set([...dataDs.match(null, rdf.namedNode(NS.rdf + 'type'), rdf.namedNode(NS.dcat + 'Dataset'))].map(q => q.subject))
   for (const d of datasets) {
     const id = first(d, ident)
-    const holder = first(d, holderP)
-    if (!id || id.termType !== 'Literal' || !holder) continue
-    const hid = first(holder, ident)
+    if (!id || id.termType !== 'Literal') continue
+    // il titolare puo' essere piu' d'uno (1..N): basta che il prefisso sia il codice di uno di loro
+    const hids = []
+    for (const q of dataDs.match(d, holderP)) {
+      for (const x of dataDs.match(q.object, ident)) if (x.object.termType === 'Literal' && x.object.value.trim()) hids.push(x.object.value.trim())
+    }
     const m = /^([^:]+):/.exec(id.value)
-    if (!m || !hid || hid.termType !== 'Literal' || !hid.value) continue
-    if (m[1] === hid.value.trim()) continue   // confronto esatto: i codici IPA vanno scritti come in IndicePA
+    if (!m || !hids.length) continue
+    if (hids.includes(m[1])) continue   // confronto esatto: i codici IPA vanno scritti come in IndicePA
     out.push({
       profile: 'agid', severity: 'Info', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
       component: 'CodiceIPA', focus: termText(d), where: ownerOf(dataDs, d, owners),
-      value: `${JSON.stringify(id.value)} ≠ titolare ${JSON.stringify(hid.value)}`, shape: '',
+      value: `${JSON.stringify(id.value)} ≠ titolare ${[...new Set(hids)].sort().map(x => JSON.stringify(x)).join(' / ')}`, shape: '',
     })
   }
   return out
