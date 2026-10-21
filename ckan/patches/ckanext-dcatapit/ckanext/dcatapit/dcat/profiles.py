@@ -575,8 +575,16 @@ class ItalianDCATAPProfile(RDFProfile):
                         license_type.version
                     )
 
+                # 21.10.26 FIX: license_type e' una riga del vocabolario licenze nel DB
+                # (oggetto SQLAlchemy della sessione). Prima il codice ne modificava
+                # document_uri/uri e al commit dell'harvest la modifica restava nel DB:
+                # es. CC BY-SA e IODL 1.0 finivano con documento http://creativecommons.org/licenses/by/4.0/
+                # per TUTTI i dataset. Ora si lavora su copie locali.
+                lic_uri = license_type.uri if license_type is not None else None
+                doc_uri = license_type.document_uri if license_type is not None else None
+
                 if license_type is not None:
-                    resource_dict['license_type'] = license_type.uri
+                    resource_dict['license_type'] = lic_uri
                 else:
                     resource_dict['license_type'] = str(license)
 
@@ -585,7 +593,7 @@ class ItalianDCATAPProfile(RDFProfile):
  #                   license_type.document_uri = 'https://creativecommons.org/licenses/by/4.0/'
  #                   license_name = 'Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)'
                   if 'r_lazio' in dataset_dict.get('holder_identifier'):
-                    license_type.document_uri = 'https://www.dati.gov.it/content/italian-open-data-license-v20'
+                    doc_uri = 'https://www.dati.gov.it/content/italian-open-data-license-v20'
                     license_name = 'Italian Open Data License 2.0'
                 try:
                     #log.info('License Name: %s', names)
@@ -601,11 +609,11 @@ class ItalianDCATAPProfile(RDFProfile):
                         else:
                            log.warning('license_type.default_name')
                            license_name = 'Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)'
-                           if license_type is not None and license_type.document_uri is not None:
-                             if 'publicdomain' in license_type.document_uri:
+                           if doc_uri is not None:
+                             if 'publicdomain' in doc_uri:
                                license_name='Creative Commons CC0 1.0 Universale - Public Domain Dedication (CC0 1.0)'
                              else:
-                              license_type.document_uri="http://creativecommons.org/licenses/by/4.0/"
+                              doc_uri="http://creativecommons.org/licenses/by/4.0/"
                               resource_dict['license_id'] = license_name
                               resource_dict['license_type']="https://w3id.org/italia/controlled-vocabulary/licences/A21_CCBY40"
                            #license_type.default_name
@@ -616,14 +624,14 @@ class ItalianDCATAPProfile(RDFProfile):
                  #         if 'r_campan' in dataset_dict.get('holder_identifier'):
                   #            license_name = 'Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)'
 
-                if license_type is not None and license_type.document_uri is not None:
-                          if 'https://creativecommons.org/licenses/by/4.0/' in license_type.document_uri:
+                if doc_uri is not None:
+                          if 'https://creativecommons.org/licenses/by/4.0/' in doc_uri:
                             #log.warning('2. Licenza Sconosciuta nel dataset, provo a settare CCBY')
                             license_name='Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)'
-                            license_type.uri=license_type.uri.replace("C1_Unknown","A21_CCBY40")
+                            lic_uri=(lic_uri or '').replace("C1_Unknown","A21_CCBY40")
                             dataset_dict['license_id']=license_name
                             dataset_dict['license_title']=license_name
-                            resource_dict['license_type'] = license_type.uri
+                            resource_dict['license_type'] = lic_uri
                             resource_dict['license_id'] = license_name
                             setlic=1
                 access_rights = None
@@ -641,9 +649,9 @@ class ItalianDCATAPProfile(RDFProfile):
                                resource_dict['license_type'] = 'http://purl.org/adms/licencetype/OtherRestrictiveClauses'
                                resource_dict['license_id'] = 'OtherRestrictiveClauses'
                                if license_type is not None:
-                                license_type.document_uri='http://purl.org/adms/licencetype/OtherRestrictiveClauses'
-                                license_type.uri='http://purl.org/adms/licencetype/OtherRestrictiveClauses'
-                                resource_dict['license_type'] = license_type.uri
+                                doc_uri='http://purl.org/adms/licencetype/OtherRestrictiveClauses'
+                                lic_uri='http://purl.org/adms/licencetype/OtherRestrictiveClauses'
+                                resource_dict['license_type'] = lic_uri
                                if license is not None:
                                  license_lower = license.lower()
                                  if 'w3id' in license_lower or 'unknown' in license_lower or 'creative' in license_lower:
@@ -652,8 +660,8 @@ class ItalianDCATAPProfile(RDFProfile):
                              log.debug('Arights NON trovato')
                 else:
                    log.info('access_rights non trovato')
-                license_uri = license_type.uri if license_type is not None else None
-                license_doc_uri = license_type.document_uri if license_type is not None else None
+                license_uri = lic_uri
+                license_doc_uri = doc_uri
 
                 log.info('Setting license %s %s %s', license_uri, license_name, license_doc_uri)
 

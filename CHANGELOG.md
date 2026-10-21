@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-21` — dcatapit: il vocabolario licenze non viene piu' alterato dall'harvest
+- Nella lettura della licenza (parse della distribuzione) il codice modificava `document_uri` e `uri` della riga del vocabolario licenze restituita da `get_license_from_dcat()`. Quella riga e' un oggetto SQLAlchemy della sessione: al commit dell'harvest la modifica restava nel database e valeva da quel momento per tutti i dataset con quella licenza. Esempi visti: su dati.puglia.it CC BY-SA esce come `http://creativecommons.org/licenses/by/4.0/` (con tipo e nomi BY-SA); su dati.gov.it lo stesso indirizzo descrive insieme CC BY e IODL 1.0. Il ramo DGA poteva trasformare in OtherRestrictiveClauses la licenza di tutti i dataset.
+- Ora le sostituzioni si fanno su variabili locali (`lic_uri`, `doc_uri`); il risultato per il singolo dataset non cambia.
+- **Da fare una volta su ogni istanza gia' in esercizio**, per ripulire il vocabolario: `ckan dcatapit load --filename <ckanext-dcatapit>/vocabularies/licences.rdf` (svuota e ricarica le licenze; le risorse conservano la loro licenza, salvata come URI). Il catalogo esposto si corregge subito, senza nuovo harvest.
+
 ## `2026-10-21` — validazione di tutto il catalogo
 - Validatore web, scheda CKAN: nuova opzione «Tutte le pagine del catalogo». Le pagine del `catalog.ttl` (100 dataset ciascuna) si scaricano e si validano una dopo l'altra seguendo `hydra:lastPage`/`hydra:nextPage`, con l'avanzamento a schermo e il bottone «Interrompi»; il report e le esportazioni JSON/CSV le uniscono. I codici IPA si chiedono a IndicePA una volta sola per tutto il catalogo.
 - `validate_edp_shacl.py`: `--pages tutte` (o `all`) legge il numero di pagine dall'`hydra:lastPage` della prima.
