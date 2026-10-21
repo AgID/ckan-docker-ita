@@ -111,6 +111,10 @@ textarea { min-height: 150px; font-family: var(--f-mono); font-size: .8rem; resi
 .wrap[data-busy] #busy-note { display: block; }
 .wrap[data-busy] .btn.primary { cursor: progress; }
 #status[data-kind="error"] { color: var(--bad); }
+#alert-top { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; margin: 0 0 14px; padding: 10px 12px; border-left: 4px solid var(--bad); background: var(--bad-soft); border-radius: 4px; font-size: .88rem; line-height: 1.45; }
+#alert-top[hidden] { display: none; }
+#alert-top #alert-text { min-width: 0; overflow-wrap: anywhere; }
+#alert-top .btn { flex: none; }
 #status[data-kind="done"] { color: var(--muted); }
 
 /* esito */
@@ -154,6 +158,9 @@ details.row[open] summary { border-bottom: 1px solid var(--line); }
 [data-sev="Violation"] .sev { background: var(--bad-soft); color: var(--bad); }
 [data-sev="Warning"] .sev { background: var(--warn-soft); color: var(--warn); }
 [data-sev="Info"] .sev { background: var(--hint-soft); color: var(--hint); }
+/* avviso noto della regola piveau StatusRestrictionADMS: in verifica con data.europa.eu */
+[data-sev="Warning"][data-atteso] .sev { background: var(--accent-soft); color: var(--accent); }
+[data-atteso] .msg b { color: var(--accent); }
 .msg { grid-area: msg; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .meta { grid-area: meta; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: .82rem; color: var(--muted); }
 .tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; }
@@ -183,6 +190,9 @@ details.row summary:hover { background: var(--bg); }
     </div>
     <div class="badge-row"><span class="badge">DCAT-AP 3.0.0</span><span class="badge">DCAT-AP_IT</span><span class="badge">HVD · Reg. UE 2023/138</span></div>
   </header>
+
+  <!-- errori (es. CORS, file troppo grande): in cima, perche' «Scarica e valida» sta in fondo al pannello -->
+  <div id="alert-top" role="alert" hidden><div id="alert-text"></div><button class="btn small" type="button" id="alert-close" aria-label="Chiudi l'avviso">Chiudi</button></div>
 
   <div class="grid">
     <aside class="side">

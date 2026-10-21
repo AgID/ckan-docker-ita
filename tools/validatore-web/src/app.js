@@ -121,6 +121,7 @@ function fetchError (url, e) {
   // il link compare solo per indirizzi http/https gia' verificati: mai javascript:, data: ecc.
   $('#status').innerHTML = `<strong>Il browser non può leggere questo indirizzo.</strong> Quasi sempre è il server che non permette la lettura da altre pagine (CORS). ` +
     `Apri <a href="${esc(new URL(url).href)}" target="_blank" rel="noopener noreferrer">il file</a>, salvalo e caricalo nella scheda File. <span class="mono">(${esc(e.message)})</span>`
+  syncAlert()
 }
 
 async function fetchUrl (url) {
@@ -221,10 +222,21 @@ function selectedProfiles () {
   return ORDER.filter(k => document.getElementById('p-' + k).checked)
 }
 // stoppable: aggiunge il bottone «Interrompi» (validazione di tutte le pagine)
+// copia l'errore in cima alla pagina: chi usa «Scarica e valida» in fondo al pannello
+// potrebbe non vedere la riga di stato
+function syncAlert () {
+  const st = $('#status'), top = $('#alert-top')
+  if (st.dataset.kind === 'error' && st.textContent.trim()) {
+    $('#alert-text').innerHTML = st.innerHTML   // contenuto gia' costruito con esc()
+    top.hidden = false
+    top.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  } else top.hidden = true
+}
 function setStatus (kind, text, stoppable = false) {
   const el = $('#status')
   el.dataset.kind = kind
   el.textContent = text
+  syncAlert()
   if (kind === 'busy') {
     el.insertAdjacentHTML('afterbegin', '<span class="spin" aria-hidden="true"></span>')
     if (stoppable) el.insertAdjacentHTML('beforeend', stopRequested ? ' <span class="muted">· mi fermo dopo questa pagina</span>' : ' <button class="btn small" type="button" id="stop">Interrompi</button>')
@@ -363,10 +375,10 @@ function renderTable () {
   }
   state.visible = rows
   $('#rows').innerHTML = rows.map((g, i) => `
-    <details class="row" data-sev="${g.severity}" data-i="${i}">
+    <details class="row" data-sev="${g.severity}" data-i="${i}"${atteso(g) ? ' data-atteso' : ''}>
       <summary>
-        <span class="sev">${sevLabel(g.severity)}</span>
-        <span class="msg">${esc(g.message)}</span>
+        <span class="sev">${atteso(g) ? 'Avviso atteso' : sevLabel(g.severity)}</span>
+        <span class="msg">${atteso(g) ? `<b>${esc(ATTESO_TITOLO)}</b> · ` : ''}${esc(g.message)}</span>
         <span class="meta"><span class="tag">${PROFILE_LABELS[g.profile]}</span>${g.path ? `<code>${esc(g.path)}</code>` : ''}</span>
         <span class="n" title="${g.nodes} risorse coinvolte">${g.count.toLocaleString('it-IT')}</span>
       </summary>
@@ -408,6 +420,10 @@ function showMore (btn) {
   bar.outerHTML = moreBar(g, to)
 }
 
+// avviso noto della regola piveau StatusRestrictionADMS (SEMICeu/DCAT-AP#490): resta un Warning,
+// ma si mostra come atteso finche' data.europa.eu non corregge la regola
+const ATTESO_TITOLO = 'Avviso in fase di verifica con il portale europeo'
+const atteso = g => g.severity === 'Warning' && /StatusRestrictionADMS/.test(g.original || '')
 const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Indicazione' }[s] || s)
 function linkish (v) {
   if (/^https?:\/\//.test(v) && isHttpUrl(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer" class="mono">${esc(v)}</a>`
@@ -465,6 +481,7 @@ function toast (t) {
 // ------------------------------------------------------------ eventi
 function init () {
   for (const b of document.querySelectorAll('[data-tab]')) b.addEventListener('click', () => setTab(b.dataset.tab))
+  $('#alert-close').addEventListener('click', () => { $('#alert-top').hidden = true })
   const fi = $('#file')
   fi.addEventListener('change', () => fi.files[0] && readFile(fi.files[0]))
   const drop = $('#drop')

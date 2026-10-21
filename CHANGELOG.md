@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-21` — validatore web: errori in cima e avviso ADMS atteso
+- Gli errori di download o lettura (es. CORS, file troppo grande, indirizzo non valido) compaiono anche in un riquadro in cima alla pagina, con il pulsante «Chiudi», e la pagina vi scorre: «Scarica e valida» sta in fondo al pannello e la sola riga di stato poteva passare inosservata.
+- L'avviso della regola piveau `StatusRestrictionADMS` resta un Warning, ma si mostra con il badge blu «Avviso atteso» e il titolo «Avviso in fase di verifica con il portale europeo», finche' data.europa.eu non corregge la regola (SEMICeu/DCAT-AP#490).
+
 ## `2026-10-21` — validatore: dataset con piu' titolari (DCAT 3)
 - DCAT-AP_IT: `dct:rightsHolder` del dataset ora e' 1..N, come previsto con DCAT 3 (dataset aggregati con piu' enti titolari). Prima la regola ne ammetteva uno solo e segnalava una violazione per ogni dataset con piu' titolari.
 - Indicazione AgID sul prefisso dell'identificativo: con piu' titolari basta che il prefisso coincida con il codice IPA di uno di loro (prima si guardava solo il primo letto).
