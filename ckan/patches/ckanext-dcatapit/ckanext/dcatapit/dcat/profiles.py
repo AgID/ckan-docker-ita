@@ -1712,6 +1712,17 @@ class ItalianDCATAPProfile(RDFProfile):
               distribution = distribution.replace(PREF_LANDING,"http://lod.aci.it/")
               distribution=URIRef(distribution)
 
+            # 21.10.26 FIX: il profilo europeo (euro_dcat_ap.py) ha un suo elenco di
+            # sostituzioni di dominio per titolare, diverso da quello qui sopra (es. c_e506
+            # solo li'). Se la risorsa harvestata non ha l'URI originale, i due profili
+            # calcolavano due indirizzi diversi e formato, licenza, titolo finivano su un
+            # nodo non collegato al dataset. Si usa il nodo gia' collegato al dataset.
+            if (dataset_ref, DCAT.distribution, distribution) not in g:
+                _rid = str(resource_dict.get('id') or '')
+                for _d in g.objects(dataset_ref, DCAT.distribution):
+                    if _rid and str(_d).rstrip('/').endswith('/resource/' + _rid):
+                        distribution = _d
+                        break
 
             # Add the DCATAPIT type
             g.add((distribution, RDF.type, DCATAPIT.Distribution))

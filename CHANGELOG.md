@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-21` — dcatapit: distribuzione non piu' sdoppiata quando manca l'URI originale
+- Se una risorsa harvestata non conserva il proprio URI, l'indirizzo della distribuzione si costruisce come ripiego. Il profilo europeo (`euro_dcat_ap.py`) e il profilo dcatapit applicano pero' due elenchi diversi di sostituzioni di dominio per titolare (es. il Comune di Lecce, `c_e506`, solo nel primo). Il risultato erano due nodi: quello collegato al dataset senza formato, licenza e titolo, e un secondo nodo con quei dati ma non collegato. Il validatore segnalava formato e licenza mancanti.
+- Ora il profilo dcatapit, se il proprio indirizzo non e' tra le distribuzioni del dataset, usa il nodo gia' collegato con lo stesso id di risorsa.
+- Nello stack 2.12 il problema non c'e': le sostituzioni per ente sono gia' state tolte.
+
 ## `2026-10-21` — validatore web: errori in cima e avviso ADMS atteso
 - Gli errori di download o lettura (es. CORS, file troppo grande, indirizzo non valido) compaiono anche in un riquadro in cima alla pagina, con il pulsante «Chiudi», e la pagina vi scorre: «Scarica e valida» sta in fondo al pannello e la sola riga di stato poteva passare inosservata.
 - L'avviso della regola piveau `StatusRestrictionADMS` resta un Warning, ma si mostra con il badge blu «Avviso atteso» e il titolo «Avviso in fase di verifica con il portale europeo», finche' data.europa.eu non corregge la regola (SEMICeu/DCAT-AP#490).
