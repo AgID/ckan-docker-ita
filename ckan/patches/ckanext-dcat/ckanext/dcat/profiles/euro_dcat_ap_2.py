@@ -11,7 +11,12 @@ from .base import (
     DCATAP,
     DCT,
     XSD,
+    VCARD,
+    FOAF,
 )
+
+# Regolamento di esecuzione (UE) 2023/138 sui dati di elevato valore (HVD)
+HVD_ELI = "http://data.europa.eu/eli/reg_impl/2023/138/oj"
 
 from .euro_dcat_ap import EuropeanDCATAPProfile
 import logging
@@ -138,12 +143,33 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                             for key, predicate in (
                                 ("endpoint_url", DCAT.endpointURL),
                                 ("serves_dataset", DCAT.servesDataset),
+                                # proprieta' HVD del servizio (Reg. UE 2023/138)
+                                ("hvd_category", DCATAP.hvdCategory),
+                                ("applicable_legislation", DCATAP.applicableLegislation),
+                                ("page", FOAF.page),
                             ):
                                 values = self._object_value_list(
                                     access_service, predicate
                                 )
                                 if values:
                                     access_service_dict[key] = values
+
+                            # punto di contatto del servizio: nome ed email
+                            contacts = []
+                            for cp in self.g.objects(access_service, DCAT.contactPoint):
+                                c = {}
+                                if isinstance(cp, URIRef):
+                                    c["uri"] = str(cp)
+                                fn = self._object_value(cp, VCARD.fn)
+                                if fn:
+                                    c["name"] = fn
+                                em = self._object_value(cp, VCARD.hasEmail)
+                                if em:
+                                    c["email"] = em.replace("mailto:", "")
+                                if c:
+                                    contacts.append(c)
+                            if contacts:
+                                access_service_dict["contact_point"] = contacts
 
                             # Access service URI (explicitly show the missing ones)
                             access_service_dict["uri"] = (
@@ -354,14 +380,46 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                         access_service_dict, access_service_node, items
                     )
 
+                    # HVD: con una categoria HVD il servizio dichiara anche l'ELI 2023/138
+                    if access_service_dict.get("hvd_category") and not access_service_dict.get("applicable_legislation"):
+                        access_service_dict["applicable_legislation"] = [HVD_ELI]
+
                     #  Lists
                     items = [
                         ("endpoint_url", DCAT.endpointURL, None, URIRefOrLiteral),
                         ("serves_dataset", DCAT.servesDataset, None, URIRefOrLiteral),
+                        # proprieta' HVD del servizio (Reg. UE 2023/138)
+                        ("hvd_category", DCATAP.hvdCategory, None, URIRef),
+                        ("applicable_legislation", DCATAP.applicableLegislation, None, URIRef),
+                        ("page", FOAF.page, None, URIRef),
                     ]
                     self._add_list_triples_from_dict(
                         access_service_dict, access_service_node, items
                     )
+                    for _page in self.g.objects(access_service_node, FOAF.page):
+                        self.g.add((_page, RDF.type, FOAF.Document))
+
+                    # punto di contatto del servizio: {"name": ..., "email": ..., "uri": ...}
+                    # (un oggetto o una lista di oggetti)
+                    contacts = access_service_dict.get("contact_point") or []
+                    if isinstance(contacts, dict):
+                        contacts = [contacts]
+                    # il profilo europeo puo' girare due volte (dcat_ap_edp_mqa ne e' una
+                    # sottoclasse): il contatto si scrive una volta sola
+                    if (access_service_node, DCAT.contactPoint, None) in self.g:
+                        contacts = []
+                    for c in contacts:
+                        if not isinstance(c, dict) or not (c.get("name") or c.get("email")):
+                            continue
+                        cp = CleanedURIRef(c["uri"]) if c.get("uri") else BNode()
+                        self.g.add((access_service_node, DCAT.contactPoint, cp))
+                        self.g.add((cp, RDF.type, VCARD.Organization))
+                        self.g.add((cp, RDF.type, VCARD.Kind))
+                        if c.get("name"):
+                            self.g.add((cp, VCARD.fn, Literal(c["name"])))
+                        if c.get("email"):
+                            em = c["email"].strip()
+                            self.g.add((cp, VCARD.hasEmail, URIRef(em if em.startswith("mailto:") else "mailto:" + em)))
 
                 if access_service_list:
                     resource_dict["access_services"] = json.dumps(access_service_list)

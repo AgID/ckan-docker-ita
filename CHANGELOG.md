@@ -1,5 +1,13 @@
 # Changelog
 
+## `2026-10-21` — servizi dati HVD: categoria, ELI, documentazione e punto di contatto
+- Il campo `access_services` delle risorse accetta quattro nuove chiavi, scritte nel catalogo sul `dcat:DataService` e rilette all'harvest:
+  - `hvd_category`: lista di URI delle categorie HVD (`dcatap:hvdCategory`);
+  - `applicable_legislation`: lista di URI (`dcatap:applicableLegislation`). Se c'e' una categoria HVD e manca, si aggiunge l'ELI 2023/138;
+  - `page`: lista di URL della documentazione (`foaf:page`, tipizzati `foaf:Document`);
+  - `contact_point`: oggetto o lista di oggetti `{"name", "email", "uri"}` (`dcat:contactPoint`, `vcard:Organization` con `vcard:fn` e `vcard:hasEmail`). Scritto una volta sola anche quando il profilo europeo gira due volte.
+- Sono le proprieta' obbligatorie per i servizi HVD (Reg. UE 2023/138, DCAT-AP HVD) che prima non si potevano esprimere.
+
 ## `2026-10-21` — indicazione AgID: prefisso dell'editore invece che del titolare
 - Quando il prefisso dell'identificativo del dataset non e' il codice IPA del titolare ma quello dell'editore (`dct:publisher`), l'indicazione ha un messaggio proprio: «il prefisso e' il codice IPA dell'editore, non quello del titolare: l'identificativo va costruito con il codice IPA del titolare», con i due codici nel valore. Caso tipico: un comune che pubblica nel proprio catalogo dataset di cui e' titolare una societa' partecipata. Resta un'indicazione (Info) e la regola resta sul titolare.
 
