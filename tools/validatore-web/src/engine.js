@@ -326,6 +326,7 @@ export async function buildProfiles (shapeTexts) {
 // Stessa logica di agid_checks() in tools/validate_edp_shacl.py.
 const DCT = 'http://purl.org/dc/terms/'
 export const AGID_PREFIX_MSG = "Il prefisso dell'identificativo del dataset non coincide con il codice IPA del titolare (dct:rightsHolder/dct:identifier)"
+export const AGID_PREFIX_EDITORE_MSG = "Il prefisso dell'identificativo del dataset è il codice IPA dell'editore (dct:publisher), non quello del titolare (dct:rightsHolder): l'identificativo va costruito con il codice IPA del titolare"
 export function agidChecks (dataDs) {
   const out = []
   const owners = new Map()
@@ -344,10 +345,19 @@ export function agidChecks (dataDs) {
     const m = /^([^:]+):/.exec(id.value)
     if (!m || !hids.length) continue
     if (hids.includes(m[1])) continue   // confronto esatto: i codici IPA vanno scritti come in IndicePA
+    // caso frequente: l'ente che pubblica (editore) usa il proprio codice per un dataset
+    // di cui il titolare e' un altro soggetto (es. Comune di Bari per AMIU)
+    const pubs = []
+    for (const q of dataDs.match(d, rdf.namedNode(DCT + 'publisher'))) {
+      for (const x of dataDs.match(q.object, ident)) if (x.object.termType === 'Literal') pubs.push(x.object.value.trim())
+    }
+    const editore = pubs.includes(m[1])
+    const msg = editore ? AGID_PREFIX_EDITORE_MSG : AGID_PREFIX_MSG
+    const tit = [...new Set(hids)].sort().map(x => JSON.stringify(x)).join(' / ')
     out.push({
-      profile: 'agid', severity: 'Info', path: 'dct:identifier', message: AGID_PREFIX_MSG, original: AGID_PREFIX_MSG,
+      profile: 'agid', severity: 'Info', path: 'dct:identifier', message: msg, original: msg,
       component: 'CodiceIPA', focus: termText(d), where: ownerOf(dataDs, d, owners),
-      value: `${JSON.stringify(id.value)} ≠ titolare ${[...new Set(hids)].sort().map(x => JSON.stringify(x)).join(' / ')}`, shape: '',
+      value: editore ? `${JSON.stringify(id.value)}: prefisso dell'editore ${JSON.stringify(m[1])}, titolare ${tit}` : `${JSON.stringify(id.value)} ≠ titolare ${tit}`, shape: '',
     })
   }
   return out

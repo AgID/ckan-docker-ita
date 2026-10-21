@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-21` — indicazione AgID: prefisso dell'editore invece che del titolare
+- Quando il prefisso dell'identificativo del dataset non e' il codice IPA del titolare ma quello dell'editore (`dct:publisher`), l'indicazione ha un messaggio proprio: «il prefisso e' il codice IPA dell'editore, non quello del titolare: l'identificativo va costruito con il codice IPA del titolare», con i due codici nel valore. Caso tipico: un comune che pubblica nel proprio catalogo dataset di cui e' titolare una societa' partecipata. Resta un'indicazione (Info) e la regola resta sul titolare.
+
 ## `2026-10-21` — report settimanale: aggiornamento di singole PA nel report pubblicato
 - Nuova opzione `--aggiorna`, da usare con `--org`: rifa solo quelle PA dentro il report gia' pubblicato in `--out`. Sostituisce le loro cartelle e le loro righe in `riepilogo.csv` e rigenera `index.html` con tutte le altre PA invariate. L'intestazione conserva data, durata e nota IndicePA dell'ultima esecuzione completa, con l'aggiunta «aggiornato il …» e l'elenco delle PA rifatte.
 - Senza `--aggiorna`, `--org` continua a scrivere un report con le sole PA indicate, adatto alle prove in una cartella a parte.

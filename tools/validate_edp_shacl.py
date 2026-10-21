@@ -81,6 +81,9 @@ PROFILES_IT = ("dcatapit", "vocabolari", "hvd")
 PROFILES_EXTRA = ("agid",)
 AGID_PREFIX_MSG = ("Il prefisso dell'identificativo del dataset non coincide con il codice IPA "
                    "del titolare (dct:rightsHolder/dct:identifier)")
+AGID_PREFIX_EDITORE_MSG = ("Il prefisso dell'identificativo del dataset e' il codice IPA dell'editore "
+                           "(dct:publisher), non quello del titolare (dct:rightsHolder): l'identificativo va "
+                           "costruito con il codice IPA del titolare")
 IPA_API = "https://indicepa.gov.it/ipa-dati/api/3/action/datastore_search_sql"
 IPA_ENTI = "d09adf99-dc10-4349-8c53-27b1e5aa97b6"   # dataset "enti" di IndicePA
 IPA_UO = "b0aa1f6c-f135-4c8a-b416-396fed4e1a5d"     # dataset "unita-organizzative"
@@ -209,9 +212,17 @@ def agid_checks(data):
         hids = [str(x).strip() for h in data.objects(d, holder_p) for x in data.objects(h, ident) if str(x).strip()]
         if not hids:
             continue
-        if str(i).split(":", 1)[0] not in hids:   # esatto: i codici IPA vanno scritti come in IndicePA
+        pref = str(i).split(":", 1)[0]
+        if pref not in hids:   # esatto: i codici IPA vanno scritti come in IndicePA
             tit = " / ".join(f'"{x}"' for x in sorted(set(hids)))
-            out.append({"focus": str(d), "value": f'"{i}" != titolare {tit}'})
+            # caso frequente: l'ente che pubblica (editore) usa il proprio codice per un dataset
+            # di cui il titolare e' un altro soggetto (es. Comune di Bari per AMIU)
+            pubs = {str(x).strip() for p in data.objects(d, URIRef(DCT + "publisher")) for x in data.objects(p, ident)}
+            if pref in pubs:
+                out.append({"focus": str(d), "message": AGID_PREFIX_EDITORE_MSG,
+                            "value": f'"{i}": prefisso dell\'editore "{pref}", titolare {tit}'})
+            else:
+                out.append({"focus": str(d), "value": f'"{i}" != titolare {tit}'})
     return out
 
 
@@ -454,10 +465,11 @@ def main():
                         examples[key].append({"source": src, "message": IPA_MSG, **x})
             if prof == "agid":
                 for x in agid_checks(data):
-                    key = ("Info", "agid", "dct:identifier", AGID_PREFIX_MSG)
+                    msg = x.pop("message", AGID_PREFIX_MSG)
+                    key = ("Info", "agid", "dct:identifier", msg)
                     counts[key] += 1
                     if len(examples[key]) < a.examples:
-                        examples[key].append({"source": src, "message": AGID_PREFIX_MSG, **x})
+                        examples[key].append({"source": src, "message": msg, **x})
         seen |= mine
     print(f"Dataset: {n_ds}  Distribuzioni: {n_dist}  Triple: {n_triples}")
     if duplicates:

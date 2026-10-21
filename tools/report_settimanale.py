@@ -288,7 +288,7 @@ def validate_graph(data, profiles):
         if prof == "agid":
             for x in V.agid_checks(data):
                 counts[("agid", "Info")] += 1
-                out.append({"profilo": "agid", "gravita": "Info", "proprieta": "dct:identifier", "messaggio": V.AGID_PREFIX_MSG,
+                out.append({"profilo": "agid", "gravita": "Info", "proprieta": "dct:identifier", "messaggio": x.get("message", V.AGID_PREFIX_MSG),
                             "vincolo": "CodiceIPA", "risorsa": x["focus"], "contenuta_in": "", "valore": x["value"]})
     return out, counts, hvd_found
 
