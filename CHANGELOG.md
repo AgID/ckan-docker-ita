@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-21` — report settimanale: aggiornamento di singole PA nel report pubblicato
+- Nuova opzione `--aggiorna`, da usare con `--org`: rifa solo quelle PA dentro il report gia' pubblicato in `--out`. Sostituisce le loro cartelle e le loro righe in `riepilogo.csv` e rigenera `index.html` con tutte le altre PA invariate. L'intestazione conserva data, durata e nota IndicePA dell'ultima esecuzione completa, con l'aggiunta «aggiornato il …» e l'elenco delle PA rifatte.
+- Senza `--aggiorna`, `--org` continua a scrivere un report con le sole PA indicate, adatto alle prove in una cartella a parte.
+
 ## `2026-10-21` — report settimanale: secondo tentativo con l'user agent dell'harvester sui 403
 - Alcuni server rispondono 403 a chi si presenta come browser senza esserlo (es. il catalogo della Regione FVG: 403 con l'user agent di Chrome, 200 con curl o con l'user agent dell'harvester di dati.gov.it). Su un 403 lo script riprova una volta con `dati.gov.it-harvester/1.0` e, se passa, usa quello per tutte le richieste successive a quel server. Gli altri server restano con l'user agent da browser, che serve per il WAF di dati.gov.it e per IndicePA.
 

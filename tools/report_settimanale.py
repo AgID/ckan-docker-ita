@@ -565,6 +565,41 @@ SUM_COLS = ["slug", "organizzazione", "origine", "endpoint", "endpoint_http", "d
             "violazioni", "avvisi", "indicazioni", "risorse_non_raggiungibili", "errore", "conforme"]
 
 
+def merge_report(out, nuove, generato, durata, ipa_note):
+    """--aggiorna: unisce le righe delle PA appena rifatte al riepilogo gia' pubblicato.
+    Le altre PA restano come nell'ultima esecuzione completa; intestazione e note
+    dell'indice restano le sue, con l'indicazione delle PA aggiornate."""
+    path = os.path.join(out, "riepilogo.csv")
+    if not os.path.isfile(path):
+        sys.exit(f"--aggiorna: {path} non trovato (serve un report completo gia' pubblicato)")
+    def num(v):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return v
+    vecchie = []
+    with open(path, encoding="utf-8-sig", newline="") as fh:
+        for r in csv.DictReader(fh):
+            r = {k: (v[1:] if v[:2] in ("'=", "'+", "'-", "'@") else v) for k, v in r.items()}
+            for k in ("dataset_totali", "dataset_validati", "violazioni", "avvisi", "indicazioni"):
+                r[k] = num(r.get(k))
+            # bloccante = nessuna pagina validata (le sorgenti parziali hanno solo un avviso)
+            r["_bloccante"] = bool(r.get("errore")) and not r.get("dataset_validati")
+            vecchie.append(r)
+    nuove_by = {r["slug"]: r for r in nuove}
+    rows = [nuove_by.pop(r["slug"], r) for r in vecchie] + list(nuove_by.values())
+    g0, d0, n0 = generato, durata, ipa_note
+    try:
+        with open(os.path.join(out, "index.html"), encoding="utf-8") as fh:
+            m = re.search(r"Report del (.+?) · durata (.+?) · profili .+? · (.+?)</p>", fh.read())
+        if m:
+            g0, d0, n0 = html.unescape(m.group(1)).split(" · aggiornato")[0], html.unescape(m.group(2)), html.unescape(m.group(3))
+    except OSError:
+        pass
+    agg = ", ".join(sorted(r["slug"] for r in nuove))
+    return rows, f"{g0} · aggiornato il {generato}: {agg}", d0, n0
+
+
 def index_html(rows, generato, durata, ipa_note):
     rows = sorted(rows, key=lambda r: (not r["_bloccante"], -r["violazioni"], -r["indicazioni"]))
     n_err = sum(1 for r in rows if r["_bloccante"])
@@ -619,7 +654,12 @@ def main():
     ap.add_argument("--telegram", help="file JSON con token e chat_id del bot")
     ap.add_argument("--url-report", default="", help="indirizzo pubblico della pagina generale, da citare nel messaggio Telegram")
     ap.add_argument("--seed", type=int, default=None, help="seme per il campione casuale (default: numero della settimana)")
+    ap.add_argument("--aggiorna", action="store_true",
+                    help="con --org: aggiorna solo quelle PA dentro un report gia' pubblicato in --out, "
+                         "sostituendone la riga in riepilogo.csv e rigenerando index.html con le altre invariate")
     a = ap.parse_args()
+    if a.aggiorna and not a.org:
+        sys.exit("--aggiorna va usato con una o piu' --org")
     t0 = time.time()
     oggi = datetime.datetime.now()
     generato = oggi.strftime("%d/%m/%Y %H:%M")
@@ -688,6 +728,8 @@ def main():
         write_csv(os.path.join(d, r["org"]["name"] + ".csv"), r["righe"], CSV_COLS)
         rows.append(summary_row(r))
     durata = f"{int((time.time() - t0) // 60)} min {int((time.time() - t0) % 60)} s"
+    if a.aggiorna:
+        rows, generato, durata, ipa_note = merge_report(a.out, rows, generato, durata, ipa_note)
     with open(os.path.join(a.out, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(index_html(rows, generato, durata, ipa_note))
     write_csv(os.path.join(a.out, "riepilogo.csv"), rows, SUM_COLS)
