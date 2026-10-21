@@ -1,8 +1,5 @@
 # Changelog
 
-## `2026-10-21` — tools/imposta_servizio_hvd.py
-- Script (solo libreria standard) che collega un servizio dati HVD a tutti i dataset che serve, tramite le API di CKAN. Scrive `access_services` sulle risorse servite dal servizio, cioe' quelle con l'indirizzo sullo stesso server dell'`endpoint_url` (o su tutte, con `--tutte`), e aggiunge l'ELI 2023/138 in `applicable_legislation` su tutte le risorse dei dataset. Per default e' una prova a secco; scrive solo con `--applica` e con un token API in `CKAN_API_TOKEN`.
-
 ## `2026-10-21` — servizi dati HVD: categoria, ELI, documentazione e punto di contatto
 - Il campo `access_services` delle risorse accetta quattro nuove chiavi, scritte nel catalogo sul `dcat:DataService` e rilette all'harvest:
   - `hvd_category`: lista di URI delle categorie HVD (`dcatap:hvdCategory`);
