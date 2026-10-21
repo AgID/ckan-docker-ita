@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-21` — servizi dati: proprieta' dei criteri MQA
+- Il servizio (`dcat:DataService`) conserva all'harvest e scrive nel catalogo anche le proprieta' valutate dall'MQA di data.europa.eu sui servizi: `keyword` (`dcat:keyword`), `theme` (`dcat:theme`), `landing_page` (`dcat:landingPage`, tipizzata `foaf:Document`), `format` (`dct:format`), `conforms_to` (`dct:conformsTo`) e `publisher` (`dct:publisher`: URI, oppure `{"uri", "name", "identifier"}`). Prima andavano perse, anche quando la fonte le dichiarava.
+
 ## `2026-10-21` — servizi dati HVD: categoria, ELI, documentazione e punto di contatto
 - Il campo `access_services` delle risorse accetta quattro nuove chiavi, scritte nel catalogo sul `dcat:DataService` e rilette all'harvest:
   - `hvd_category`: lista di URI delle categorie HVD (`dcatap:hvdCategory`);

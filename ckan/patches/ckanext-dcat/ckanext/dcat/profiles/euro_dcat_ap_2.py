@@ -135,6 +135,9 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                                 ("license", DCT.license),
                                 ("access_rights", DCT.accessRights),
                                 ("description", DCT.description),
+                                # criteri MQA dei servizi: landing page e formato
+                                ("landing_page", DCAT.landingPage),
+                                ("format", DCT["format"]),
                             ):
                                 value = self._object_value(access_service, predicate)
                                 if value:
@@ -147,12 +150,28 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                                 ("hvd_category", DCATAP.hvdCategory),
                                 ("applicable_legislation", DCATAP.applicableLegislation),
                                 ("page", FOAF.page),
+                                # criteri MQA dei servizi
+                                ("keyword", DCAT.keyword),
+                                ("theme", DCAT.theme),
+                                ("conforms_to", DCT.conformsTo),
                             ):
                                 values = self._object_value_list(
                                     access_service, predicate
                                 )
                                 if values:
                                     access_service_dict[key] = values
+
+                            # editore del servizio (criterio MQA "Publisher"): URI, o nome e identificativo
+                            pub = self._object(access_service, DCT.publisher)
+                            if pub is not None:
+                                p_name = self._object_value(pub, FOAF.name)
+                                p_id = self._object_value(pub, DCT.identifier)
+                                if p_name or p_id:
+                                    access_service_dict["publisher"] = {k: v for k, v in (
+                                        ("uri", str(pub) if isinstance(pub, URIRef) else ""),
+                                        ("name", p_name), ("identifier", p_id)) if v}
+                                elif isinstance(pub, URIRef):
+                                    access_service_dict["publisher"] = str(pub)
 
                             # punto di contatto del servizio: nome ed email
                             contacts = []
@@ -367,6 +386,9 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                             URIRef,
                         ),
                         ("description", DCT.description, None, Literal),
+                        # criteri MQA dei servizi: landing page e formato
+                        ("landing_page", DCAT.landingPage, None, URIRef),
+                        ("format", DCT["format"], None, URIRefOrLiteral),
                     ]
                     # Fallback license
                     if not access_service_dict.get("license"):
@@ -392,10 +414,30 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                         ("hvd_category", DCATAP.hvdCategory, None, URIRef),
                         ("applicable_legislation", DCATAP.applicableLegislation, None, URIRef),
                         ("page", FOAF.page, None, URIRef),
+                        # criteri MQA dei servizi
+                        ("keyword", DCAT.keyword, None, Literal),
+                        ("theme", DCAT.theme, None, URIRef),
+                        ("conforms_to", DCT.conformsTo, None, URIRef),
                     ]
                     self._add_list_triples_from_dict(
                         access_service_dict, access_service_node, items
                     )
+                    for _lp in self.g.objects(access_service_node, DCAT.landingPage):
+                        self.g.add((_lp, RDF.type, FOAF.Document))
+
+                    # editore del servizio: URI oppure {"uri", "name", "identifier"}
+                    pub = access_service_dict.get("publisher")
+                    if pub and not (access_service_node, DCT.publisher, None) in self.g:
+                        if isinstance(pub, dict):
+                            pnode = CleanedURIRef(pub["uri"]) if pub.get("uri") else BNode()
+                            if pub.get("name"):
+                                self.g.add((pnode, FOAF.name, Literal(pub["name"])))
+                            if pub.get("identifier"):
+                                self.g.add((pnode, DCT.identifier, Literal(pub["identifier"])))
+                        else:
+                            pnode = CleanedURIRef(str(pub))
+                        self.g.add((access_service_node, DCT.publisher, pnode))
+                        self.g.add((pnode, RDF.type, FOAF.Agent))
                     for _page in self.g.objects(access_service_node, FOAF.page):
                         self.g.add((_page, RDF.type, FOAF.Document))
 
