@@ -338,6 +338,9 @@ scarica e valida una dopo l'altra tutte le pagine del `catalog.ttl` (si puo'
 interrompere a meta') e restituisce un unico report. Le shape EDP sono incluse nella pagina (licenza Apache 2.0,
 Fraunhofer FOKUS) invece di essere scaricate.
 
+Il manuale d'uso e di interpretazione dei risultati, con l'elenco dei messaggi e
+il modo di correggerli, e' in [`tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf`](tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf).
+
 La pagina e' pubblicata su GitHub Pages dal workflow
 `.github/workflows/validatore-pages.yml`, che riparte a ogni modifica della
 pagina o delle shape. Per costruirla in locale:
