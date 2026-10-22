@@ -1,7 +1,7 @@
 # Changelog
 
-## `2026-10-22` — manuale del validatore in PDF
-- Nuovo `tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf` (versione 1.1): uso del validatore web, lettura dei risultati, significato e correzione di ogni segnalazione per profilo (EDP, DCAT-AP_IT, Vocabolari, HVD, Indicazioni AgID), report CSV/JSON, messaggi di errore e uso da riga di comando di `tools/validate_edp_shacl.py`.
+## `2026-10-22` — manuale del validatore in PDF (bozza)
+- Nuovo `tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf` (versione 1.1, bozza in attesa di approvazione, con filigrana «BOZZA» in copertina): uso del validatore web, lettura dei risultati, significato e correzione di ogni segnalazione per profilo (EDP, DCAT-AP_IT, Vocabolari, HVD, Indicazioni AgID), report CSV/JSON, messaggi di errore e uso da riga di comando di `tools/validate_edp_shacl.py`.
 
 ## `2026-10-22` — validatore: «raccomandata» e «obbligatoria» secondo la gravita'; parole chiave tra le indicazioni AgID
 - Le regole piveau usano lo stesso vincolo (`sh:minCount`) per le proprieta' obbligatorie (Violation) e per quelle raccomandate (Warning, profilo «EDP · raccomandate»). Il messaggio tradotto diceva sempre «Proprieta' obbligatoria assente»; ora dice «Proprieta' raccomandata assente» quando la gravita' e' Warning. Vale per il validatore web e il report settimanale.
