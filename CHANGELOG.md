@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-22` — manuale del validatore impaginato sul modello AgID
+- `tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf` ora usa l'impaginazione dei documenti AgID: copertina, licenza CC BY 4.0, frontespizio, scheda del documento (autore, riferimenti normativi, stato, scopo, campo di applicazione), indice e piè di pagina con il capitolo corrente. Contenuto invariato (versione 1.1), sempre in bozza con filigrana «BOZZA».
+
 ## `2026-10-22` — manuale del validatore in PDF (bozza)
 - Nuovo `tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf` (versione 1.1, bozza in attesa di approvazione, con filigrana «BOZZA» in copertina): uso del validatore web, lettura dei risultati, significato e correzione di ogni segnalazione per profilo (EDP, DCAT-AP_IT, Vocabolari, HVD, Indicazioni AgID), report CSV/JSON, messaggi di errore e uso da riga di comando di `tools/validate_edp_shacl.py`.
 
