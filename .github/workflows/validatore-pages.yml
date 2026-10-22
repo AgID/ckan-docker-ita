@@ -42,7 +42,7 @@ jobs:
           grep -q '"dcatapit Violation":10' risultato.txt
           IPA=0 node test/run.mjs test/agid.ttl agid > agid.txt || true
           cat agid.txt
-          grep -q '"agid Info":9' agid.txt
+          grep -q '"agid Info":16' agid.txt
       - run: npm run build
       - name: Prepara il sito
         run: |

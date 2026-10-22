@@ -200,13 +200,14 @@ KIND = {"BlankNodeOrIRI": "un URI (o un nodo strutturato)", "IRI": "un URI", "Li
         "BlankNode": "un nodo strutturato", "BlankNodeOrLiteral": "un nodo o un testo", "IRIOrLiteral": "un URI o un testo"}
 
 
-def spiega(msg, comp, value):
+def spiega(msg, comp, value, sev="Violation"):
     m = re.search(r"node kind <[^#>]*#(\w+)>|NodeKind[^#]*#(\w+)", msg)
     if comp == "NodeKind" and m:
         k = m.group(1) or m.group(2)
         return f"Il valore deve essere {KIND.get(k, k)}" + (", non un testo tra virgolette" if value.startswith('"') and "IRI" in k else "")
     if comp == "MinCount":
-        return "Proprietà obbligatoria assente"
+        # piveau usa MinCount sia per le obbligatorie (Violation) sia per le raccomandate (Warning)
+        return "Proprietà obbligatoria assente" if sev == "Violation" else "Proprietà raccomandata assente"
     if comp == "MaxCount":
         return "Troppi valori: la proprietà ne ammette uno solo"
     if "StatusRestrictionADMS" in msg:
@@ -276,7 +277,7 @@ def validate_graph(data, profiles):
             focus = rg.value(r, URIRef(SH + "focusNode"))
             value = term_text(rg.value(r, URIRef(SH + "value")))
             if prof == "edp":
-                msg_it = spiega(msg, comp, value)
+                msg_it = spiega(msg, comp, value, sev)
             else:
                 msg_it = msg
             counts[(prof, sev)] += 1

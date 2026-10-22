@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-22` — validatore: «raccomandata» e «obbligatoria» secondo la gravita'; parole chiave tra le indicazioni AgID
+- Le regole piveau usano lo stesso vincolo (`sh:minCount`) per le proprieta' obbligatorie (Violation) e per quelle raccomandate (Warning, profilo «EDP · raccomandate»). Il messaggio tradotto diceva sempre «Proprieta' obbligatoria assente»; ora dice «Proprieta' raccomandata assente» quando la gravita' e' Warning. Vale per il validatore web e il report settimanale.
+- Nuova indicazione AgID (Info): dataset senza parole chiave (`dcat:keyword`), richieste per l'harvesting su dati.gov.it e valutate dall'MQA.
+
 ## `2026-10-21` — servizi dati: proprieta' dei criteri MQA
 - Il servizio (`dcat:DataService`) conserva all'harvest e scrive nel catalogo anche le proprieta' valutate dall'MQA di data.europa.eu sui servizi: `keyword` (`dcat:keyword`), `theme` (`dcat:theme`), `landing_page` (`dcat:landingPage`, tipizzata `foaf:Document`), `format` (`dct:format`), `conforms_to` (`dct:conformsTo`) e `publisher` (`dct:publisher`: URI, oppure `{"uri", "name", "identifier"}`). Prima andavano perse, anche quando la fonte le dichiarava.
 

@@ -25,7 +25,12 @@ agid:Dataset a sh:NodeShape ;
     [ sh:path dct:identifier ;
       sh:pattern "^[A-Za-z0-9_]+:[A-Za-z0-9_.-]+$" ;
       sh:severity sh:Info ;
-      sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (dopo i due punti solo lettere, cifre, punto, - e _; niente spazi, accenti o altri caratteri)" ] .
+      sh:message "Identificativo del dataset non nel formato codiceIPA:identificativo (dopo i due punti solo lettere, cifre, punto, - e _; niente spazi, accenti o altri caratteri)" ] ,
+    # parole chiave: richieste per l'harvesting su dati.gov.it (e criterio MQA "Keyword usage")
+    [ sh:path dcat:keyword ;
+      sh:minCount 1 ;
+      sh:severity sh:Info ;
+      sh:message "Dataset senza parole chiave (dcat:keyword): sono richieste per l'harvesting su dati.gov.it e valutate dall'MQA di data.europa.eu" ] .
 
 # ---------------------------------------------------------------- TITOLARE
 agid:Holder a sh:NodeShape ;

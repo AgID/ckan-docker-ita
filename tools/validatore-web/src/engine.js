@@ -227,14 +227,15 @@ const KIND = {
   BlankNodeOrIRI: 'un URI (o un nodo strutturato)', IRI: 'un URI', Literal: 'un testo (letterale)',
   BlankNode: 'un nodo strutturato', BlankNodeOrLiteral: 'un nodo o un testo', IRIOrLiteral: 'un URI o un testo',
 }
-export function spiega (message, component, value) {
+export function spiega (message, component, value, severity = 'Violation') {
   let m
   if ((m = /node kind <[^#>]*#(\w+)>/.exec(message))) {
     const atteso = KIND[m[1]] || m[1]
     const testo = value && value.startsWith('"')
     return `Il valore deve essere ${atteso}` + (testo && /IRI/.test(m[1]) ? ', non un testo tra virgolette' : '')
   }
-  if ((m = /^Less than (\d+) values?/.exec(message))) return m[1] === '1' ? 'Proprietà obbligatoria assente' : `Servono almeno ${m[1]} valori`
+  // piveau usa lo stesso vincolo sia per le obbligatorie (Violation) sia per le raccomandate (Warning)
+  if ((m = /^Less than (\d+) values?/.exec(message))) return m[1] === '1' ? (severity === 'Violation' ? 'Proprietà obbligatoria assente' : 'Proprietà raccomandata assente') : `Servono almeno ${m[1]} valori`
   if ((m = /^More than (\d+) values?/.exec(message))) return m[1] === '1' ? 'Troppi valori: la proprietà ne ammette uno solo' : `Troppi valori: al massimo ${m[1]}`
   if (/StatusRestrictionADMS/.test(message)) return 'Stato non preso dal vocabolario ADMS (regola piveau che chiede il vocabolario DCAT-AP 2.1; con il vocabolario EU distribution-status il warning è atteso)'
   if (/DateOrDateTimeDataType/.test(message)) return 'La data deve essere xsd:date, xsd:dateTime, xsd:gYear o xsd:gYearMonth'
@@ -279,7 +280,7 @@ export async function validateProfile (dataDs, shapesDs, profile) {
       profile,
       severity: sev,
       path: pathText(r.path, report.dataset),
-      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value)) : original,
+      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value), sev) : original,
       original,
       component: comp,
       focus: termText(r.focusNode),
