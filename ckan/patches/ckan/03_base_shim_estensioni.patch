@@ -1,0 +1,14 @@
+--- a/ckan/lib/base.py
++++ b/ckan/lib/base.py
+@@ -22,6 +22,11 @@
+ 
+ from ckan.common import request, config, session, g
+ 
++# Shim di compatibilita' per estensioni pre-2.10 (dcatapit, harvest, oai-pmh-server)
++# che fanno: from ckan.lib.base import model / c
++import ckan.model as model  # noqa: E402,F401
++from ckan.common import g as c  # noqa: E402,F401
++
+ log = logging.getLogger(__name__)
+ 
+ APIKEY_HEADER_NAME_KEY = 'apikey_header_name'

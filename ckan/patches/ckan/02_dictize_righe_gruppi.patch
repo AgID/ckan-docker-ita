@@ -1,0 +1,17 @@
+--- a/ckan/lib/dictization/model_dictize.py
++++ b/ckan/lib/dictization/model_dictize.py
+@@ -384,7 +384,8 @@
+                 try:
+                     packages_limit = context['limits']['packages']
+                 except KeyError:
+-                    del q['rows']  # leave it to package_search to limit it
++                    q['rows'] = 50
++              #      del q['rows']  # leave it to package_search to limit it
+                 else:
+                     q['rows'] = packages_limit
+ 
+@@ -682,3 +683,4 @@
+     for token in tokens:
+         token_dicts.append(api_token_dictize(token, context))
+     return token_dicts
++

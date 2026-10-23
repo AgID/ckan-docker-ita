@@ -60,8 +60,7 @@ RUN chmod 666 "${APP_DIR}/patches/topics.json"
 COPY patches/regions.rdf "${APP_DIR}/patches/regions.rdf"
 RUN chmod 666 "${APP_DIR}/patches/regions.rdf"
 
-COPY patches/model_dictize.py ${APP_DIR}/src/ckan/ckan/lib/dictization/model_dictize.py
-COPY patches/base.py ${APP_DIR}/src/ckan/ckan/lib/base.py
+# model_dictize.py e base.py: ora patch in patches/ckan/ (02, 03), vedi sotto.
 
 COPY patches/xmlrpc.py /usr/local/lib/python3.10/site-packages/pylons/controllers/xmlrpc.py
 COPY patches/jsonrpc.py /usr/local/lib/python3.10/site-packages/pylons/controllers/jsonrpc.py
@@ -82,8 +81,7 @@ COPY patches/ckan_logo_col.png "${APP_DIR}/src/ckan/ckan/public/base/images"
 #     aveva alcun effetto.
 # patch per avere il rating dal portale europeo dei dati aperti. Decommentare se si vuole il punteggio
 #COPY patches/read.html "${APP_DIR}/src/ckan/ckan/templates/package/read.html"
-# fix origin con landingpage e non /edit/
-COPY patches/language_selector.html ${APP_DIR}/src/ckan/ckan/templates/snippets/language_selector.html
+# fix origin con landingpage e non /edit/: ora patch patches/ckan/05 (vedi sotto)
 # 10.10.26 Rimosso l'override di ckan/views/util.py (era patches/util.py):
 # la copia era identica a upstream 2.10.10, zero differenze, e in 2.10.11 quel
 # file riceve la gestione di FlaskRouteBuildError su internal_redirect (400
@@ -92,8 +90,7 @@ COPY patches/language_selector.html ${APP_DIR}/src/ckan/ckan/templates/snippets/
 #FIX per XLOADER per il comando ckan xloader status. Consigliato:
 COPY patches/command.py /usr/local/lib/python3.10/site-packages/ckanext/xloader/command.py
 
-# Min length resource = 5
-COPY patches/validators.py ${APP_DIR}/src/ckan/ckan/logic/validators.py
+# Min length resource = 5: ora patch patches/ckan/04 (vedi sotto)
 
 # Copy custom initialization scripts
 # CSS predefinito accessibile (WCAG 2.1 AA): impostato come "Custom CSS" da
@@ -108,12 +105,20 @@ COPY patches/groups ${APP_DIR}/patches/groups
 # patches/ckan/01_pagination_accessibilita.patch: paginazione accessibile
 # (WCAG 1.3.1, 2.4.4, 4.1.2) — <nav> con etichetta, frecce con testo per i
 # lettori di schermo, aria-current sulla pagina corrente, puntini non link.
+# Le modifiche al core che prima sostituivano interi file (rischio: annullare in
+# silenzio le correzioni di sicurezza delle nuove versioni di CKAN) sono patch:
+#   02 model_dictize: rows=50 nel conteggio dataset di gruppi/organizzazioni
+#   03 base.py: shim `model` / `c` per le estensioni pre-2.10
+#   04 validators: nome risorsa di almeno 5 caratteri (invece di 7)
+#   05 language_selector: campo `redirect_url` invece di `url`
+# Se una nuova versione di CKAN cambia quei file, la patch non si applica e la
+# build si ferma (invece di sovrascrivere il file aggiornato).
 COPY patches ${APP_DIR}/patches
 
 RUN for d in $APP_DIR/patches/*; do \
         if [ -d $d ]; then \
             for f in `ls $d/*.patch | sort -g`; do \
-                cd $SRC_DIR/`basename "$d"` && echo "$0: Applying patch $f to $SRC_DIR/`basename $d`"; patch -p1 < "$f" ; \
+                cd $SRC_DIR/`basename "$d"` && echo "$0: Applying patch $f to $SRC_DIR/`basename $d`"; patch -p1 < "$f" || exit 1 ; \
             done ; \
         fi ; \
     done

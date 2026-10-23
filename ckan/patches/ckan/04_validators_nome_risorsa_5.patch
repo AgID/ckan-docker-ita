@@ -1,0 +1,11 @@
+--- a/ckan/logic/validators.py
++++ b/ckan/logic/validators.py
+@@ -286,7 +286,7 @@
+     pattern = re.compile("[^0-9a-zA-Z _-]")
+     if pattern.search(value):
+         raise Invalid(_('Invalid characters in resource id'))
+-    if len(value) < 7 or len(value) > 100:
++    if len(value) < 5 or len(value) > 100:
+         raise Invalid(_('Invalid length for resource id'))
+     return value
+ 

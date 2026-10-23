@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-24` — modifiche al core di CKAN come patch, Solr 9.10
+- Le modifiche al core di CKAN che sostituivano interi file (`model_dictize.py`, `ckan/lib/base.py`, `logic/validators.py`, `snippets/language_selector.html`) sono ora patch in `ckan/patches/ckan/` (02-05). Verificato che le copie erano basate sulla 2.10.11 e non annullavano correzioni di sicurezza; con le patch, se una versione futura di CKAN cambia quei file la build si ferma invece di sovrascriverli in silenzio. Il risultato e' identico byte per byte.
+- Il ciclo che applica le patch ora interrompe la build se una patch non si applica (prima proseguiva).
+- `solr/Dockerfile`: base `solr:9.10.1` ufficiale al posto di `ckan/ckan-solr:2.10-solr9`, con gli stessi passi; rimossi i moduli opzionali non usati da CKAN (Tika, OpenNLP, Kafka, Hadoop...) e `prometheus-exporter`. Indice compatibile: i volumi `solr_data` esistenti non vanno ricreati.
+
 ## `2026-10-24` — README: sicurezza e aggiornamenti
 - Nuova sezione «Sicurezza e aggiornamenti»: fine del supporto della serie CKAN 2.10, aggiornamento periodico delle immagini (`docker compose build --pull`), esposizione del solo NGINX, gestione dei segreti e permessi del `.env`.
 - Avviso di fine supporto in testa al README; tabella della configurazione con i segreti generati al primo avvio.
