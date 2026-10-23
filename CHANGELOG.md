@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-23` — attribuzione del footer configurabile
+- Il testo «rebuilt by …» del footer si imposta con `CKANEXT__DCATAPIT__FOOTER_REBUILT_BY`; vuoto (default) = `AgID`. Prima era fisso «rebuilt by Piersoft for AgID».
+
 ## `2026-10-23` — CSS accessibile predefinito
 - Il tema accessibile (WCAG 2.1 AA) è ora predefinito: `css.example` si sposta in `ckan/css.example`, viene copiato nell'immagine e all'avvio lo script `docker-entrypoint.d/05_custom_css.sh` lo imposta come «Custom CSS» (chiave `ckan.site_custom_css`) se l'admin non ne ha uno proprio. Alle versioni successive viene aggiornato finché l'admin non lo modifica; un CSS modificato dall'admin non viene mai sovrascritto.
 - Variabili `CKAN_CUSTOM_CSS_DEFAULT` (default `true`; `false` disattiva) e `CKAN_CUSTOM_CSS_FORCE` (`true` sovrascrive col predefinito al prossimo avvio).

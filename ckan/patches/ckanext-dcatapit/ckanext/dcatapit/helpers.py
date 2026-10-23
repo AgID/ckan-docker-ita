@@ -66,6 +66,13 @@ def restricted_search_url():
         return '/dataset/?access_rights=' + RESTRICTED_ACCESS_RIGHTS
 
 
+def get_footer_rebuilt_by():
+    """Chi ha ricostruito lo stack, mostrato nel footer ("rebuilt by ...").
+    Config: ckanext.dcatapit.footer_rebuilt_by
+    (env CKANEXT__DCATAPIT__FOOTER_REBUILT_BY). Vuoto = AgID."""
+    return (config.get('ckanext.dcatapit.footer_rebuilt_by') or '').strip() or 'AgID'
+
+
 def get_accessibility_statement_url():
     """URL della dichiarazione di accessibilita' (link nel footer).
     Config: ckanext.dcatapit.accessibility_statement_url
