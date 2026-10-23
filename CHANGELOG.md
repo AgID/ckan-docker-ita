@@ -1,5 +1,16 @@
 # Changelog
 
+## `2026-10-23` — `css.example`: revisione accessibilità WCAG 2.1 AA
+- Focus visibile anche nell'header: l'anello blu sulla barra blu era quasi invisibile (1.3:1), ora è bianco (4.6:1). Stile visibile al focus per lo skip link nativo di CKAN (`.visually-hidden-focusable`); la vecchia classe `.skip-link` non era usata dal template.
+- Hover e voce attiva del menu desktop: contrasto da 3.6:1 a 9.3:1, con sottolineatura come indicatore non solo cromatico.
+- Pulsanti in hover/focus con bordo, per restare riconoscibili quando diventano bianchi su bianco.
+- Link del footer sottolineati: blu del link e blu del testo differivano solo per colore (1.9:1).
+- Campi dei form alti almeno 38px e testo a 1rem (era 0.7em); bordo dei campi a 4.7:1.
+- Separatore per lettori di schermo tra nome e formato della risorsa (prima veniva letto «datiCSVCSV»).
+- Rientro ripristinato per le liste nelle descrizioni dei dataset; titolo e sottotitolo dell'header vanno a capo su mobile; rispetto di `prefers-reduced-motion`.
+- Pulizia: rimosso il blocco footer duplicato e le regole di colore dei link in conflitto; corretti i rapporti di contrasto nei commenti; l'immagine di sfondo della homepage è ora un esempio commentato.
+- In fondo al file l'elenco dei punti che richiedono modifiche ai template o alle traduzioni (h1 in homepage, paginazione, facet troncati, stringhe in inglese, dichiarazione di accessibilità).
+
 ## `2026-10-23` — validatore: nota sull'«Avviso atteso» dello stato della distribuzione
 - Aprendo la riga «Avviso atteso» (regola piveau `StatusRestrictionADMS`) una nota spiega che le regole di data.europa.eu contengono due vincoli incompatibili sullo stato: il profilo level1 chiede il vocabolario ADMS (`deprecateduris.ttl`), mentre `mdr-vocabularies.shape.ttl` e DCAT-AP 3 prevedono distribution-status. Link alle segnalazioni [piveau #124](https://gitlab.com/piveau/community/issues/-/work_items/124) e [SEMICeu/DCAT-AP#490](https://github.com/SEMICeu/DCAT-AP/issues/490).
 

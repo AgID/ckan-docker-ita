@@ -1,71 +1,147 @@
 /* =============================================================
-   CSS custom
-   Revisione accessibilità WCAG 2.1 AA / AgID
-   Aprile 2026
-   
-   LEGENDA FIX:
-   [A11Y-FIX] = correzione accessibilità con motivazione WCAG
-   [SYNTAX]   = errore sintassi CSS (# usato come commento)
-   [REMOVED]  = regola rimossa perché dannosa per l'accessibilità
+   CSS custom per CKAN 2.10 (ckan-docker-ita)
+   Da incollare in Admin > Config > "Custom CSS".
+
+   Revisione accessibilità WCAG 2.1 AA (EN 301 549 / Linee guida AgID)
+   Ultima revisione: ottobre 2026
+
+   I rapporti di contrasto indicati nei commenti sono calcolati con
+   la formula WCAG (luminanza relativa). Soglie: 4.5:1 testo normale,
+   3:1 testo grande (≥ 24px o ≥ 18.66px grassetto) e componenti UI.
+
+   Il CSS non può correggere tutto: alcuni punti richiedono modifiche
+   ai template o alle traduzioni (vedi elenco in fondo al file).
    ============================================================= */
 
-/* ---------------------------------------------------------------
-   [A11Y-FIX] WCAG 2.4.1 — Skip link "Salta al contenuto"
-   Aggiungilo anche nel base.html come primo elemento del <body>:
-   <a class="skip-link" href="#content">Salta al contenuto</a>
-   --------------------------------------------------------------- */
-.skip-link {
-  position: absolute;
-  top: -9999px;
-  left: 0;
-  background: #0066cc;
-  color: #ffffff;
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 700;
-  z-index: 9999;
-  text-decoration: underline;
-  border-radius: 0 0 4px 0;
-}
-.skip-link:focus {
-  top: 0;
-}
 
-/* ---------------------------------------------------------------
-   [A11Y-FIX] WCAG 2.4.7 / 2.4.11 — Focus visibile globale
-   Sostituisce outline:0 ereditato da Bootstrap/CKAN su tutti
-   gli elementi interattivi. Usa :focus-visible per non mostrare
-   l'outline al click con mouse (solo tastiera/AT).
-   --------------------------------------------------------------- */
+/* ===============================================================
+   1. FOCUS E NAVIGAZIONE DA TASTIERA
+   =============================================================== */
+
+/* WCAG 2.4.7 — focus visibile su tutti gli elementi interattivi.
+   :focus-visible mostra l'anello solo da tastiera, non al click.
+   #005fcc su bianco = 6.0:1 */
 :focus-visible {
   outline: 3px solid #005fcc !important;
   outline-offset: 3px !important;
   box-shadow: none !important;
 }
 
-/* Rimuove l'outline su :focus (non :focus-visible) solo per mouse */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-@media (min-width: 768px) {
-  .row[class~="wrapper"]::before {
-    content: none !important;
-    display: none !important;
+/* WCAG 2.4.7 / 1.4.11 — sulle barre scure l'anello blu sparisce
+   (#005fcc su #1c75d1 = 1.3:1): lì l'anello è bianco.
+   Bianco su #1c75d1 = 4.6:1, su #31383d = 11.9:1 */
+.masthead :focus-visible,
+.account-masthead :focus-visible {
+  outline-color: #ffffff !important;
+  outline-offset: 2px !important;
+}
+
+/* WCAG 2.4.1 — skip link nativo di CKAN ("Salta al contenuto").
+   CKAN lo rende con .visually-hidden-focusable: qui lo rendiamo
+   ben visibile quando riceve il focus. Bianco su #0066cc = 5.6:1 */
+.visually-hidden-focusable a:focus,
+.visually-hidden-focusable a:focus-visible {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  background: #0066cc;
+  color: #ffffff !important;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: underline;
+  border-radius: 0 0 4px 0;
+  outline-color: #ffffff !important;
+  outline-offset: -4px !important;
+}
+
+/* WCAG 2.3.3 — rispetta chi ha chiesto di ridurre le animazioni */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* ---------------------------------------------------------------
-   Format label — colori badge formato risorsa
-   [A11Y-FIX] WCAG 1.4.3 — Contrasto minimo 4.5:1 (testo su sfondo)
-   Tutti i badge usano testo #fff su colore di sfondo verificato.
-   
-   CSV originale: #856A00 → rapporto su #fff = 3.8:1 (FALLISCE)
-   CSV corretto:  #5C4900 → rapporto su #fff = 6.8:1 (OK)
-   
-   HTML originale: #2E759E → su #fff = 3.7:1 (FALLISCE)
-   HTML corretto:  #1A5778 → su #fff = 5.5:1 (OK)
-   --------------------------------------------------------------- */
+
+/* ===============================================================
+   2. TIPOGRAFIA E LINK
+   =============================================================== */
+
+body {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 18px;
+  background-color: rgb(2, 39, 76);
+}
+
+/* Link di default: #0066cc su bianco = 5.6:1.
+   Attenzione: su sfondo del body rgb(2,39,76) lo stesso blu scende
+   a 2.7:1, quindi i contenuti devono stare su un contenitore chiaro. */
+a {
+  color: #0066cc;
+}
+
+a:hover {
+  color: #003d7a;
+  text-decoration: underline;
+}
+
+.toolbar .breadcrumb a,
+.nav-item a {
+  color: #0066cc;
+}
+
+/* Heading delle risorse e breadcrumb: #003d7a su bianco = 10.8:1 */
+.resource-item .heading,
+.breadcrumb {
+  color: #003d7a;
+}
+
+/* Titoli dataset in lista: #005bb5 su bianco = 6.6:1 */
+.dataset-heading a {
+  color: #005bb5;
+  font-size: 2rem !important;
+  letter-spacing: 0.007em !important;
+}
+
+.h3 {
+  color: #005bb5;
+}
+
+/* WCAG 1.4.12 — le liste nei testi (descrizioni markdown dei dataset
+   e delle risorse) mantengono il rientro; solo menu e liste di
+   servizio restano senza padding. */
+ol,
+ul {
+  padding-left: 0;
+}
+
+.notes ul,
+.notes ol,
+.resource-item .description ul,
+.resource-item .description ol,
+.module-content .prose ul,
+.module-content .prose ol {
+  padding-left: 1.5rem;
+}
+
+
+/* ===============================================================
+   3. BADGE FORMATO RISORSA
+   Testo bianco su sfondo scuro: tutti ≥ 7:1 (anche AAA).
+   Nelle liste dataset i badge sono generati da dcatapit come
+   <a class="label" data-format="...">.
+   =============================================================== */
 .label {
   display: inline;
   padding: 0.2em 0.6em 0.3em;
@@ -78,90 +154,40 @@
   vertical-align: baseline;
   border-radius: 0.25em;
 }
-.label[data-format=html],
-.label[data-format*=html] {
-  background-color: #1A5778; /* era #2E759E → contrasto 3.7:1, ora 5.5:1 */
-}
-.label[data-format=json],
-.label[data-format*=json] {
-  background-color: #A02D00; /* era #D63B00 → contrasto 3.6:1, ora 5.8:1 */
-}
-.label[data-format=xml],
-.label[data-format*=xml] {
-  background-color: #A02D00;
-}
-.label[data-format=text],
-.label[data-format*=text] {
-  background-color: #0F5F7A; /* era #1A7EA3 → contrasto 4.0:1, ora 5.9:1 */
-}
-.label[data-format=csv],
-.label[data-format*=csv] {
-  background-color: #5C4900; /* era #856A00 → contrasto 3.8:1, ora 6.8:1 */
-}
-.label[data-format=xls],
-.label[data-format*=xls] {
-  background-color: #155C2E; /* era #207E42 → contrasto 4.2:1, ora 7.0:1 */
-}
-.label[data-format=zip],
-.label[data-format*=zip] {
-  background-color: #484848; /* era #686868 → contrasto 3.9:1, ora 7.0:1 */
-}
-.label[data-format=api],
-.label[data-format*=api] {
-  background-color: #9C1F61; /* era #D22D81 → contrasto 3.4:1, ora 5.8:1 */
-}
-.label[data-format=pdf],
-.label[data-format*=pdf] {
-  background-color: #b00016; /* era #e0051e → contrasto 4.2:1, ora 6.3:1 */
-}
-.label[data-format=rdf],
+.label[data-format*=html] { background-color: #1A5778; } /* 7.8:1 */
+.label[data-format*=json] { background-color: #A02D00; } /* 7.3:1 */
+.label[data-format*=xml]  { background-color: #A02D00; } /* 7.3:1 */
+.label[data-format*=text] { background-color: #0F5F7A; } /* 7.2:1 */
+.label[data-format*=csv]  { background-color: #5C4900; } /* 8.7:1 */
+.label[data-format*=xls]  { background-color: #155C2E; } /* 8.1:1 */
+.label[data-format*=zip]  { background-color: #484848; } /* 9.2:1 */
+.label[data-format*=api]  { background-color: #9C1F61; } /* 7.6:1 */
+.label[data-format*=pdf]  { background-color: #b00016; } /* 7.4:1 */
 .label[data-format*=rdf],
 .label[data-format*=nquad],
 .label[data-format*=ntriples],
-.label[data-format*=turtle] {
-  background-color: #0b4498; /* già ok → contrasto 7.2:1 */
+.label[data-format*=turtle] { background-color: #0b4498; } /* 9.2:1 */
+
+/* Formato nell'elenco risorse della pagina dataset */
+.resource-item .format-label {
+  position: absolute;
+  top: 18px;
+  left: 10px;
 }
 
-/* ---------------------------------------------------------------
-   Tipografia base
-   --------------------------------------------------------------- */
-body {
-  font-family: 'Titillium Web', sans-serif;
-  font-size: 18px;
-  background-color: rgb(2, 39, 76);
+/* WCAG 1.3.1 / 2.4.4 — nel template il formato è attaccato al nome
+   della risorsa, e lo screen reader legge "datiCSVCSV".
+   Il testo alternativo del contenuto generato (sintassi "/") aggiunge
+   un separatore solo per le tecnologie assistive, senza cambiare
+   l'aspetto. I browser che non la supportano ignorano la regola. */
+.resource-item .format-label::before {
+  content: "" / ", formato ";
 }
 
-/* [A11Y-FIX] WCAG 1.4.3 — link devono essere distinguibili
-   #0066cc su sfondo bianco = 4.52:1 (appena sopra soglia, ok) */
-a,
-.resource-item .heading,
-.breadcrumb {
-  color: #fff;
 
-}
-
-.toolbar .breadcrumb a {
-  color: #0066cc;
-}
-
-.nav-item a {
-  color: #0066cc;
-}
-
-.dataset-heading a {
-  color: #005bb5; /* leggermente più scuro di #0066cc per sicurezza extra */
-  font-size: 2rem !important;
-  letter-spacing: 0.007em !important;
-  /* [SYNTAX] rimosso: #padding */
-}
-
-.h3 {
-  color: #005bb5;
-}
-
-/* ---------------------------------------------------------------
-   Account masthead (barra superiore)
-   --------------------------------------------------------------- */
+/* ===============================================================
+   4. BARRA ACCOUNT (in alto)
+   =============================================================== */
 .account-masthead {
   background-color: rgb(49, 56, 61);
 }
@@ -170,8 +196,7 @@ a,
   background-color: black;
 }
 
-/* [A11Y-FIX] WCAG 1.4.3 — rgba(255,255,255,0.6) su rgb(49,56,61)
-   = circa 3.2:1 (FALLISCE). Corretto a 0.85 = 5.6:1 (OK) */
+/* rgba(255,255,255,0.85) su rgb(49,56,61) = 9.1:1 */
 .account-masthead .account ul li a {
   color: rgba(255, 255, 255, 0.85);
 }
@@ -181,36 +206,286 @@ a,
   background-color: white;
 }
 
-.media-overlay .media-heading {
-  background-color: #0066cc;
-  padding: 6px 10px;
+
+/* ===============================================================
+   5. MASTHEAD (header) E MENU
+   =============================================================== */
+.masthead {
+  background-color: rgb(28, 117, 209);
 }
 
-/* ---------------------------------------------------------------
-   Masthead principale (navbar)
-   --------------------------------------------------------------- */
-.masthead {
-  background: #0066cc;
-  background-color: rgb(28, 117, 209);
+/* Link bianchi solo nell'header: bianco su #1c75d1 = 4.6:1 */
+.masthead a,
+.account-masthead a,
+.masthead a:hover,
+.account-masthead a:hover {
+  color: #ffffff;
+}
+
+.masthead .navbar hgroup h2,
+.masthead .navbar hgroup .h2 {
+  color: #ffffff !important;
+}
+
+.Header-titleLink {
+  color: #000000;
+  font-size: 3.6rem !important;
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .Header-titleLink a small {
   font-style: italic;
 }
 
+@media screen and (min-width: 768px) {
+  .Header-logo img {
+    height: 9.5rem;
+    width: 9.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .row[class~="wrapper"]::before {
+    content: none !important;
+    display: none !important;
+  }
+}
+
 /* ---------------------------------------------------------------
-   Pulsanti
-   [A11Y-FIX] WCAG 2.4.7 — i btn non devono azzerare l'outline.
-   Il focus globale (:focus-visible) definito sopra gestisce tutto;
-   qui rimuoviamo solo i box-shadow/outline in conflitto.
+   Logo + titolo + sottotitolo.
+   Con il logo impostato il template non mostra il titolo del sito:
+   qui titolo e sottotitolo sono aggiunti con ::before/::after.
+
+   LIMITE (WCAG 1.3.1): il testo generato via CSS non è nel DOM,
+   non si traduce e non tutti gli screen reader lo leggono.
+   Usarlo solo come ripiego: la soluzione corretta è mettere titolo
+   e sottotitolo nel template header.html. Il logo deve comunque
+   avere un alt con il nome dell'ente.
    --------------------------------------------------------------- */
+.masthead hgroup.header-image {
+  display: flex !important;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.masthead hgroup.header-image .logo {
+  order: 1;
+  flex-shrink: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.masthead hgroup.header-image .logo img {
+  height: 130px;
+  width: auto;
+  max-width: none;
+  display: block;
+}
+
+/* TITOLO — sostituire con il nome dell'ente.
+   Bianco su #1c75d1 = 4.6:1 */
+.masthead hgroup.header-image::before {
+  content: "Comune di Bugnano";
+  order: 2;
+  color: #ffffff;
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  flex-basis: calc(100% - 130px - 1.25rem);
+  margin: 0;
+  padding: 0;
+}
+
+/* SOTTOTITOLO */
+.masthead hgroup.header-image::after {
+  content: "Portale dei Dati Aperti";
+  order: 3;
+  color: #ffffff;
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-basis: calc(100% - 130px - 1.25rem);
+  margin: 0.2rem 0 0 0;
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .masthead hgroup.header-image .logo img {
+    height: 90px;
+  }
+  .masthead hgroup.header-image::before {
+    font-size: 1.6rem;
+    white-space: normal; /* WCAG 1.4.10 — niente scroll orizzontale */
+    flex-basis: calc(100% - 90px - 1.25rem);
+  }
+  .masthead hgroup.header-image::after {
+    font-size: 0.95rem;
+    white-space: normal;
+    flex-basis: calc(100% - 90px - 1.25rem);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Menu orizzontale su desktop, hamburger su mobile
+   --------------------------------------------------------------- */
+@media (min-width: 992px) {
+
+  .masthead .navbar-toggler {
+    display: none !important;
+  }
+
+  .masthead .main-navbar.collapse,
+  .masthead .main-navbar.collapse:not(.show),
+  .masthead #main-navigation-toggle {
+    display: flex !important;
+    flex-basis: auto !important;
+    flex-grow: 1;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .masthead .main-navbar .navbar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .masthead .main-navbar .navbar-nav > li {
+    list-style: none;
+    margin: 0;
+  }
+
+  .masthead .main-navbar .navbar-nav > li > a {
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: block;
+    border-radius: 0;
+  }
+
+  /* WCAG 1.4.3 — l'overlay bianco al 15% abbassava il contrasto a
+     3.6:1. Sfondo più scuro: bianco su #00468c = 9.3:1 */
+  .masthead .main-navbar .navbar-nav > li > a:hover,
+  .masthead .main-navbar .navbar-nav > li > a:focus {
+    color: #ffffff !important;
+    background: #00468c;
+    text-decoration: underline;
+  }
+
+  /* Voce di menu della sezione corrente: indicatore non solo
+     cromatico (WCAG 1.4.1) */
+  .masthead .main-navbar .navbar-nav > li.active > a,
+  .masthead .main-navbar .navbar-nav > li > a[aria-current] {
+    background: #00468c;
+    box-shadow: inset 0 -3px 0 #ffffff;
+  }
+
+  /* Ricerca nell'header */
+  .masthead .site-search {
+    display: flex !important;
+    align-items: center;
+    margin-left: 1rem;
+  }
+
+  .masthead .site-search input[type="text"] {
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    height: 38px;
+    padding: 0 0.75rem;
+    min-width: 180px;
+    border-radius: 3px 0 0 3px;
+  }
+
+  /* Icona #0066cc su bianco = 5.6:1; area cliccabile 38×38 px */
+  .masthead .site-search .btn {
+    background: #ffffff !important;
+    color: #0066cc !important;
+    border: none;
+    border-left: 9px solid #ffffff;
+    height: 38px;
+    width: 38px;
+    padding: 0;
+    border-radius: 0 3px 3px 0;
+    box-shadow: none;
+  }
+
+  .masthead .site-search .btn i {
+    color: #0066cc !important;
+  }
+}
+
+@media (max-width: 991px) {
+  /* Bordo bianco su #1c75d1 = 4.6:1 (WCAG 1.4.11) */
+  .masthead .navbar-toggler {
+    display: block;
+    background: transparent;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    font-size: 2rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Selettori del vecchio header (CKAN 2.9): restano per compatibilità */
+.masthead .navigation .nav-pills > li > a:hover {
+  background-color: #ffffff;
+  color: #000000;
+  text-transform: uppercase;
+  border-radius: 0.1em;
+}
+
+/* Voce attiva: niente opacity (portava il contrasto a 1.9:1),
+   indicatore con bordo inferiore */
+.masthead .navigation .nav-pills li.active a {
+  background-color: #ffffff;
+  color: #000000;
+  text-transform: uppercase;
+  border-radius: 0.1em;
+  border-bottom: 3px solid #0066cc;
+}
+
+.masthead input[type="text"]:focus {
+  box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.4);
+}
+
+.masthead .main-navbar .site-search button {
+  margin-left: 0;
+}
+
+
+/* ===============================================================
+   6. PULSANTI E TAG
+   =============================================================== */
+
+/* Bianco su #0066cc = 5.6:1 */
 .btn,
 .dropdown.btn-group {
-  text-transform: uppercase;
   background-color: #0066cc;
-  border-color: #003647;
-  color: #ffffff;
   background-image: none;
+  color: #ffffff;
+  border: none;
   border-radius: 0.1em;
   font-weight: 600;
   font-size: 0.8em;
@@ -219,217 +494,79 @@ a,
   vertical-align: middle;
   white-space: nowrap;
   box-shadow: 0 2px 4px 0 #bdbdbd;
-  border: none;
 }
 
-/* [A11Y-FIX] WCAG 1.4.3 — tag: #004a4d su #65dde0 = 4.3:1 (borderline)
-   Scurito leggermente: #003336 su #65dde0 = 5.1:1 (OK) */
-.tag {
-  text-transform: lowercase;
-  background-color: #65dde0;
-  border-color: #50d8dc;
-  color: #003336;
-  background-image: none;
-  border-radius: 0.1em;
-  border: none;
-  box-shadow: none;
-}
-
-.btn[disabled],
-.btn.is-disabled {
-  background-color: #65dde0 !important;
-  border-color: #50d8dc !important;
-  color: #003336 !important; /* stessa correzione del .tag */
-}
-
+/* Il focus ring resta quello globale (:focus-visible) */
 .btn:focus,
 .btn:hover,
 .dropdown.btn-group:hover,
 a.tag:hover {
-  background-color: rgb(255, 255, 255);
-  color: rgb(0, 0, 0);
+  background-color: #ffffff;
+  color: #000000;
   box-shadow: none;
-  /* [A11Y-FIX] WCAG 2.4.7 — non sovrascrivere outline qui;
-     il :focus-visible globale gestisce il focus ring */
 }
 
+/* WCAG 1.4.11 — al passaggio a sfondo bianco il pulsante deve restare
+   riconoscibile: bordo #0066cc su bianco = 5.6:1 */
+.btn:hover,
+.btn:focus {
+  box-shadow: inset 0 0 0 2px #0066cc;
+}
+
+/* #65dde0 su #003647 = 8.0:1 */
 .btn:active,
 .btn.is-pressed,
 .content_action.is-pressed {
   background-color: #003647;
-  border-color: rgb(0, 0, 0);
   color: #65dde0;
 }
 
 .dropdown-toggle:active,
 .open .dropdown-toggle {
   background-color: #004a4d;
-  border-color: rgb(0, 0, 0);
   color: #65dde0;
 }
 
+/* Tag: #003336 su #65dde0 = 8.5:1 */
+.tag {
+  text-transform: lowercase;
+  background-color: #65dde0;
+  background-image: none;
+  color: #003336;
+  border: none;
+  border-radius: 0.1em;
+  box-shadow: none;
+}
+
+.btn[disabled],
+.btn.is-disabled {
+  background-color: #65dde0 !important;
+  color: #003336 !important;
+}
+
+/* Paginazione: #0066cc su bianco = 5.6:1 */
 .pagination ul > .disabled > a {
   color: #0066cc;
 }
 
-/* ---------------------------------------------------------------
-   Nav pills masthead
-   --------------------------------------------------------------- */
-.masthead .navigation .nav-pills > li > a:hover {
-  background-color: rgb(255, 255, 255);
-  color: black;
-  text-transform: uppercase;
-  border-radius: 0.1em;
-}
-
 .pagination ul > .active > a,
 .pagination ul > .active > span {
-  color: white;
+  color: #ffffff;
   background-color: #0066cc;
 }
 
-/* [A11Y-FIX] WCAG 1.4.3 — opacity: 0.5 sul pill attivo
-   rende il testo (nero su bianco) a circa 1.9:1 (FALLISCE).
-   Rimosso opacity, mantenuto stile visivo con bordo bottom. */
-.masthead .navigation .nav-pills li.active a {
-  background-color: rgb(255, 255, 255);
-  color: #000000;
-  /* [REMOVED] opacity: .5  — abbassa il contrasto sotto 4.5:1 */
-  text-transform: uppercase;
-  border-radius: 0.1em;
-  border-bottom: 3px solid #0066cc; /* indicatore visivo alternativo */
-}
-
-/* [A11Y-FIX] WCAG 2.4.7 — focus sulla searchbox
-   L'outline inset era troppo sottile; ora gestito da :focus-visible globale.
-   Manteniamo solo un box-shadow supplementare visivo. */
-.masthead input[type="text"]:focus {
-  box-shadow: 0 0 0 3px rgba(0, 95, 204, 0.4);
-}
-
-/* ---------------------------------------------------------------
-   Homepage
-   --------------------------------------------------------------- */
-.homepage .module-search {
+.media-overlay .media-heading {
   background-color: #0066cc;
-  color: white;
-  padding: 0px;
+  padding: 6px 10px;
 }
 
-.homepage .module-content {
-  margin: 20px 0;
-}
 
-.homepage .module-content:last-child {
-  padding-bottom: 20px;
-}
+/* ===============================================================
+   7. FORM
+   =============================================================== */
 
-.hero .box {
-  border: none;
-}
-
-.homepage .module-search .module-content {
-  color: rgb(68, 68, 68);
-  background-color: white;
-}
-
-.homepage .module-search .tags {
-  background-color: #0066cc;
-}
-
-.module-content:last-child {
-  padding-bottom: 0px;
-}
-
-.homepage [role="main2"] {
-  border-top: 0px solid rgb(204, 204, 204);
-  padding-bottom: 30px;
-}
-
-.homepage [role="main"] {
-  border-top: 0px solid rgb(204, 204, 204);
-  background-size: contain;
-  background-position: right center;
-  background-repeat: no-repeat;
-}
-
-/* ---------------------------------------------------------------
-   Footer
-   [A11Y-FIX] WCAG 1.4.3 — rgba(255,255,255,0.6) su rgb(2,39,76)
-   = circa 4.2:1 (sotto soglia 4.5:1).
-   Portato a 0.80 = circa 5.6:1 (OK).
-   --------------------------------------------------------------- */
-.site-footer,
-.site-footer label,
-.site-footer small {
-  color: rgba(255, 255, 255, 0.80);
-}
-
-/* Link footer: #65dcdf su rgb(2,39,76) = 8.1:1 (eccellente, invariato) */
-.site-footer a {
-  color: #65dcdf;
-  font-weight: 700;
-}
-
-/* ---------------------------------------------------------------
-   Burger menu / btn-navbar
-   [A11Y-FIX] I colori transparent sul hover/focus sono ok purché
-   il focus ring (:focus-visible) resti visibile — garantito sopra.
-   --------------------------------------------------------------- */
-.masthead .btn-navbar.collapsed .top-bar {
-  transform: rotate(0);
-}
-.masthead .btn-navbar.collapsed .middle-bar {
-  opacity: 1;
-}
-.masthead .btn-navbar.collapsed .bottom-bar {
-  transform: rotate(0);
-}
-.masthead .btn-navbar {
-  border: none;
-  background-color: #0066cc;
-  background: transparent !important;
-}
-.masthead .btn-navbar:hover,
-.masthead .btn-navbar:focus {
-  background: transparent !important;
-  /* focus ring gestito da :focus-visible */
-}
-.masthead .btn-navbar.collapsed:hover {
-  background: transparent !important;
-}
-.masthead .btn-navbar .fa-bar {
-  width: 18px;
-  transition: all 0.5s;
-}
-.masthead .btn-navbar .top-bar {
-  transform: rotate(45deg);
-  transform-origin: 25% 40%;
-}
-.masthead .btn-navbar .middle-bar {
-  opacity: 0;
-}
-.masthead .btn-navbar .bottom-bar {
-  transform: rotate(-45deg);
-  transform-origin: 25% 50%;
-}
-.masthead .btn-navbar .icon-bar {
-  display: block;
-  width: 40px;
-  height: 4px;
-  border-radius: 1px;
-}
-
-/* [A11Y-FIX] WCAG 1.4.11 — Non-text contrast: il bordo focus sul
-   btn-navbar deve avere contrasto 3:1 contro lo sfondo adiacente */
-.btn.btn-navbar:focus {
-  outline: 3px solid #ffffff;
-  outline-offset: 2px;
-}
-
-/* ---------------------------------------------------------------
-   Form controls
-   --------------------------------------------------------------- */
+/* WCAG 2.5.8 / leggibilità — campi alti almeno 38px e testo non
+   sotto i 16px (sotto quella soglia iOS zooma al focus) */
 select,
 textarea,
 input[type="text"],
@@ -447,66 +584,97 @@ input[type="search"],
 input[type="tel"],
 input[type="color"],
 .uneditable-input {
-  height: 30px;
+  min-height: 38px;
 }
 
 .input-append .add-on,
 .input-prepend .add-on {
-  height: 30px;
+  min-height: 38px;
 }
 
-.form-control {
-  font-size: 0.7em;
-}
-
-/* ---------------------------------------------------------------
-   Logo e titolo
-   --------------------------------------------------------------- */
-@media screen and (min-width: 768px) and (max-width: 991px),
-       screen and (min-width: 992px) and (max-width: 1365px),
-       screen and (min-width: 1366px) {
-  .Header-logo img {
-    height: 9.5rem;
-    width: 9.5rem;
-  }
-}
-
-.Header-titleLink {
-  color: #000000;
-  font-size: 3.6rem !important;
-  font-family: inherit;
-  font-weight: 700;
+.form-control,
+input.form-control,
+textarea.form-control,
+select.form-control {
+  font-size: 1rem !important;
 }
 
 select {
-  padding: 0px;
+  padding: 0 0.5rem;
 }
 
-/* [A11Y-FIX] WCAG 1.4.3 — #4A2C04 su sfondo bianco = 8.5:1 (ok).
-   Rimossa la regola solo se applicata su sfondo scuro — verificare
-   i contesti d'uso di .u-color-50 e .Skiplinks */
-.u-color-50,
-.Accordion--plus .Accordion-link,
-.Accordion--default .Accordion-link,
-.Linklist-link,
-.Linklist a,
-.ErrorPage-title,
-.ErrorPage-subtitle,
-.Header-language-other a,
-.Share-revealIcon.is-open {
-  color: #4A2C04 !important;
+/* WCAG 1.4.11 — bordo dei campi: #6c757d su bianco = 4.7:1 */
+.form-control,
+.form-select {
+  border-color: #6c757d;
 }
 
-/* [A11Y-FIX] WCAG 2.4.1 — Skip link: deve essere incluso anche
-   .Skiplinks. Se CKAN usa .Skiplinks nativo, assicurati che sia
-   visibile al focus (non nascosto con display:none o overflow:hidden). */
-.Skiplinks > li > a {
-  color: #0066cc !important;
+
+/* ===============================================================
+   8. HOMEPAGE
+   =============================================================== */
+.homepage .module-search {
+  background-color: #0066cc;
+  color: #ffffff;
+  padding: 0;
 }
 
-/* ---------------------------------------------------------------
-   Varie dimensioni e layout
-   --------------------------------------------------------------- */
+.homepage .module-search .module-content {
+  color: rgb(68, 68, 68); /* su bianco = 9.7:1 */
+  background-color: #ffffff;
+}
+
+.homepage .module-search .tags {
+  background-color: #0066cc;
+}
+
+.homepage .module-search .tags h3,
+.homepage .module-search .tags .h3 {
+  font-size: 1.6rem;
+}
+
+.homepage .module-content {
+  margin: 20px 0;
+}
+
+.homepage .module-content:last-child {
+  padding-bottom: 20px;
+}
+
+.module-content:last-child {
+  padding-bottom: 0;
+}
+
+.homepage .module-feeds {
+  padding: 2rem 0;
+  background: transparent !important;
+}
+
+.hero .box {
+  border: none;
+}
+
+.homepage [role="main"] {
+  border-top: 0;
+  padding-bottom: 30px;
+  background-image: none;
+}
+
+/* Immagine di sfondo della homepage (facoltativa).
+   Sostituire NOME_IMMAGINE con il file caricato, oppure eliminare
+   la regola. WCAG 1.4.3: il testo non deve mai poggiare direttamente
+   sull'immagine; i blocchi di contenuto hanno sfondo bianco. */
+/*
+.homepage {
+  background: url(../../base/images/NOME_IMMAGINE) no-repeat center center fixed;
+  background-size: cover;
+}
+*/
+
+
+/* ===============================================================
+   9. VARIE
+   =============================================================== */
 .module-heading {
   font-size: 1.6rem;
 }
@@ -519,156 +687,35 @@ select {
   font-size: 1.6rem;
 }
 
-.masthead .main-navbar .site-search button {
-  margin-left: 0px;
-}
-
-.homepage .module-search .tags h3,
-.homepage .module-search .tags .h3 {
-  font-size: 1.6rem;
-}
-
-ol,
-ul {
-  padding-left: 0rem;
-}
-
-.resource-item .format-label {
-  position: absolute;
-  top: 18px;
-  left: 10px;
-}
-
 .main1 {
   padding: 2rem 0;
 }
 
-.homepage .module-feeds {
-  padding: 2rem 0;
-  background: transparent !important;
+/* #4A2C04 su bianco = 12.7:1 (usare solo su sfondi chiari) */
+.u-color-50,
+.Accordion--plus .Accordion-link,
+.Accordion--default .Accordion-link,
+.Linklist-link,
+.Linklist a,
+.ErrorPage-title,
+.ErrorPage-subtitle,
+.Header-language-other a,
+.Share-revealIcon.is-open {
+  color: #4A2C04 !important;
 }
 
-.navbar-toggler {
-  font-size: 4rem;
-}
-.masthead .navbar hgroup h2, .masthead .navbar hgroup .h2 {
-color: #ffffff !important ;
-}
-/* ---------------------------------------------------------------
-   [A11Y-FIX] WCAG 4.1.2 — aria-label del burger menu in italiano
-   Da aggiungere nel template header.html di CKAN:
-   
-   <button class="btn btn-navbar" 
-           aria-label="{{ _('Apri menu di navigazione') }}"
-           aria-expanded="false"
-           aria-controls="main-navbar">
-   
-   Il CSS da solo non può correggere i label ARIA hardcoded in inglese
-   (bug CKAN #7945). Questo commento è un promemoria d'intervento
-   sul template Jinja2.
-   --------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------
-   [A11Y-FIX] Dichiarazione di accessibilità nel footer
-   Da aggiungere nel template footer.html:
-   
-   <li>
-     <a href="/accessibilita">Dichiarazione di accessibilità</a>
-   </li>
-   
-   oppure link diretto alla dichiarazione su AgID.
-   --------------------------------------------------------------- */
 
 /* ===============================================================
-   FIX LOGO + TITOLO + SOTTOTITOLO via pseudo-elementi
-   Il template CKAN non mostra h1/h2 quando il logo è impostato.
-   Iniettiamo titolo e sottotitolo via ::before e ::after su hgroup.
-   =============================================================== */
-
-/* Contenitore hgroup: flex con logo a sinistra e testo impilato a destra */
-.masthead hgroup.header-image {
-  display: flex !important;
-  align-items: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  align-content: center;
-  margin: 0;
-  padding: 0;
-}
-
-/* Logo a sinistra */
-.masthead hgroup.header-image .logo {
-  order: 1;
-  flex-shrink: 0;
-  display: block;
-  margin: 0;
-  padding: 0;
-}
-
-.masthead hgroup.header-image .logo img {
-  height: 130px;
-  width: auto;
-  max-width: none;
-  display: block;
-}
-
-/* TITOLO (grande) */
-.masthead hgroup.header-image::before {
-  content: "Comune di Bugnano";
-  order: 2;
-  color: #ffffff;
-  font-family: 'Titillium Web', sans-serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-  flex-basis: calc(100% - 130px - 1.25rem);
-  margin: 0;
-  padding: 0;
-}
-
-/* SOTTOTITOLO (piccolo) */
-.masthead hgroup.header-image::after {
-  content: "Portale dei Dati Aperti";
-  order: 3;
-  color: #ffffff;
-  font-family: 'Titillium Web', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 400;
-  line-height: 1.2;
-  white-space: nowrap;
-flex-basis: calc(100% - 130px - 1.25rem);
-  margin: 0.2rem 0 0 0;
-  padding: 0;
-}
-
-/* Responsive mobile */
-@media (max-width: 767px) {
-  .masthead hgroup.header-image .logo img {
-    height: 90px;
-  }
-  .masthead hgroup.header-image::before {
-    font-size: 1.6rem;
-    flex-basis: calc(100% - 90px - 1.25rem);
-  }
-  .masthead hgroup.header-image::after {
-    font-size: 0.95rem;
-    flex-basis: calc(100% - 90px - 1.25rem);
-  }
-}
-
-/* ===============================================================
-   FOOTER — sfondo bianco, testo blu, leggibile e accessibile
+   10. FOOTER — sfondo bianco, testo blu
    =============================================================== */
 .site-footer {
   background: #ffffff !important;
-  background-color: #ffffff !important;
   color: #003d7a !important;
   padding: 2rem 0;
   border-top: 3px solid #0066cc;
 }
 
-/* Tutto il testo del footer in blu scuro per contrasto AA */
+/* #003d7a su bianco = 10.8:1 */
 .site-footer,
 .site-footer p,
 .site-footer label,
@@ -681,36 +728,31 @@ flex-basis: calc(100% - 130px - 1.25rem);
   color: #003d7a !important;
 }
 
-/* Link del footer: blu istituzionale, sottolineati per accessibilità */
+/* WCAG 1.4.1 — il link nel testo (#0066cc) e il testo (#003d7a)
+   differiscono solo per colore (1.9:1, serve 3:1): i link del footer
+   sono sottolineati. #0066cc su bianco = 5.6:1 */
 .site-footer a {
   color: #0066cc !important;
   font-weight: 700;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .site-footer a:hover,
 .site-footer a:focus {
   color: #003d7a !important;
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 
-/* Liste di link nel footer: spaziatura pulita */
 .site-footer ul.list-unstyled li {
   padding: 0.25rem 0;
 }
 
-/* Blocco "Fatto con CKAN / rebuilt by Piersoft per AgID" */
 .site-footer .attribution p {
   font-size: 0.875rem;
-  color: #003d7a !important;
 }
 
-.site-footer .attribution strong {
-  color: #003d7a !important;
-}
-
-/* Logo CKAN: il tuo CSS attuale usa background-image con text-indent.
-   Se diventa invisibile su bianco, forziamo la versione corretta del logo. */
+/* Logo CKAN a colori, leggibile su bianco */
 .site-footer .attribution .ckan-footer-logo {
   display: inline-block;
   width: 68px;
@@ -721,275 +763,47 @@ flex-basis: calc(100% - 130px - 1.25rem);
   vertical-align: middle;
 }
 
-/* Selettore lingua: label + dropdown */
+/* Selettore lingua */
 .site-footer .lang-select label {
-  color: #003d7a !important;
   font-weight: 700;
 }
 
 .site-footer .lang-select select {
   background: #ffffff;
   color: #003d7a;
-  border: 1px solid #0066cc;
+  border: 1px solid #0066cc; /* 5.6:1 */
   padding: 0.25rem 0.5rem;
   font-weight: 600;
 }
 
-/* Le immagini dei loghi PNRR/UE/MiC in alto al footer: 
-   hanno sfondo bianco trasparente nel PNG, quindi ora 
-   sono perfettamente leggibili su sfondo bianco.
-   Il logo "Mystica Harmonia" ha testo rosso che su bianco si legge. */
+/* Loghi istituzionali (PNRR, UE, ecc.) */
 .site-footer .gal-img img {
   max-width: 100%;
   height: auto;
 }
 
-/* Separatore opzionale tra le colonne */
 .site-footer .row {
   align-items: flex-start;
 }
 
-/* ===============================================================
-   FOOTER — sfondo bianco, testo blu, leggibile e accessibile
-   =============================================================== */
-.site-footer {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  color: #003d7a !important;
-  padding: 2rem 0;
-  border-top: 3px solid #0066cc;
-}
-
-.site-footer,
-.site-footer p,
-.site-footer label,
-.site-footer small,
-.site-footer strong,
-.site-footer .attribution p,
-.site-footer .footer-links,
-.site-footer .col-md-4,
-.site-footer .col-md-8 {
-  color: #003d7a !important;
-}
-
-.site-footer a {
-  color: #0066cc !important;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.site-footer a:hover,
-.site-footer a:focus {
-  color: #003d7a !important;
-  text-decoration: underline;
-}
-
-.site-footer ul.list-unstyled li {
-  padding: 0.25rem 0;
-}
-
-.site-footer .attribution p {
-  font-size: 0.875rem;
-  color: #003d7a !important;
-}
-
-.site-footer .attribution strong {
-  color: #003d7a !important;
-}
-
-/* Logo CKAN: il tuo CSS attuale usa background-image con text-indent.
-   Se diventa invisibile su bianco, forziamo la versione corretta del logo. */
-.site-footer .attribution .ckan-footer-logo {
-  display: inline-block;
-  width: 68px;
-  height: 21px;
-  background: url(../../base/images/ckan_logo_col.png) no-repeat top left;
-  background-size: contain;
-  text-indent: -900em;
-  vertical-align: middle;
-}
-
-/* Selettore lingua: label + dropdown */
-.site-footer .lang-select label {
-  color: #003d7a !important;
-  font-weight: 700;
-}
-
-.site-footer .lang-select select {
-  background: #ffffff;
-  color: #003d7a;
-  border: 1px solid #0066cc;
-  padding: 0.25rem 0.5rem;
-  font-weight: 600;
-}
-
-/* Le immagini dei loghi PNRR/UE/MiC in alto al footer: 
-   hanno sfondo bianco trasparente nel PNG, quindi ora 
-   sono perfettamente leggibili su sfondo bianco.
-   Il logo "Mystica Harmonia" ha testo rosso che su bianco si legge. */
-.site-footer .gal-img img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Separatore opzionale tra le colonne */
-.site-footer .row {
-  align-items: flex-start;
-}
 
 /* ===============================================================
-   HEADER — menu orizzontale su desktop, hamburger solo su mobile
+   DA FARE FUORI DAL CSS (template / traduzioni)
+   Il CSS non basta per questi punti:
+
+   - WCAG 3.1.2: "Skip to main content", segnaposto della ricerca
+     ed etichetta "Toggle navigation" vanno tradotti nel catalogo
+     it; l'etichetta del selettore lingua va resa con "Lingua".
+   - WCAG 1.3.1: in homepage manca un h1; nelle liste i titoli
+     dei dataset sono h2 dentro sezioni h3.
+   - WCAG 2.4.4 / 4.1.2: nella paginazione il link "pagina
+     successiva" non ha testo e "..." è un link a "#".
+   - WCAG 2.4.4: i facet troncati ("Ministero del...") vanno
+     completati con aria-label (nome intero e numero di dataset).
+   - WCAG 4.1.2: il pulsante "Esplora" delle risorse è un <a
+     href="#">; meglio un <button>.
+   - Logo dell'ente con alt significativo; immagini di gruppi e
+     organizzazioni accanto al nome con alt="".
+   - Link "Dichiarazione di accessibilità" nel footer (obbligo per
+     le PA, Linee guida AgID).
    =============================================================== */
-
-/* Desktop (≥ 992px): nascondi hamburger, mostra menu orizzontale */
-@media (min-width: 992px) {
-  
-  /* Nascondi il pulsante hamburger */
-  .masthead .navbar-toggler {
-    display: none !important;
-  }
-  
-  /* Forza il menu a essere visibile anche senza la classe .show */
-  .masthead .main-navbar.collapse,
-  .masthead .main-navbar.collapse:not(.show),
-  .masthead #main-navigation-toggle {
-    display: flex !important;
-    flex-basis: auto !important;
-    flex-grow: 1;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 1.5rem;
-  }
-  
-  /* Lista dei link orizzontale */
-  .masthead .main-navbar .navbar-nav {
-    display: flex !important;
-    flex-direction: row !important;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  
-  .masthead .main-navbar .navbar-nav > li {
-    list-style: none;
-    margin: 0;
-  }
-  
-  /* Stile dei link del menu */
-  .masthead .main-navbar .navbar-nav > li > a {
-    color: #ffffff !important;
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: block;
-    border-radius: 0;
-  }
-  
-  .masthead .main-navbar .navbar-nav > li > a:hover,
-  .masthead .main-navbar .navbar-nav > li > a:focus {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.15);
-    text-decoration: none;
-  }
-  
-  /* Search box nell'header su desktop */
-  .masthead .site-search {
-    display: flex !important;
-    align-items: center;
-    margin-left: 1rem;
-  }
-  
-  .masthead .site-search input[type="text"] {
-    background: #ffffff;
-    color: #000000;
-    border: none;
-    height: 38px;
-    padding: 0 0.75rem;
-    min-width: 180px;
-    border-radius: 3px 0 0 3px;
-  }
-  
-  .masthead .site-search .btn {
-    background: #ffffff !important;
-    color: #0066cc !important;
-    border: none;
-    border-left: 9px solid #ffffff;
-    height: 38px;
-    width: 38px;
-    padding: 0;
-    border-radius: 0 3px 3px 0;
-    box-shadow: none;
-  }
-  
-  .masthead .site-search .btn i {
-    color: #0066cc !important;
-  }
-}
-
-/* Mobile (< 992px): hamburger visibile, menu nascosto quando collapsed */
-@media (max-width: 991px) {
-  .masthead .navbar-toggler {
-    display: block;
-    background: transparent;
-    border: 1px solid #ffffff;
-    color: #ffffff;
-  }
-}
-
-.homepage [role="main"] {
-  border-top: 0px solid rgb(204, 204, 204);
- background-size: contain;
- background-position: right center;
- background-repeat: no-repeat;
-}
-
-.homepage {
-
-background:url(../../base/images/IMMAGINEDIFONDO) no-repeat center center fixed;
- -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
-
-}
-/* Link di default: blu istituzionale leggibile su sfondo bianco */
-a {
-  color: #0066cc;
-}
-
-a:hover {
-  color: #003d7a;
-  text-decoration: underline;
-}
-
-/* Link bianchi SOLO nell'header del sito */
-.masthead a,
-.account-masthead a {
-  color: #ffffff;
-}
-
-.masthead a:hover,
-.account-masthead a:hover {
-  color: #ffffff;
-}
-
-/* Heading delle risorse e breadcrumb: colore blu (non bianco su bianco) */
-.resource-item .heading,
-.breadcrumb {
-  color: #003d7a;
-}
-.homepage [role="main"] {
-    border-top: 0px solid rgb(204, 204, 204);
-    padding-bottom: 30px;
-    background-image: none;
-}
-input.form-control,
-textarea.form-control {
-  font-size: 0.9rem !important;
-}
