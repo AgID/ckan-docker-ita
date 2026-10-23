@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-23` — validatore: nota sull'«Avviso atteso» dello stato della distribuzione
+- Aprendo la riga «Avviso atteso» (regola piveau `StatusRestrictionADMS`) una nota spiega che le regole di data.europa.eu contengono due vincoli incompatibili sullo stato: il profilo level1 chiede il vocabolario ADMS (`deprecateduris.ttl`), mentre `mdr-vocabularies.shape.ttl` e DCAT-AP 3 prevedono distribution-status. Link alle segnalazioni [piveau #124](https://gitlab.com/piveau/community/issues/-/work_items/124) e [SEMICeu/DCAT-AP#490](https://github.com/SEMICeu/DCAT-AP/issues/490).
+
 ## `2026-10-22` — manuale del validatore impaginato sul modello AgID
 - `tools/docs/Manuale_Validatore_DCAT-AP_IT.pdf` ora usa l'impaginazione dei documenti AgID: copertina, licenza CC BY 4.0, frontespizio, scheda del documento (autore, riferimenti normativi, stato, scopo, campo di applicazione), indice e piè di pagina con il capitolo corrente. Contenuto invariato (versione 1.1), sempre in bozza con filigrana «BOZZA».
 

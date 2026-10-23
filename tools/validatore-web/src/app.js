@@ -384,6 +384,7 @@ function renderTable () {
       </summary>
       <div class="ex">
         <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}${g.original && g.original !== g.message ? ` · messaggio originale: <code>${esc(g.original)}</code>` : ''}.</p>
+        ${atteso(g) ? ATTESO_NOTA : ''}
         <table><thead><tr><th>Risorsa</th><th>Valore</th></tr></thead><tbody>${exampleRows(g, 0, FIRST)}</tbody></table>
         ${moreBar(g, Math.min(FIRST, g.examples.length))}
       </div>
@@ -424,6 +425,10 @@ function showMore (btn) {
 // ma si mostra come atteso finche' data.europa.eu non corregge la regola
 const ATTESO_TITOLO = 'Avviso in fase di verifica con il portale europeo'
 const atteso = g => g.severity === 'Warning' && /StatusRestrictionADMS/.test(g.original || '')
+const ATTESO_NOTA = '<p class="exh">Le regole di data.europa.eu (piveau) contengono due vincoli incompatibili sullo stato: ' +
+  'il profilo usato per la validazione chiede il vocabolario ADMS, mentre DCAT-AP 3 prevede distribution-status. ' +
+  'Segnalato in <a href="https://gitlab.com/piveau/community/issues/-/work_items/124" target="_blank" rel="noopener noreferrer">piveau #124</a> ' +
+  'e in <a href="https://github.com/SEMICeu/DCAT-AP/issues/490" target="_blank" rel="noopener noreferrer">SEMICeu/DCAT-AP#490</a>; non richiede correzioni.</p>'
 const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Indicazione' }[s] || s)
 function linkish (v) {
   if (/^https?:\/\//.test(v) && isHttpUrl(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer" class="mono">${esc(v)}</a>`
