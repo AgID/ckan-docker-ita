@@ -12,10 +12,10 @@ msgstr ""
 "PO-Revision-Date: 2016-11-28 12:06+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 0.9.6\n"
 
 #: ckanext/dcatapit/plugin.py:554
@@ -128,12 +128,12 @@ msgstr "Identificativo del dataset"
 msgid "package_identifier_help"
 msgstr ""
 "E’ un codice identificativo univoco che si deve assegnare al dataset.Si "
-"genera associando il codice IPA dell’organizzazione titolare ad un codice"
-" identificativo unico (UUID) generato sul sito "
-"https://www.uuidgenerator.net/ . Questo sito genera, ogni volta che viene"
-" aperto, un codice alfanumerico unico e irripetibile. E’ pertanto "
-"sufficiente aprire il sito e copiare il codice che compare in alto. "
-"Riportare il codice ottenuto nella forma IPA:UUID."
+"genera associando il codice IPA dell’organizzazione titolare ad un codice "
+"identificativo unico (UUID) generato sul sito https://www.uuidgenerator.net/"
+" . Questo sito genera, ogni volta che viene aperto, un codice alfanumerico "
+"unico e irripetibile. E’ pertanto sufficiente aprire il sito e copiare il "
+"codice che compare in alto. Riportare il codice ottenuto nella forma "
+"IPA:UUID."
 
 #: ckanext/dcatapit/schema.py:134
 msgid "Other Identifier"
@@ -146,8 +146,8 @@ msgstr "Altro identificativo"
 #: ckanext/dcatapit/schema.py:137
 msgid "package_alternate_identifier_help"
 msgstr ""
-"Specificare, se utile, uno o più identificativi secondari per il dataset."
-" Per esempio, un identificativo disponibile nel sistema da cui il dato è "
+"Specificare, se utile, uno o più identificativi secondari per il dataset. "
+"Per esempio, un identificativo disponibile nel sistema da cui il dato è "
 "estratto."
 
 #: ckanext/dcatapit/schema.py:145
@@ -162,9 +162,8 @@ msgstr "es. educazione, agricoltura, energia"
 msgid "package_theme_help"
 msgstr ""
 "Assegnare al dataset uno o più temi che descrivano l'ambito in cui si "
-"colloca, scegliendo tra quelli proposti nel menù a tendina. I temi "
-"proposti sono quelli definiti nel vocabolario europeo sui temi per i "
-"cataloghi."
+"colloca, scegliendo tra quelli proposti nel menù a tendina. I temi proposti "
+"sono quelli definiti nel vocabolario europeo sui temi per i cataloghi."
 
 #: ckanext/dcatapit/schema.py:161 ckanext/dcatapit/schema.py:270
 #: ckanext/dcatapit/schema.py:331
@@ -185,8 +184,8 @@ msgstr "identificativo dell'editore"
 msgid "package_publisher_help"
 msgstr ""
 "L’organizzazione che rende disponibile il dataset, pubblicandolo. Vanno "
-"indicati sia il nome che il codice identificativo dell'organizzazione "
-"(per le PA il codice IPA). Non inserire nomi di singole persone."
+"indicati sia il nome che il codice identificativo dell'organizzazione (per "
+"le PA il codice IPA). Non inserire nomi di singole persone."
 
 #: ckanext/dcatapit/schema.py:181
 msgid "Release Date"
@@ -199,8 +198,8 @@ msgstr "Data di rilascio (Anno-Mese-Giorno)"
 #: ckanext/dcatapit/schema.py:185
 msgid "package_issued_help"
 msgstr ""
-"E' la data in cui il dataset è reso disponibile la prima volta. Si "
-"sceglie dal calendario che viene proposto."
+"E' la data in cui il dataset è reso disponibile la prima volta. Si sceglie "
+"dal calendario che viene proposto."
 
 #: ckanext/dcatapit/schema.py:192
 msgid "Modification Date"
@@ -213,10 +212,10 @@ msgstr "Data di modifica (Anno-Mese-Giorno)"
 #: ckanext/dcatapit/schema.py:196
 msgid "package_modified_help"
 msgstr ""
-"E' la data dell'ultima modifica o dell'ultimo aggiornamento del dataset. "
-"Si sceglie dal calendario che viene proposto. In caso di aggiornamento "
-"continuo/quotidiano o comunque molto frequente inserire la data di ultima"
-" modifica sostanziale del dataset."
+"E' la data dell'ultima modifica o dell'ultimo aggiornamento del dataset. Si "
+"sceglie dal calendario che viene proposto. In caso di aggiornamento "
+"continuo/quotidiano o comunque molto frequente inserire la data di ultima "
+"modifica sostanziale del dataset."
 
 #: ckanext/dcatapit/schema.py:204
 msgid "Geographical Name"
@@ -233,8 +232,8 @@ msgstr "Area di competenza dell'unità organizzativa preposta"
 #: ckanext/dcatapit/schema.py:209
 msgid "package_geographical_name_help"
 msgstr ""
-"E' l'area geografica coperta dal dataset; scegliere tra quelle proposte, "
-"che fanno riferimento al \"tabella europea dei luoghi\" (table of places)"
+"E' l'area geografica coperta dal dataset; scegliere tra quelle proposte, che"
+" fanno riferimento al \"tabella europea dei luoghi\" (table of places)"
 
 #: ckanext/dcatapit/schema.py:216
 msgid "GeoNames URL"
@@ -251,11 +250,11 @@ msgstr "Nome della località"
 #: ckanext/dcatapit/schema.py:220
 msgid "package_geographical_geonames_url_help"
 msgstr ""
-"Questa proprietà si riferisce ai riferimenti spaziali dell’area "
-"geografica di pertinenza del dataset ed utilizza una URI (Uniform "
-"Resource Identifier). L’URI da inserire si ottiene sul sito "
-"http://www.geonames.org/. Selezionare la località desiderata inserendone "
-"il nome nel primo campo disponibile per ottenere la URI corrispondente."
+"Questa proprietà si riferisce ai riferimenti spaziali dell’area geografica "
+"di pertinenza del dataset ed utilizza una URI (Uniform Resource Identifier)."
+" L’URI da inserire si ottiene sul sito http://www.geonames.org/. Selezionare"
+" la località desiderata inserendone il nome nel primo campo disponibile per "
+"ottenere la URI corrispondente."
 
 #: ckanext/dcatapit/schema.py:228
 msgid "Dataset Languages"
@@ -290,8 +289,8 @@ msgstr "Data finale"
 #: ckanext/dcatapit/schema.py:258
 msgid "package_temporal_coverage_help"
 msgstr ""
-"Inserire, se pertinente, la data di inizio e di fine del periodo a cui si"
-" riferiscono i dati del dataset."
+"Inserire, se pertinente, la data di inizio e di fine del periodo a cui si "
+"riferiscono i dati del dataset."
 
 #: ckanext/dcatapit/schema.py:264
 msgid "Rights Holder"
@@ -304,21 +303,21 @@ msgstr "Titolare del dataset"
 #: ckanext/dcatapit/schema.py:285
 msgid "package_rights_holder_name_help"
 msgstr ""
-"E' l'organizzazione che detiene la titolarità del dato ovvero quella che "
-"è responsabile della gestione complessiva del dataset in virtù dei propri"
-" compiti istituzionali. Si raccomanda di evitare l’inserimento di nomi di"
-" singole persone. "
+"E' l'organizzazione che detiene la titolarità del dato ovvero quella che è "
+"responsabile della gestione complessiva del dataset in virtù dei propri "
+"compiti istituzionali. Si raccomanda di evitare l’inserimento di nomi di "
+"singole persone. "
 
 #: ckanext/dcatapit/schema.py:286
 msgid "package_rights_holder_name_create_help"
 msgstr ""
-"E' l'organizzazione che detiene la titolarità del dato ovvero quella che "
-"ha originariamente formato per uso proprio o commissionato ad altro "
-"soggetto pubblico o privato il dato. E' necessario selezionare "
-"un'organizzazione già esistente presso la piattaforma CKAN. Se "
-"l'organizzazione titolare non esiste, è necessario crearla fornendo la "
-"sua denominazione e l'identificativo, quest'ultimo rappresentato dal "
-"codice IPA (o partita IVA in caso di organizzazione privata)."
+"E' l'organizzazione che detiene la titolarità del dato ovvero quella che ha "
+"originariamente formato per uso proprio o commissionato ad altro soggetto "
+"pubblico o privato il dato. E' necessario selezionare un'organizzazione già "
+"esistente presso la piattaforma CKAN. Se l'organizzazione titolare non "
+"esiste, è necessario crearla fornendo la sua denominazione e "
+"l'identificativo, quest'ultimo rappresentato dal codice IPA (o partita IVA "
+"in caso di organizzazione privata)."
 
 #: ckanext/dcatapit/schema.py:294
 msgid "Frequency"
@@ -332,8 +331,7 @@ msgstr "frequenza di aggiornamento"
 msgid "package_frequency_help"
 msgstr ""
 "Frequenza temporale con cui il dataset viene aggiornato; scegliere tra "
-"quelle proposte che fanno riferimento al vocabolario europeo sulle "
-"frequenze"
+"quelle proposte che fanno riferimento al vocabolario europeo sulle frequenze"
 
 #: ckanext/dcatapit/schema.py:305
 msgid "Version Of"
@@ -347,15 +345,15 @@ msgstr "è una versione del datase con URI"
 msgid "package_is_version_of_help"
 msgstr ""
 "Questa proprietà si può utilizzare se il dataset è un adattamento o una "
-"nuova versione di un dataset già pubblicato e descritto. Per esempio, se "
-"si vuole inserire una nuova versione 2.0 di un dataset già presente nel "
+"nuova versione di un dataset già pubblicato e descritto. Per esempio, se si "
+"vuole inserire una nuova versione 2.0 di un dataset già presente nel "
 "catalogo (con versione 1.0) si richiede di indicare il riferimento al "
-"dataset già incluso nel catalogo. Generalmente, si sconsiglia fortemente "
-"di creare nuovi dataset per piccoli cambiamenti. E’ invece consigliato "
-"definire nuovi dataset solo in presenza di cambiamenti significativi "
-"rispetto a precedenti versioni (e.g., nuovi elementi inclusi, adattamenti"
-" significativi di alcuni elementi, ecc). Per fare riferimento al dataset "
-"di riferimento, inserire l'identificativo del dataset stesso."
+"dataset già incluso nel catalogo. Generalmente, si sconsiglia fortemente di "
+"creare nuovi dataset per piccoli cambiamenti. E’ invece consigliato definire"
+" nuovi dataset solo in presenza di cambiamenti significativi rispetto a "
+"precedenti versioni (e.g., nuovi elementi inclusi, adattamenti significativi"
+" di alcuni elementi, ecc). Per fare riferimento al dataset di riferimento, "
+"inserire l'identificativo del dataset stesso."
 
 #: ckanext/dcatapit/schema.py:315
 msgid "Conforms To"
@@ -368,11 +366,11 @@ msgstr "Conforme a"
 #: ckanext/dcatapit/schema.py:318
 msgid "package_conforms_to_help"
 msgstr ""
-"Questa proprietà si riferisce a una regola implementativa o altra "
-"specifica a cui il dataset è conforme. Si possono specificare uno o più "
-"standard, sia tecnici (anche de-facto) come per esempio DCAT, ISO/IEC "
-"25012, CSW, ecc., sia riferimenti normativi (e.g., Decreto legislativo "
-"n.82/2005 - Codice dell’Amministrazione Digitale)."
+"Questa proprietà si riferisce a una regola implementativa o altra specifica "
+"a cui il dataset è conforme. Si possono specificare uno o più standard, sia "
+"tecnici (anche de-facto) come per esempio DCAT, ISO/IEC 25012, CSW, ecc., "
+"sia riferimenti normativi (e.g., Decreto legislativo n.82/2005 - Codice "
+"dell’Amministrazione Digitale)."
 
 #: ckanext/dcatapit/schema.py:323
 msgid "Creator"
@@ -385,13 +383,13 @@ msgstr "autore del dataset"
 #: ckanext/dcatapit/schema.py:345
 msgid "package_creator_help"
 msgstr ""
-"Questa proprietà si riferisce a una o più entità (organizzazione) che "
-"hanno materialmente creato il dataset. Se l'editore non l’ha prodotto, si"
-" può indicare l’organizzazione che ha materialmente prodotto il dataset. "
-"Si raccomanda di evitare l’inserimento di nomi di singole persone. Nel "
-"caso in cui editore e autore del dataset coincidano, allora si può "
-"omettere questa  proprietà. Vanno inseriti il nome dell'organizzazione e "
-"il suo codice identificativo."
+"Questa proprietà si riferisce a una o più entità (organizzazione) che hanno "
+"materialmente creato il dataset. Se l'editore non l’ha prodotto, si può "
+"indicare l’organizzazione che ha materialmente prodotto il dataset. Si "
+"raccomanda di evitare l’inserimento di nomi di singole persone. Nel caso in "
+"cui editore e autore del dataset coincidano, allora si può omettere questa  "
+"proprietà. Vanno inseriti il nome dell'organizzazione e il suo codice "
+"identificativo."
 
 #: ckanext/dcatapit/schema.py:361
 #: ckanext/dcatapit/templates/package/resource_read.html:20
@@ -572,8 +570,8 @@ msgstr "Inizio intervallo mancante nell'estensione temporale"
 #: ckanext/dcatapit/validators.py:368
 msgid "Temporal coverage start {} is after end {}"
 msgstr ""
-"La data iniziale dell'intervallo temporale {} è posteriore alla data "
-"finale {}"
+"La data iniziale dell'intervallo temporale {} è posteriore alla data finale "
+"{}"
 
 #: ckanext/dcatapit/validators.py:381 ckanext/dcatapit/validators.py:403
 #: ckanext/dcatapit/validators.py:412
@@ -670,7 +668,8 @@ msgstr "Campo personalizzato"
 
 #: ckanext/dcatapit/templates/macros/dcatapit_form_macros.html:73
 msgid "Select organization"
-msgstr "Automaticamente assegnato all'organizzazione proprietaria del dataset."
+msgstr ""
+"Automaticamente assegnato all'organizzazione proprietaria del dataset."
 
 #: ckanext/dcatapit/templates/macros/dcatapit_form_macros.html:190
 msgid "Add a Theme"
@@ -894,10 +893,9 @@ msgid "eg. 1024"
 msgstr "es. 1024"
 
 msgid "The organization selected above will be used as rights holder"
-msgstr "L'organizzazione proprietaria del dataset, selezionabile nel campo precedente, sarà indicata come titolare."
-
-#~ msgid "Organizations"
-#~ msgstr "Soggetti"
+msgstr ""
+"L'organizzazione proprietaria del dataset, selezionabile nel campo "
+"precedente, sarà indicata come titolare."
 
 msgid "Thesaurus File Uploader"
 msgstr "Caricamento vocabolari"
@@ -907,7 +905,6 @@ msgstr "Seleziona un file RDF di vocabolario"
 
 msgid "Submit"
 msgstr "Invia"
-
 
 msgid "Load vocabulary result"
 msgstr "Risultato del caricamento del vocabolario"
@@ -930,7 +927,6 @@ msgstr "Tag eliminati"
 msgid "tag_skipped"
 msgstr "Tag non processati"
 
-
 msgid "label_added"
 msgstr "Etichette aggiunte"
 
@@ -942,3 +938,110 @@ msgstr "Etichette non modificate"
 
 msgid "label_skipped"
 msgstr "Etichette non processate"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Skip to main content"
+msgstr "Salta al contenuto principale"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Search Datasets..."
+msgstr "Cerca dataset..."
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Search datasets"
+msgstr "Cerca dataset"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Toggle navigation"
+msgstr "Apri o chiudi il menu di navigazione"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Language"
+msgstr "Lingua"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Data and Resources"
+msgstr "Dati e risorse"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Account"
+msgstr "Account"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Breadcrumb"
+msgstr "Percorso di navigazione"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Close"
+msgstr "Chiudi"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "close"
+msgstr "chiudi"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "List of downloadable formats"
+msgstr "Elenco dei formati scaricabili"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Profile settings"
+msgstr "Impostazioni del profilo"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Promote user to Sysadmin"
+msgstr "Promuovi l'utente ad amministratore di sistema"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Revoke"
+msgstr "Revoca"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Revoke Sysadmin permission"
+msgstr "Revoca i permessi di amministratore di sistema"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "View dashboard"
+msgstr "Vai alla dashboard"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Navigate to resource: {name_or_id}"
+msgstr "Vai alla risorsa: {name_or_id}"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Filter by: {title}"
+msgstr "Filtra per: {title}"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Pagination"
+msgstr "Paginazione"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Previous page"
+msgstr "Pagina precedente"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Next page"
+msgstr "Pagina successiva"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "{label}: {count} datasets"
+msgstr "{label}: {count} dataset"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "{label}: {count} datasets, active filter (click to remove)"
+msgstr "{label}: {count} dataset, filtro attivo (premi per rimuoverlo)"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Resource: {name}, format: {format}"
+msgstr "Risorsa: {name}, formato: {format}"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Explore resource: {name}"
+msgstr "Esplora la risorsa: {name}"
+
+#. Accessibilita' WCAG: stringa di CKAN core non tradotta o tradotta male
+msgid "Accessibility statement"
+msgstr "Dichiarazione di accessibilità"
+
+#~ msgid "Organizations"
+#~ msgstr "Soggetti"

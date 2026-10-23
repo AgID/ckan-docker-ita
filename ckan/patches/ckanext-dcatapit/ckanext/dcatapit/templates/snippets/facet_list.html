@@ -1,0 +1,60 @@
+{% ckan_extends %}
+
+{#
+  Accessibilita' dei filtri di ricerca (WCAG 2.4.4, 4.1.2)
+  - l'etichetta per i lettori di schermo usa il nome completo (a vista
+    resta troncato a 22 caratteri) e il numero di dataset; prima diceva
+    "Search datasets by organization: Ministero del..." col nome tecnico
+    del campo;
+  - il filtro attivo e' annunciato come tale e come rimovibile;
+  - icone decorative nascoste ai lettori di schermo.
+#}
+
+{% block facet_list_heading %}
+  <h2 class="module-heading">
+    <i class="fa fa-filter" aria-hidden="true"></i>
+    {{ title }}
+  </h2>
+{% endblock %}
+
+{% block facet_list_items %}
+  {% with items = items or h.get_facet_items_dict(name, search_facets) %}
+    {% if items %}
+      <nav aria-label="{{ _('Filter by: {title}').format(title=title) }}">
+        <ul class="list-unstyled nav nav-simple nav-facet">
+          {% for item in items %}
+            {% set href = h.remove_url_param(name, item.name, extras=extras, alternative_url=alternative_url) if item.active else h.add_url_param(new_params={name: item.name}, extras=extras, alternative_url=alternative_url) %}
+            {% set label = label_function(item) if label_function else item.display_name %}
+            {% set label_truncated = label|truncate(22) if not label_function else label %}
+            {% set count = count_label(item['count']) if count_label else ('%d' % item['count']) %}
+            {% if item.active %}
+              {% set item_aria = _('{label}: {count} datasets, active filter (click to remove)').format(label=label, count=count) %}
+            {% else %}
+              {% set item_aria = _('{label}: {count} datasets').format(label=label, count=count) %}
+            {% endif %}
+            <li class="nav-item {% if item.active %} active{% endif %}">
+              <a href="{{ href }}" aria-label="{{ item_aria }}" {% if item.active %}aria-current="true"{% endif %} {% if label != label_truncated %} data-bs-title="{{ label }}" data-bs-toggle="tooltip" {% endif %}>
+                <span class="item-label">{{ label_truncated }}</span>
+                <span class="hidden separator"> - </span>
+                <span class="item-count badge">{{ count }}</span>
+                {% if item.active %}<span class="facet-close" aria-hidden="true">x</span>{% endif %}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+
+      <p class="module-footer">
+        {% if h.get_param_int('_%s_limit' % name) %}
+          {% if h.has_more_facets(name, search_facets) %}
+            <a href="{{ h.remove_url_param('_%s_limit' % name, replace=0, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Show More {facet_type}').format(facet_type=title) }}</a>
+          {% endif %}
+        {% else %}
+          <a href="{{ h.remove_url_param('_%s_limit' % name, extras=extras, alternative_url=alternative_url) }}" class="read-more">{{ _('Show Only Popular {facet_type}').format(facet_type=title) }}</a>
+        {% endif %}
+      </p>
+    {% else %}
+      <p class="module-content empty">{{ _('There are no {facet_type} that match this search').format(facet_type=title) }}</p>
+    {% endif %}
+  {% endwith %}
+{% endblock %}

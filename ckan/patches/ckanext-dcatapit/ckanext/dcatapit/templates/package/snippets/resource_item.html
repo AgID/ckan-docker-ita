@@ -1,0 +1,36 @@
+{% ckan_extends %}
+
+{#
+  accessibilita' dell'elenco risorse
+  - titolo: l'etichetta per i lettori di schermo dice nome e formato
+    (nel testo visibile sono attaccati, es. "datiCSV") (WCAG 2.4.4);
+  - "Esplora": <button> invece di <a href="#">, con id univoco per
+    risorsa (prima "dropdownExplorer" ripetuto) e nome che contiene
+    la risorsa (WCAG 4.1.2, 2.5.3);
+  - icone decorative nascoste ai lettori di schermo.
+#}
+
+{% block resource_item_title %}
+  {% set name_or_id = res.name or res.id %}
+  {% set res_format = h.get_translated(res, 'format') %}
+  {% set res_label = _('Resource: {name}, format: {format}').format(name=name_or_id, format=res_format) if res_format else _('Navigate to resource: {name_or_id}').format(name_or_id=name_or_id) %}
+  <a class="heading" href="{{ url }}" aria-label="{{ res_label }}">
+    {{ h.resource_display_name(res) | truncate(50) }}<span class="format-label" property="dc:format" data-format="{{ res.format.lower() or 'data' }}">{{ res_format }}</span>
+  </a>
+{% endblock %}
+
+{% block resource_item_explore %}
+  {% if not url_is_edit %}
+  {% set explore_id = 'explore-' ~ res.id %}
+  <div class="dropdown btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" id="{{ explore_id }}" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ _('Explore resource: {name}').format(name=res.name or res.id) }}">
+      <i class="fa fa-share" aria-hidden="true"></i>
+      {{ _('Explore') }}
+      <span class="caret" aria-hidden="true"></span>
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="{{ explore_id }}">
+      {% block resource_item_explore_links %}{{ super() }}{% endblock %}
+    </ul>
+  </div>
+  {% endif %}
+{% endblock %}

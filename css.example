@@ -175,8 +175,10 @@ ul {
   left: 10px;
 }
 
-/* WCAG 1.3.1 / 2.4.4 — nel template il formato è attaccato al nome
-   della risorsa, e lo screen reader legge "datiCSVCSV".
+/* WCAG 1.3.1 / 2.4.4 — nel template core il formato è attaccato al
+   nome della risorsa ("datiCSVCSV"). Il template di dcatapit mette già
+   nome e formato nell'aria-label del link: questa regola resta come
+   ripiego.
    Il testo alternativo del contenuto generato (sintassi "/") aggiunge
    un separatore solo per le tecnologie assistive, senza cambiare
    l'aspetto. I browser che non la supportano ignorano la regola. */
@@ -767,22 +769,17 @@ select {
 
 
 /* ===============================================================
-   DA FARE FUORI DAL CSS (template / traduzioni)
-   Il CSS non basta per questi punti:
-
-   - WCAG 3.1.2: "Skip to main content", segnaposto della ricerca
-     ed etichetta "Toggle navigation" vanno tradotti nel catalogo
-     it; l'etichetta del selettore lingua va resa con "Lingua".
-   - WCAG 1.3.1: in homepage manca un h1; nelle liste i titoli
-     dei dataset sono h2 dentro sezioni h3.
-   - WCAG 2.4.4 / 4.1.2: nella paginazione il link "pagina
-     successiva" non ha testo e "..." è un link a "#".
-   - WCAG 2.4.4: i facet troncati ("Ministero del...") vanno
-     completati con aria-label (nome intero e numero di dataset).
-   - WCAG 4.1.2: il pulsante "Esplora" delle risorse è un <a
-     href="#">; meglio un <button>.
-   - Logo dell'ente con alt significativo; immagini di gruppi e
-     organizzazioni accanto al nome con alt="".
-   - Link "Dichiarazione di accessibilità" nel footer (obbligo per
-     le PA, Linee guida AgID).
+   PUNTI RISOLTI FUORI DAL CSS (template di ckanext-dcatapit e patch
+   patches/ckan/01_pagination_accessibilita.patch)
+   - traduzioni italiane mancanti nel core (skip link, ricerca,
+     menu, etichette aria, "Lingua");
+   - h1 in homepage, titoli h2/h3 coerenti nelle sezioni in evidenza,
+     tolta la "sezione in evidenza" d'esempio;
+   - paginazione in <nav>, frecce con testo, pagina corrente
+     annunciata, puntini non piu' link;
+   - filtri con nome completo e numero di dataset;
+   - "Esplora" come <button> con id univoco, nome e formato della
+     risorsa nell'etichetta;
+   - link "Dichiarazione di accessibilità" nel footer se e'
+     impostato CKANEXT__DCATAPIT__ACCESSIBILITY_STATEMENT_URL.
    =============================================================== */

@@ -39,6 +39,13 @@ DEFAULT_ORG_CTX.update(dict((k, False) for k in ('include_tags',
                                                  'include_followers',)))
 
 
+def get_accessibility_statement_url():
+    """URL della dichiarazione di accessibilita' (link nel footer).
+    Config: ckanext.dcatapit.accessibility_statement_url
+    (env CKANEXT__DCATAPIT__ACCESSIBILITY_STATEMENT_URL). Vuoto = nessun link."""
+    return (config.get('ckanext.dcatapit.accessibility_statement_url') or '').strip()
+
+
 def get_dcatapit_package_schema():
     log.debug('Retrieving DCAT-AP_IT package schema fields...')
     return dcatapit_schema.get_custom_package_schema()

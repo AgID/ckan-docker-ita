@@ -1,0 +1,22 @@
+{% ckan_extends %}
+
+{#
+  gruppo in evidenza in homepage (WCAG 1.3.1, 1.1.1, 2.4.4)
+  - titolo del gruppo h2 e dataset h3 (prima h3 con dentro h2);
+  - l'immagine ripeteva il link del titolo con alt = slug: ora e'
+    decorativa e fuori dall'ordine di tabulazione.
+#}
+
+{% block group_item_header_image %}
+  <a class="module-image" href="{{ h.url_for(group.type ~ '.read', id=group.name) }}" tabindex="-1" aria-hidden="true">
+    <img src="{{ group.image_display_url or h.url_for_static('/base/images/placeholder-group.png') }}" alt="" />
+  </a>
+{% endblock %}
+
+{% block group_item_header_title %}
+  <h2 class="media-heading h3"><a href="{{ h.url_for(group.type ~ '.read', id=group.name) }}">{{ group.title or group.name }}</a></h2>
+{% endblock %}
+
+{% block group_item_content %}
+  {% snippet 'snippets/package_list.html', packages=group.packages, list_class="list-unstyled dataset-list", item_class="dataset-item module-content", heading_level=3 %}
+{% endblock %}

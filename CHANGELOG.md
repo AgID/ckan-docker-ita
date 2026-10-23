@@ -1,5 +1,13 @@
 # Changelog
 
+## `2026-10-23` — accessibilità WCAG 2.1 AA dei template
+- **Traduzioni**: il catalogo italiano di `ckanext-dcatapit` aggiunge le stringhe del core rimaste vuote (skip link «Salta al contenuto principale», ricerca, «Apri o chiudi il menu di navigazione», etichette `aria-label`) e corregge «Linguaggio» in «Lingua» e «Data e Risorse» in «Dati e risorse». Le traduzioni delle estensioni sono unite dopo quelle del core e le sovrascrivono.
+- **Homepage**: `h1` con il titolo del sito quando c'è il testo introduttivo; titoli di gruppi e organizzazioni in evidenza h2 e dataset h3 (prima h3 con dentro h2); immagini decorative fuori dal tab; tolta la «sezione in evidenza» d'esempio con immagine segnaposto e link a `#`.
+- **Paginazione** (`patches/ckan/01_pagination_accessibilita.patch`, applicata al core in fase di build): `<nav>` con etichetta, frecce con testo per i lettori di schermo, `aria-current` sulla pagina corrente, puntini non più link.
+- **Filtri di ricerca**: l'etichetta dice nome completo e numero di dataset; filtro attivo annunciato come tale.
+- **Risorse**: «Esplora» è un `<button>` con id univoco (prima `dropdownExplorer` ripetuto); l'etichetta del link dice nome e formato della risorsa.
+- **Footer**: link «Dichiarazione di accessibilità» se è impostato `CKANEXT__DCATAPIT__ACCESSIBILITY_STATEMENT_URL`.
+
 ## `2026-10-23` — `css.example`: revisione accessibilità WCAG 2.1 AA
 - Focus visibile anche nell'header: l'anello blu sulla barra blu era quasi invisibile (1.3:1), ora è bianco (4.6:1). Stile visibile al focus per lo skip link nativo di CKAN (`.visually-hidden-focusable`); la vecchia classe `.skip-link` non era usata dal template.
 - Hover e voce attiva del menu desktop: contrasto da 3.6:1 a 9.3:1, con sottolineatura come indicatore non solo cromatico.

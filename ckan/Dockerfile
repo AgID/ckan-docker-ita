@@ -102,6 +102,9 @@ COPY patches/groups ${APP_DIR}/patches/groups
 
 # Apply any patches needed to CKAN core or any of the built extensions (not the
 # runtime mounted ones)
+# patches/ckan/01_pagination_accessibilita.patch: paginazione accessibile
+# (WCAG 1.3.1, 2.4.4, 4.1.2) — <nav> con etichetta, frecce con testo per i
+# lettori di schermo, aria-current sulla pagina corrente, puntini non link.
 COPY patches ${APP_DIR}/patches
 
 RUN for d in $APP_DIR/patches/*; do \

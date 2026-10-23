@@ -261,6 +261,7 @@ class DCATAPITPackagePlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm,
             'dcatapit_enable_form_tabs': helpers.get_enable_form_tabs,
             'dcatapit_get_icustomschema_fields': helpers.get_icustomschema_fields,
             'dcatapit_edp_mqa': edp_mqa.edp_mqa,
+            'dcatapit_accessibility_statement_url': helpers.get_accessibility_statement_url,
         }
 
         if MLR:

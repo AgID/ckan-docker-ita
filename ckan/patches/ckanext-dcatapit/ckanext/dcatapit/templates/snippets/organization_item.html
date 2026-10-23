@@ -1,0 +1,22 @@
+{% ckan_extends %}
+
+{#
+  organizzazione in evidenza in homepage (WCAG 1.3.1, 1.1.1, 2.4.4)
+  - titolo dell'organizzazione h2 e dataset h3 (prima h3 con dentro h2);
+  - l'immagine ripeteva il link del titolo con alt = slug: ora e'
+    decorativa e fuori dall'ordine di tabulazione.
+#}
+
+{% block organization_item_header_image %}
+  <a class="module-image" href="{{ url }}" tabindex="-1" aria-hidden="true">
+    <img src="{{ organization.image_display_url or h.url_for_static('/base/images/placeholder-organization.png') }}" alt="" />
+  </a>
+{% endblock %}
+
+{% block organization_item_header_title %}
+  <h2 class="media-heading h3"><a href="{{ url }}">{{ organization.title or organization.name }}</a></h2>
+{% endblock %}
+
+{% block organization_item_content %}
+  {% snippet 'snippets/package_list.html', packages=organization.packages, list_class="list-unstyled dataset-list", item_class="dataset-item module-content", heading_level=3 %}
+{% endblock %}
