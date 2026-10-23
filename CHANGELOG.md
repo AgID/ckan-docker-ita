@@ -7,8 +7,8 @@
 - Link del footer sottolineati: blu del link e blu del testo differivano solo per colore (1.9:1).
 - Campi dei form alti almeno 38px e testo a 1rem (era 0.7em); bordo dei campi a 4.7:1.
 - Separatore per lettori di schermo tra nome e formato della risorsa (prima veniva letto «datiCSVCSV»).
-- Rientro ripristinato per le liste nelle descrizioni dei dataset; titolo e sottotitolo dell'header vanno a capo su mobile; rispetto di `prefers-reduced-motion`.
-- Pulizia: rimosso il blocco footer duplicato e le regole di colore dei link in conflitto; corretti i rapporti di contrasto nei commenti; l'immagine di sfondo della homepage è ora un esempio commentato.
+- Rientro ripristinato per le liste nelle descrizioni dei dataset; il sottotitolo dell'header va a capo su mobile; rispetto di `prefers-reduced-motion`.
+- Pulizia: rimosso il blocco footer duplicato e le regole di colore dei link in conflitto; corretti i rapporti di contrasto nei commenti; l'immagine di sfondo della homepage è ora un esempio commentato; tolto il titolo d'esempio dell'ente aggiunto via CSS (resta il sottotitolo).
 - In fondo al file l'elenco dei punti che richiedono modifiche ai template o alle traduzioni (h1 in homepage, paginazione, facet troncati, stringhe in inglese, dichiarazione di accessibilità).
 
 ## `2026-10-23` — validatore: nota sull'«Avviso atteso» dello stato della distribuzione

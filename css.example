@@ -253,14 +253,14 @@ ul {
 }
 
 /* ---------------------------------------------------------------
-   Logo + titolo + sottotitolo.
+   Logo + sottotitolo.
    Con il logo impostato il template non mostra il titolo del sito:
-   qui titolo e sottotitolo sono aggiunti con ::before/::after.
+   qui il sottotitolo è aggiunto con ::after.
 
    LIMITE (WCAG 1.3.1): il testo generato via CSS non è nel DOM,
    non si traduce e non tutti gli screen reader lo leggono.
-   Usarlo solo come ripiego: la soluzione corretta è mettere titolo
-   e sottotitolo nel template header.html. Il logo deve comunque
+   Usarlo solo come ripiego: la soluzione corretta è mettere il
+   sottotitolo nel template header.html. Il logo deve comunque
    avere un alt con il nome dell'ente.
    --------------------------------------------------------------- */
 .masthead hgroup.header-image {
@@ -288,23 +288,7 @@ ul {
   display: block;
 }
 
-/* TITOLO — sostituire con il nome dell'ente.
-   Bianco su #1c75d1 = 4.6:1 */
-.masthead hgroup.header-image::before {
-  content: "Comune di Bugnano";
-  order: 2;
-  color: #ffffff;
-  font-family: 'Titillium Web', sans-serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-  flex-basis: calc(100% - 130px - 1.25rem);
-  margin: 0;
-  padding: 0;
-}
-
-/* SOTTOTITOLO */
+/* SOTTOTITOLO — bianco su #1c75d1 = 4.6:1 */
 .masthead hgroup.header-image::after {
   content: "Portale dei Dati Aperti";
   order: 3;
@@ -323,14 +307,9 @@ ul {
   .masthead hgroup.header-image .logo img {
     height: 90px;
   }
-  .masthead hgroup.header-image::before {
-    font-size: 1.6rem;
-    white-space: normal; /* WCAG 1.4.10 — niente scroll orizzontale */
-    flex-basis: calc(100% - 90px - 1.25rem);
-  }
   .masthead hgroup.header-image::after {
     font-size: 0.95rem;
-    white-space: normal;
+    white-space: normal; /* WCAG 1.4.10 — niente scroll orizzontale */
     flex-basis: calc(100% - 90px - 1.25rem);
   }
 }
