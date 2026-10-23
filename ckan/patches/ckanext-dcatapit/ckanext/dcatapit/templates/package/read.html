@@ -1,6 +1,12 @@
 
 {% ckan_extends %}
 
+{# Etichetta DGA accanto al titolo del dataset (accesso limitato, Data Governance Act) #}
+{% block page_heading %}
+  {{ super() }}
+  {% snippet "snippets/dcatapit_dga_badge.html", pkg=pkg %}
+{% endblock %}
+
 {% block package_additional_info %}
 
   {% snippet "package/snippets/dcatapit_additional_info.html", pkg_dict=pkg %}

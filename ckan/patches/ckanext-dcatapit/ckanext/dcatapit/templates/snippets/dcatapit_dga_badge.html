@@ -1,0 +1,16 @@
+{#
+  Etichetta "DGA" per i dataset con dct:accessRights RESTRICTED (Data Governance Act).
+  Parametri: pkg (dict del dataset), small (true per la versione compatta nei risultati).
+  Lo stile e' inline perche' il badge vive dentro un <h2>/<h1> e altrimenti ne eredita
+  la dimensione del font. Colori: #1a1a1a su #f0ad4e = 8.9:1 (WCAG 1.4.3).
+#}
+{% if h.dcatapit_is_restricted(pkg) %}
+  <a href="{{ h.dcatapit_restricted_search_url() }}"
+     class="badge bg-warning text-dark dcatita-dga-badge"
+     style="font-size: {{ '.65rem' if small else '.7rem' }}; font-weight: 600; letter-spacing: .04em;
+            padding: .2em .5em; vertical-align: middle; position: relative; top: -.15em;
+            margin-left: .5rem; text-decoration: none;"
+     title="{{ _('Dati ad accesso limitato ai sensi del Regolamento (UE) 2022/868 - Data Governance Act') }}">
+    DGA
+  </a>
+{% endif %}

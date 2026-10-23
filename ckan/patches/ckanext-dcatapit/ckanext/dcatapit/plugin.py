@@ -262,6 +262,8 @@ class DCATAPITPackagePlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm,
             'dcatapit_get_icustomschema_fields': helpers.get_icustomschema_fields,
             'dcatapit_edp_mqa': edp_mqa.edp_mqa,
             'dcatapit_accessibility_statement_url': helpers.get_accessibility_statement_url,
+            'dcatapit_is_restricted': helpers.is_restricted,
+            'dcatapit_restricted_search_url': helpers.restricted_search_url,
         }
 
         if MLR:

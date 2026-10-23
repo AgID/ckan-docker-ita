@@ -39,6 +39,33 @@ DEFAULT_ORG_CTX.update(dict((k, False) for k in ('include_tags',
                                                  'include_followers',)))
 
 
+RESTRICTED_ACCESS_RIGHTS = 'http://publications.europa.eu/resource/authority/access-right/RESTRICTED'
+
+
+def is_restricted(pkg):
+    """True se il dataset ha dct:accessRights RESTRICTED (dati ad accesso
+    limitato ai sensi del Data Governance Act, Reg. UE 2022/868). Funziona
+    sia con il dict completo di package_show sia con quello dei risultati
+    di ricerca (access_rights come campo o come extra)."""
+    if not pkg:
+        return False
+    value = pkg.get('access_rights') or ''
+    if not value:
+        for extra in pkg.get('extras') or []:
+            if isinstance(extra, dict) and extra.get('key') == 'access_rights':
+                value = extra.get('value') or ''
+                break
+    return 'RESTRICTED' in str(value).upper()
+
+
+def restricted_search_url():
+    """URL della ricerca filtrata sui soli dataset ad accesso limitato."""
+    try:
+        return h.url_for('dataset.search', access_rights=RESTRICTED_ACCESS_RIGHTS)
+    except Exception:
+        return '/dataset/?access_rights=' + RESTRICTED_ACCESS_RIGHTS
+
+
 def get_accessibility_statement_url():
     """URL della dichiarazione di accessibilita' (link nel footer).
     Config: ckanext.dcatapit.accessibility_statement_url

@@ -783,3 +783,42 @@ select {
    - link "Dichiarazione di accessibilità" nel footer se e'
      impostato CKANEXT__DCATAPIT__ACCESSIBILITY_STATEMENT_URL.
    =============================================================== */
+
+
+/* ===============================================================
+   11. ETICHETTA DGA (ckanext-dcatapit)
+   Dataset ad accesso limitato (Data Governance Act). Il badge sta
+   dentro il titolo h1/h2: senza font-size esplicito ne erediterebbe
+   la dimensione. #1a1a1a su #f0ad4e = 8.9:1
+   =============================================================== */
+.dcatita-dga-badge,
+h1 .dcatita-dga-badge,
+h2 .dcatita-dga-badge,
+.dataset-heading .dcatita-dga-badge {
+  display: inline-block;
+  font-size: 0.9rem !important;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2em 0.5em !important;
+  border-radius: 0.25rem;
+  vertical-align: middle;
+  position: relative;
+  top: -0.1em;
+  margin-left: 0.5rem;
+  text-decoration: none !important;
+  background-color: #f0ad4e !important;
+  color: #1a1a1a !important;
+  white-space: nowrap;
+}
+.dcatita-dga-badge:hover,
+.dcatita-dga-badge:focus {
+  background-color: #d99226 !important;
+  color: #000 !important;
+  text-decoration: none !important;
+}
+.dcatita-dga-badge:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+

@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-23` — etichetta DGA sui dataset ad accesso limitato
+- I dataset con `dct:accessRights` RESTRICTED (dati ad accesso limitato ai sensi del Regolamento UE 2022/868, Data Governance Act) mostrano un'etichetta **DGA** accanto al titolo, nei risultati di ricerca e nella pagina del dataset. L'etichetta porta alla ricerca filtrata sui soli dataset ad accesso limitato.
+- Helper `dcatapit_is_restricted` e `dcatapit_restricted_search_url`, snippet `snippets/dcatapit_dga_badge.html`; override dei blocchi `heading_meta` (`snippets/package_item.html`) e `page_heading` (`package/read.html`). Stile in `css.example` (contrasto 8.9:1).
+
 ## `2026-10-23` — accessibilità WCAG 2.1 AA dei template
 - **Traduzioni**: il catalogo italiano di `ckanext-dcatapit` aggiunge le stringhe del core rimaste vuote (skip link «Salta al contenuto principale», ricerca, «Apri o chiudi il menu di navigazione», etichette `aria-label`) e corregge «Linguaggio» in «Lingua» e «Data e Risorse» in «Dati e risorse». Le traduzioni delle estensioni sono unite dopo quelle del core e le sovrascrivono.
 - **Homepage**: `h1` con il titolo del sito quando c'è il testo introduttivo; titoli di gruppi e organizzazioni in evidenza h2 e dataset h3 (prima h3 con dentro h2); immagini decorative fuori dal tab; tolta la «sezione in evidenza» d'esempio con immagine segnaposto e link a `#`.
