@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-23` — aggiornamenti di sicurezza delle immagini
+- Immagine CKAN: `apt-get upgrade` in fase di build (perl, expat, pcre2, gnutls, libpq, Python 3.11 di sistema) e rimozione degli header del kernel Linux lasciati da `ckan/ckan-base:2.10.11` (`linux-headers`, `linux-kbuild`, `linux-compiler`): nel container il kernel e' quello dell'host, ma contavano oltre 1600 segnalazioni. Resta `linux-libc-dev`, richiesto da `libc6-dev` (le sue segnalazioni riguardano il kernel e non hanno effetto nel container).
+- Librerie Python portate alle versioni corrette: `certifi>=2026.10.19`, `PyJWT>=2.14.0`, `urllib3>=2.8.0` (compatibile con requests 2.32 su Python 3.10), `sqlparse>=0.5.5`.
+- Solr, NGINX e PostgreSQL: aggiornamenti dei pacchetti di sistema in fase di build (`apt-get upgrade` / `apk upgrade`). Per prenderli serve `docker compose build --pull`.
+- **Segreti**: `.env.example` non contiene piu' `CHANGE_ME`. Con le righe commentate, `beaker.session.secret` e i segreti JWT vengono generati al primo avvio e conservati nel volume `ckan_storage` (nuovo entrypoint `ckan/setup/ckan-ita-entrypoint.sh`). **Istanze esistenti con `CHANGE_ME` nel `.env`**: chiunque conosca il valore puo' fabbricare cookie di sessione validi. Sostituire i valori con segreti casuali (o commentare le righe); dopo il riavvio gli utenti rifanno il login e i token API vanno rigenerati.
+
 ## `2026-10-23` — attribuzione del footer configurabile
 - Il testo «rebuilt by …» del footer si imposta con `CKANEXT__DCATAPIT__FOOTER_REBUILT_BY`; vuoto (default) = `AgID`. Prima era fisso «rebuilt by Piersoft for AgID».
 

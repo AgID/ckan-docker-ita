@@ -123,10 +123,35 @@ RUN for d in $APP_DIR/patches/*; do \
 COPY setup_groups.sh ${APP_DIR}/setup_groups.sh
 RUN chmod +x ${APP_DIR}/setup_groups.sh
 
-# Utilita' di base (un solo layer, non interattivo)
+# Utilita' di base e aggiornamenti di sicurezza Debian (un solo layer, non interattivo).
+# - apt-get upgrade: correzioni non ancora presenti nell'immagine base
+#   (perl, expat, pcre2, gnutls, libpq, python3.11 di sistema...)
+# - via gli header del kernel Linux lasciati dalla base (linux-headers, kbuild,
+#   compiler): servono solo a compilare moduli, nel container il kernel e' quello
+#   dell'host. Portavano oltre 1600 segnalazioni (CVE del kernel) senza effetto reale.
+#   linux-libc-dev resta: e' richiesto da libc6-dev.
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends nano curl \
+    && KHDR="$(dpkg-query -W -f '${binary:Package}\n' 'linux-headers-*' 'linux-kbuild-*' 'linux-compiler-gcc-*' 2>/dev/null || true)" \
+    && if [ -n "$KHDR" ]; then apt-get purge -y $KHDR; fi \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install setuptools==80
-RUN pip3 install --no-cache-dir -U certifi
+# Aggiornamenti di sicurezza delle librerie Python fissate da CKAN 2.10.11
+# (versioni minime che correggono CVE note, segnalate da Trivy/Docker Scout).
+# urllib3 2.x: compatibile con requests 2.32 di CKAN 2.10 su Python 3.10.
+RUN pip3 install --no-cache-dir -U \
+        "certifi>=2026.10.19" \
+        "PyJWT>=2.14.0,<3" \
+        "urllib3>=2.8.0,<3" \
+        "sqlparse>=0.5.5,<0.6" \
+    && (pip3 check || true)
+
+# Entrypoint: genera e conserva nel volume i segreti se nel .env mancano
+# (o sono CHANGE_ME). Con segreti reali nel .env non fa nulla. Vedi lo script.
+COPY setup/ckan-ita-entrypoint.sh ${APP_DIR}/ckan-ita-entrypoint.sh
+RUN chmod 755 ${APP_DIR}/ckan-ita-entrypoint.sh
+# Impostare ENTRYPOINT azzera il CMD ereditato: va ridichiarato.
+ENTRYPOINT ["/srv/app/ckan-ita-entrypoint.sh"]
+CMD ["/srv/app/start_ckan.sh"]

@@ -9,6 +9,9 @@ ENV SOLR_SCHEMA_FILE="$SOLR_CONFIG_DIR/ckan/conf/managed-schema"
 
 USER root
 
+# Aggiornamenti di sicurezza del sistema (openssl...)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Create a CKAN configset by copying the default one
 RUN cp -R $SOLR_CONFIG_DIR/_default $SOLR_CONFIG_DIR/ckan
 
