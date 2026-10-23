@@ -7,6 +7,11 @@
 > variabile (`CKAN_SITE_URL`). Leggere il [CHANGELOG](CHANGELOG.md) per i
 > passaggi più delicati legati all'harvesting dei cataloghi federati.
 
+> [!WARNING]
+> La serie **CKAN 2.10** ha raggiunto la **fine del supporto**: il progetto CKAN non
+> rilascia più aggiornamenti, nemmeno di sicurezza. Vedi la sezione
+> [Sicurezza e aggiornamenti](#sicurezza-e-aggiornamenti).
+
 ## Cosa include
 
 - **DCAT-AP_IT** — estensione `ckanext-dcatapit` (Geosolutions) adeguata a CKAN 2.10.10.
@@ -37,6 +42,7 @@ Variabili chiave:
 |---|---|
 | `CKAN_SITE_URL` | URL pubblico del portale, **senza slash finale**. Da qui vengono derivati automaticamente `ckanext.dcat.base_uri` e l'URL base OAI-PMH. |
 | `CKAN_SYSADMIN_NAME` / `CKAN_SYSADMIN_PASSWORD` | Utente e password del primo amministratore. |
+| `CKAN___BEAKER__SESSION__SECRET`, `CKAN___API_TOKEN__JWT__*__SECRET` | Segreti di sessione e dei token API. **Lasciare le righe commentate**: vengono generati casuali al primo avvio e conservati nel volume `ckan_storage`. Se si valorizzano a mano, mai con valori noti o di esempio. |
 | `NGINX_PORT_HOST` / `NGINX_SSLPORT_HOST` | Porte host per accesso **non-SSL** e **SSL**. |
 | `GEONAMES_USERNAME` | Username GeoNames per il geocoding (default `demo`). |
 | `CKAN_OAIPMH_BASE_URL` | (opzionale) forza l'URL base OAI; se vuoto usa `${CKAN_SITE_URL}/oai`. |
@@ -162,6 +168,36 @@ Il portale è ora raggiungibile all'indirizzo impostato in `CKAN_SITE_URL`.
   ```sh
   docker compose down -v
   ```
+
+---
+
+## Sicurezza e aggiornamenti
+
+- **Fine del supporto di CKAN 2.10.** Le vulnerabilità di CKAN scoperte dopo la
+  2.10.11 non verranno corrette in questa serie. Tenerne conto nel valutare
+  l'esposizione del portale e pianificare il passaggio a una versione supportata.
+- **Aggiornare periodicamente le immagini.** Gli aggiornamenti di sicurezza del
+  sistema operativo e delle librerie entrano solo ricostruendo le immagini con le
+  basi aggiornate (consigliato almeno una volta al mese e dopo ogni aggiornamento
+  del repository):
+
+  ```sh
+  git pull
+  docker compose build --pull
+  docker compose up -d
+  ```
+
+  `docker compose up -d` ricrea solo i container cambiati; dati, database, indice
+  Solr e file caricati restano nei volumi.
+- **Esporre solo NGINX.** Solr, Redis e PostgreSQL stanno su reti Docker interne e
+  non vanno pubblicati sull'host (non aggiungere `ports:` a quei servizi). In
+  produzione usare HTTPS con un certificato valido.
+- **Segreti.** Non impostare nel `.env` valori noti o di esempio per i segreti di
+  sessione e dei token API: lasciando le righe commentate vengono generati al primo
+  avvio (vedi la tabella della configurazione). Il file `.env` contiene password e
+  segreti: renderlo leggibile solo dall'amministratore (`chmod 600 .env`).
+- **Password dell'amministratore.** Cambiare `CKAN_SYSADMIN_PASSWORD` prima del primo
+  avvio; in seguito la password si cambia dal profilo utente.
 
 ---
 

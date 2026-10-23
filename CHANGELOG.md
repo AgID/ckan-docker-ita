@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-24` — README: sicurezza e aggiornamenti
+- Nuova sezione «Sicurezza e aggiornamenti»: fine del supporto della serie CKAN 2.10, aggiornamento periodico delle immagini (`docker compose build --pull`), esposizione del solo NGINX, gestione dei segreti e permessi del `.env`.
+- Avviso di fine supporto in testa al README; tabella della configurazione con i segreti generati al primo avvio.
+
 ## `2026-10-23` — aggiornamenti di sicurezza delle immagini
 - Immagine CKAN: `apt-get upgrade` in fase di build (perl, expat, pcre2, gnutls, libpq, Python 3.11 di sistema) e rimozione degli header del kernel Linux lasciati da `ckan/ckan-base:2.10.11` (`linux-headers`, `linux-kbuild`, `linux-compiler`): nel container il kernel e' quello dell'host, ma contavano oltre 1600 segnalazioni. Resta `linux-libc-dev`, richiesto da `libc6-dev` (le sue segnalazioni riguardano il kernel e non hanno effetto nel container).
 - Librerie Python portate alle versioni corrette: `certifi>=2026.10.19`, `PyJWT>=2.14.0`, `urllib3>=2.8.0` (compatibile con requests 2.32 su Python 3.10), `sqlparse>=0.5.5`.
