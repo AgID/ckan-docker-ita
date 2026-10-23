@@ -96,6 +96,9 @@ COPY patches/command.py /usr/local/lib/python3.10/site-packages/ckanext/xloader/
 COPY patches/validators.py ${APP_DIR}/src/ckan/ckan/logic/validators.py
 
 # Copy custom initialization scripts
+# CSS predefinito accessibile (WCAG 2.1 AA): impostato come "Custom CSS" da
+# docker-entrypoint.d/05_custom_css.sh se l'admin non ne ha uno proprio
+COPY css.example ${APP_DIR}/css.example
 COPY docker-entrypoint.d/* /docker-entrypoint.d/
 
 COPY patches/groups ${APP_DIR}/patches/groups

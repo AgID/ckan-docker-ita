@@ -1,6 +1,10 @@
 /* =============================================================
    CSS custom per CKAN 2.10 (ckan-docker-ita)
-   Da incollare in Admin > Config > "Custom CSS".
+   Tema predefinito del portale: all'avvio del container lo script
+   docker-entrypoint.d/05_custom_css.sh lo imposta come "Custom CSS"
+   (Admin > Config) se l'admin non ne ha impostato uno proprio, e lo
+   aggiorna alle nuove versioni finche' l'admin non lo modifica.
+   Chi cambia i colori deve rispettare i rapporti di contrasto indicati.
 
    Revisione accessibilità WCAG 2.1 AA (EN 301 549 / Linee guida AgID)
    Ultima revisione: ottobre 2026
@@ -738,7 +742,7 @@ select {
   display: inline-block;
   width: 68px;
   height: 21px;
-  background: url(../../base/images/ckan_logo_col.png) no-repeat top left;
+  background: url(/base/images/ckan_logo_col.png) no-repeat top left;
   background-size: contain;
   text-indent: -900em;
   vertical-align: middle;

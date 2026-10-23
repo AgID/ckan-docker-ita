@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-23` — CSS accessibile predefinito
+- Il tema accessibile (WCAG 2.1 AA) è ora predefinito: `css.example` si sposta in `ckan/css.example`, viene copiato nell'immagine e all'avvio lo script `docker-entrypoint.d/05_custom_css.sh` lo imposta come «Custom CSS» (chiave `ckan.site_custom_css`) se l'admin non ne ha uno proprio. Alle versioni successive viene aggiornato finché l'admin non lo modifica; un CSS modificato dall'admin non viene mai sovrascritto.
+- Variabili `CKAN_CUSTOM_CSS_DEFAULT` (default `true`; `false` disattiva) e `CKAN_CUSTOM_CSS_FORCE` (`true` sovrascrive col predefinito al prossimo avvio).
+- Il logo CKAN del footer usa un URL assoluto (`/base/images/ckan_logo_col.png`): con quello relativo, nel CSS inserito nella pagina, l'immagine non si caricava nelle pagine annidate (es. pagina risorsa).
+
 ## `2026-10-23` — etichetta DGA sui dataset ad accesso limitato
 - I dataset con `dct:accessRights` RESTRICTED (dati ad accesso limitato ai sensi del Regolamento UE 2022/868, Data Governance Act) mostrano un'etichetta **DGA** accanto al titolo, nei risultati di ricerca e nella pagina del dataset. L'etichetta porta alla ricerca filtrata sui soli dataset ad accesso limitato.
 - Helper `dcatapit_is_restricted` e `dcatapit_restricted_search_url`, snippet `snippets/dcatapit_dga_badge.html`; override dei blocchi `heading_meta` (`snippets/package_item.html`) e `page_heading` (`package/read.html`). Stile in `css.example` (contrasto 8.9:1).

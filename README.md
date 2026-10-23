@@ -41,6 +41,7 @@ Variabili chiave:
 | `GEONAMES_USERNAME` | Username GeoNames per il geocoding (default `demo`). |
 | `CKAN_OAIPMH_BASE_URL` | (opzionale) forza l'URL base OAI; se vuoto usa `${CKAN_SITE_URL}/oai`. |
 | `CKANEXT__DCATAPIT__ACCESSIBILITY_STATEMENT_URL` | URL della dichiarazione di accessibilità (per le PA è obbligatoria, Linee guida AgID: quella pubblicata su form.agid.gov.it). Se valorizzato, il footer mostra il link «Dichiarazione di accessibilità»; vuoto (default) = nessun link. |
+| `CKAN_CUSTOM_CSS_DEFAULT` / `CKAN_CUSTOM_CSS_FORCE` | Tema predefinito accessibile (WCAG 2.1 AA) in `ckan/css.example`: con `true` (default) all'avvio viene impostato come «Custom CSS» (Admin → Config) se l'admin non ne ha uno proprio, e aggiornato alle nuove versioni finché l'admin non lo modifica (script `docker-entrypoint.d/05_custom_css.sh`). `false` non tocca mai il Custom CSS. `CKAN_CUSTOM_CSS_FORCE=true` lo sovrascrive col predefinito al prossimo avvio. Per tornare al predefinito basta anche svuotare il Custom CSS dall'admin e riavviare. |
 
 ### Demo locale vs dominio reale
 
