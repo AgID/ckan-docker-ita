@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-24` — harvest: ordine dei job creati da `job-all`
+- `ckan harvester job-all` crea i job seguendo la data di creazione delle sorgenti, dalla più recente: i job partono nella coda gather in quell'ordine e non c'era modo di cambiarlo. Nuova opzione `ckan.harvest.job_all_order` (variabile `CKAN__HARVEST__JOB_ALL_ORDER`): `created_desc` (default, comportamento invariato), `created_asc`, `title_asc` (alfabetico per titolo, senza distinzione tra maiuscole e minuscole), `title_desc`.
+- Cambia solo l'ordine di creazione dei job di `job-all` (`harvest_job_create_all`): `harvest_source_list` e le API restano identiche, e le date di creazione delle sorgenti non vengono toccate. Con più worker gather/fetch in parallelo è garantito l'ordine di partenza, non quello di completamento.
+
 ## `2026-10-24` — validatore: descrizioni dei profili EDP raccomandate e DCAT-AP_IT
 - «EDP · raccomandate» riguarda solo le raccomandate di DCAT-AP europeo (livello 2 di data.europa.eu); le raccomandate del profilo italiano (per esempio sottotema e descrizione della distribuzione) sono avvisi del profilo DCAT-AP_IT. Le due descrizioni ora lo dicono, perché con «EDP · raccomandate» spento gli avvisi «raccomandato» di DCAT-AP_IT sembravano un errore.
 
