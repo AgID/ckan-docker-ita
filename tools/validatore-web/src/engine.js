@@ -227,8 +227,16 @@ const KIND = {
   BlankNodeOrIRI: 'un URI (o un nodo strutturato)', IRI: 'un URI', Literal: 'un testo (letterale)',
   BlankNode: 'un nodo strutturato', BlankNodeOrLiteral: 'un nodo o un testo', IRIOrLiteral: 'un URI o un testo',
 }
-export function spiega (message, component, value, severity = 'Violation') {
+// regola raccomandata EDP :Catalog_Shape2 (sh:or senza proprieta'): il catalogo deve elencare
+// direttamente almeno un dcat:dataset o un dcat:service
+const CATALOG_OR = /Catalog_Shape2$/
+export function spiega (message, component, value, severity = 'Violation', shape = '', federato = false) {
   let m
+  if (component === 'Or' && CATALOG_OR.test(shape)) {
+    return federato
+      ? 'Catalogo che elenca solo sottocataloghi (dct:hasPart): la regola raccomandata chiede almeno un dcat:dataset o dcat:service diretto'
+      : 'Catalogo senza dataset né servizi: la regola raccomandata chiede almeno un dcat:dataset o un dcat:service'
+  }
   if ((m = /node kind <[^#>]*#(\w+)>/.exec(message))) {
     const atteso = KIND[m[1]] || m[1]
     const testo = value && value.startsWith('"')
@@ -242,7 +250,7 @@ export function spiega (message, component, value, severity = 'Violation') {
   if ((m = /does not have datatype <([^>]+)>/.exec(message))) return `Tipo di dato errato: atteso ${shorten(m[1])}`
   if ((m = /does not have class <([^>]+)>/.exec(message))) return `Il valore non è dichiarato come ${shorten(m[1])}`
   if ((m = /does not have shape <([^>]+)>/.exec(message))) return `Il valore non rispetta la regola ${shorten(m[1]).replace(/^.*#/, '')}`
-  if (component === 'Or' || message === 'Or') return 'Il valore non rispetta nessuna delle forme ammesse'
+  if (component === 'Or' || message === 'Or') return 'Il valore non rispetta nessuna delle forme ammesse' + (shape ? ` (regola ${shape.replace(/^.*[#:]/, '')})` : '')
   if (component === 'In') return 'Valore non tra quelli ammessi'
   if (component === 'Pattern') return 'Valore in una forma non ammessa'
   return message
@@ -276,17 +284,22 @@ export async function validateProfile (dataDs, shapesDs, profile) {
     const sev = (r.severity && r.severity.value.split('#')[1]) || 'Violation'
     const comp = r.sourceConstraintComponent ? r.sourceConstraintComponent.value.split('#')[1].replace(/ConstraintComponent$/, '') : ''
     const original = messageText(r.message) || comp
+    const shape = r.sourceShape && r.sourceShape.termType === 'NamedNode' ? shorten(r.sourceShape.value) : ''
+    const catalogOr = comp === 'Or' && CATALOG_OR.test(shape)
+    const federato = catalogOr && r.focusNode && dataDs.match(r.focusNode, rdf.namedNode('http://purl.org/dc/terms/hasPart')).size > 0
     results.push({
       profile,
       severity: sev,
-      path: pathText(r.path, report.dataset),
-      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value), sev) : original,
+      path: pathText(r.path, report.dataset) || (catalogOr ? 'dcat:dataset / dcat:service' : ''),
+      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value), sev, shape, federato) : original,
+      // avvisi attesi: stato ADMS (regola piveau, issue #124) e catalogo radice federato
+      atteso: sev !== 'Warning' ? '' : /StatusRestrictionADMS/.test(original) ? 'stato' : federato ? 'sottocataloghi' : '',
       original,
       component: comp,
       focus: termText(r.focusNode),
       where: ownerOf(dataDs, r.focusNode, owners),
       value: termText(r.value),
-      shape: r.sourceShape && r.sourceShape.termType === 'NamedNode' ? shorten(r.sourceShape.value) : '',
+      shape,
     })
   }
   return results
@@ -297,7 +310,7 @@ export function groupResults (results, examples = 3) {
   for (const r of results) {
     const k = [r.profile, r.severity, r.path, r.message].join('\u0001')
     let g = groups.get(k)
-    if (!g) groups.set(k, g = { profile: r.profile, severity: r.severity, path: r.path, message: r.message, original: r.original, component: r.component, count: 0, focus: new Set(), examples: [] })
+    if (!g) groups.set(k, g = { profile: r.profile, severity: r.severity, path: r.path, message: r.message, original: r.original, component: r.component, atteso: r.atteso || '', count: 0, focus: new Set(), examples: [] })
     g.count++
     g.focus.add(r.focus)
     if (g.examples.length < examples) g.examples.push({ focus: r.focus, where: r.where, value: r.value })

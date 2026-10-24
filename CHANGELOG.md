@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-24` — validatore: avviso sul catalogo federato spiegato
+- La regola raccomandata EDP `:Catalog_Shape2` (un `sh:or` senza proprietà: ogni catalogo deve elencare direttamente almeno un `dcat:dataset` o un `dcat:service`) compariva come «Il valore non rispetta nessuna delle forme ammesse», senza proprietà. Ora indica `dcat:dataset / dcat:service` e spiega il caso.
+- Se il catalogo ha sottocataloghi (`dct:hasPart`), come il catalogo radice di un portale regionale federato, la riga è un «Avviso atteso» («Catalogo federato») con una nota: è la struttura prevista da DCAT-AP_IT e non richiede correzioni.
+- Gli altri `sh:or` delle regole EDP riportano il nome della regola.
+
 ## `2026-10-24` — modifiche al core di CKAN come patch, Solr 9.10
 - Le modifiche al core di CKAN che sostituivano interi file (`model_dictize.py`, `ckan/lib/base.py`, `logic/validators.py`, `snippets/language_selector.html`) sono ora patch in `ckan/patches/ckan/` (02-05). Verificato che le copie erano basate sulla 2.10.11 e non annullavano correzioni di sicurezza; con le patch, se una versione futura di CKAN cambia quei file la build si ferma invece di sovrascriverli in silenzio. Il risultato e' identico byte per byte.
 - Il ciclo che applica le patch ora interrompe la build se una patch non si applica (prima proseguiva).

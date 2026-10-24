@@ -378,13 +378,13 @@ function renderTable () {
     <details class="row" data-sev="${g.severity}" data-i="${i}"${atteso(g) ? ' data-atteso' : ''}>
       <summary>
         <span class="sev">${atteso(g) ? 'Avviso atteso' : sevLabel(g.severity)}</span>
-        <span class="msg">${atteso(g) ? `<b>${esc(ATTESO_TITOLO)}</b> · ` : ''}${esc(g.message)}</span>
+        <span class="msg">${atteso(g) ? `<b>${esc(ATTESI[atteso(g)].titolo)}</b> · ` : ''}${esc(g.message)}</span>
         <span class="meta"><span class="tag">${PROFILE_LABELS[g.profile]}</span>${g.path ? `<code>${esc(g.path)}</code>` : ''}</span>
         <span class="n" title="${g.nodes} risorse coinvolte">${g.count.toLocaleString('it-IT')}</span>
       </summary>
       <div class="ex">
         <p class="exh">${g.nodes.toLocaleString('it-IT')} risorse coinvolte${g.component ? ` · vincolo <code>${esc(g.component)}</code>` : ''}${g.original && g.original !== g.message ? ` · messaggio originale: <code>${esc(g.original)}</code>` : ''}.</p>
-        ${atteso(g) ? ATTESO_NOTA : ''}
+        ${atteso(g) ? ATTESI[atteso(g)].nota : ''}
         <table><thead><tr><th>Risorsa</th><th>Valore</th></tr></thead><tbody>${exampleRows(g, 0, FIRST)}</tbody></table>
         ${moreBar(g, Math.min(FIRST, g.examples.length))}
       </div>
@@ -423,12 +423,20 @@ function showMore (btn) {
 
 // avviso noto della regola piveau StatusRestrictionADMS (SEMICeu/DCAT-AP#490): resta un Warning,
 // ma si mostra come atteso finche' data.europa.eu non corregge la regola
-const ATTESO_TITOLO = 'Avviso in fase di verifica con il portale europeo'
-const atteso = g => g.severity === 'Warning' && /StatusRestrictionADMS/.test(g.original || '')
-const ATTESO_NOTA = '<p class="exh">Le regole di data.europa.eu (piveau) contengono due vincoli incompatibili sullo stato: ' +
+const atteso = g => (g.severity === 'Warning' && (g.atteso || (/StatusRestrictionADMS/.test(g.original || '') ? 'stato' : ''))) || ''
+const ATTESO_NOTA_STATO = '<p class="exh">Le regole di data.europa.eu (piveau) contengono due vincoli incompatibili sullo stato: ' +
   'il profilo usato per la validazione chiede il vocabolario ADMS, mentre DCAT-AP 3 prevede distribution-status. ' +
   'Segnalato in <a href="https://gitlab.com/piveau/community/issues/-/work_items/124" target="_blank" rel="noopener noreferrer">piveau #124</a> ' +
   'e in <a href="https://github.com/SEMICeu/DCAT-AP/issues/490" target="_blank" rel="noopener noreferrer">SEMICeu/DCAT-AP#490</a>; non richiede correzioni.</p>'
+const ATTESI = {
+  stato: { titolo: 'Avviso in fase di verifica con il portale europeo', nota: ATTESO_NOTA_STATO },
+  sottocataloghi: {
+    titolo: 'Catalogo federato',
+    nota: '<p class="exh">La regola raccomandata di data.europa.eu chiede che ogni catalogo elenchi direttamente almeno un dataset (<code>dcat:dataset</code>) ' +
+      'o un servizio (<code>dcat:service</code>). In un catalogo federato il catalogo radice elenca invece i sottocataloghi (<code>dct:hasPart</code>), ' +
+      'che contengono i dataset: è la struttura prevista da DCAT-AP_IT per i portali che raccolgono più enti, quindi l\'avviso è atteso e non richiede correzioni.</p>',
+  },
+}
 const sevLabel = s => ({ Violation: 'Violazione', Warning: 'Avviso', Info: 'Indicazione' }[s] || s)
 function linkish (v) {
   if (/^https?:\/\//.test(v) && isHttpUrl(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer" class="mono">${esc(v)}</a>`
