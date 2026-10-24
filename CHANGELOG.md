@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-24` — distribuzioni: `dct:rights` come `dct:RightsStatement`
+- Il campo `rights` della risorsa veniva scritto nel catalogo con `URIRefOrLiteral`: un testo (per esempio arrivato da un harvest, dove si conserva solo l'`rdfs:label` del `dct:RightsStatement` di origine) usciva come letterale, che il profilo EDP L1 segnala come violazione (`dct:rights` deve essere URI o nodo). Ora si usa `_add_statement_to_graph`, come per `dct:accessRights` del dataset e come in ckanext-dcat 2.x: il testo diventa `[ a dct:RightsStatement ; rdfs:label "..." ]`, l'URI resta URI. Caso emerso con il catalogo di Cruscotto Italia; le altre distribuzioni hanno già l'URI `access-right/PUBLIC`.
+
 ## `2026-10-24` — harvest: ordine dei job creati da `job-all`
 - `ckan harvester job-all` crea i job seguendo la data di creazione delle sorgenti, dalla più recente: i job partono nella coda gather in quell'ordine e non c'era modo di cambiarlo. Nuova opzione `ckan.harvest.job_all_order` (variabile `CKAN__HARVEST__JOB_ALL_ORDER`): `created_desc` (default, comportamento invariato), `created_asc`, `title_asc` (alfabetico per titolo, senza distinzione tra maiuscole e minuscole), `title_desc`.
 - Cambia solo l'ordine di creazione dei job di `job-all` (`harvest_job_create_all`): `harvest_source_list` e le API restano identiche, e le date di creazione delle sorgenti non vengono toccate. Con più worker gather/fetch in parallelo è garantito l'ordine di partenza, non quello di completamento.

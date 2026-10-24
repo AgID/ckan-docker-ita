@@ -723,7 +723,6 @@ class EuropeanDCATAPProfile(RDFProfile):
                 ("name", DCT.title, None, Literal),
                 ("description", DCT.description, None, Literal),
                 ("status", ADMS.status, None, URIRefOrLiteral),
-                ("rights", DCT.rights, None, URIRefOrLiteral),
                 ("license", DCT.license, None, URIRefOrLiteral),
                 ("access_url", DCAT.accessURL, None, URIRef),
                 ("download_url", DCAT.downloadURL, None, URIRef),
@@ -759,6 +758,19 @@ class EuropeanDCATAPProfile(RDFProfile):
                 resource_dict['status'] = DISTRIBUTION_STATUS_COMPLETED
                 
             self._add_triples_from_dict(resource_dict, distribution, items)
+
+            # 24.10.26 dct:rights della distribuzione: il range DCAT-AP e' dct:RightsStatement
+            # (URI o nodo), non un testo. Un testo (es. arrivato da un harvest, dove
+            # _access_rights conserva solo l'rdfs:label) diventa un nodo
+            # [ a dct:RightsStatement ; rdfs:label "..." ], come fa ckanext-dcat 2.x;
+            # un URI resta URI (tipizzato dct:RightsStatement).
+            self._add_statement_to_graph(
+                resource_dict,
+                "rights",
+                distribution,
+                DCT.rights,
+                DCT.RightsStatement
+            )
 
             # Dichiarazione SKOS del concetto di status: senza questa il validatore
             # di EDP non trova skos:inScheme e segnala StatusRestrictionADMS (vedi
