@@ -275,7 +275,52 @@ function ownerOf (dataDs, node, cache) {
   return out
 }
 
+// Entita' a cui si applica una regola EDP, dalla sh:targetClass della shape: le stesse proprieta'
+// (dct:title, dct:license...) sono controllate su piu' classi e senza questo le righe si confondono.
+const ENTITA = {
+  Catalog: 'Catalogo', CatalogRecord: 'Record del catalogo', Dataset: 'Dataset', DatasetSeries: 'Serie di dataset',
+  Distribution: 'Distribuzione', DataService: 'Servizio', Agent: 'Soggetto', Kind: 'Punto di contatto',
+  LicenseDocument: 'Licenza', PeriodOfTime: 'Periodo', Location: 'Luogo', Checksum: 'Checksum',
+  Concept: 'Concetto', ConceptScheme: 'Schema di concetti', Relationship: 'Relazione', Identifier: 'Identificativo',
+  Standard: 'Standard', RightsStatement: 'Diritti', Attribution: 'Attribuzione', ProvenanceStatement: 'Provenienza',
+  MediaType: 'Media type', LinguisticSystem: 'Lingua', Frequency: 'Frequenza', Document: 'Documento',
+}
+// Nome in italiano delle proprieta' che le regole EDP chiedono (MinCount); 'Classe|proprieta'' per i casi ambigui
+const NOMI = {
+  'adms:status': 'stato', 'dcat:accessURL': 'URL di accesso', 'dcat:bbox': 'riquadro di delimitazione, bbox',
+  'dcat:centroid': 'centroide', 'dcat:contactPoint': 'punto di contatto', 'dcat:dataset': 'elenco dei dataset',
+  'dcat:distribution': 'distribuzione', 'dcat:endDate': 'data di fine', 'dcat:startDate': 'data di inizio',
+  'dcat:endpointDescription': "descrizione dell'endpoint", 'dcat:endpointURL': "URL dell'endpoint",
+  'dcat:hadRole': 'ruolo', 'dcat:keyword': 'parole chiave', 'dcat:servesDataset': 'dataset serviti',
+  'dcat:service': 'servizi', 'dcat:theme': 'tema', 'dcat:themeTaxonomy': 'tassonomia dei temi',
+  'dcatap:availability': 'disponibilità pianificata, vocabolario planned-availability',
+  'dct:conformsTo': 'standard di conformità', 'dct:description': 'descrizione', 'dct:format': 'formato',
+  'dct:issued': 'data di rilascio', 'dct:language': 'lingua', 'dct:license': 'licenza', 'dct:modified': 'data di ultima modifica',
+  'dct:publisher': 'editore', 'dct:relation': 'risorsa collegata', 'dct:spatial': 'copertura geografica',
+  'dct:temporal': 'copertura temporale', 'dct:title': 'titolo', 'dct:type': 'tipo', 'foaf:homepage': 'home page',
+  'foaf:name': 'nome', 'foaf:primaryTopic': 'risorsa descritta', 'skos:prefLabel': 'etichetta',
+  'spdx:algorithm': 'algoritmo', 'spdx:checksumValue': 'valore del checksum',
+  'Agent|dct:type': 'tipo di soggetto, vocabolario ADMS publisher type, es. LocalAuthority',
+  'LicenseDocument|dct:type': 'tipo di licenza', 'Location|dcat:bbox': 'riquadro di delimitazione della copertura geografica, bbox',
+  'Location|dcat:centroid': 'centroide della copertura geografica',
+}
+function nomeProprieta (cls, path) {
+  return NOMI[`${cls}|${path}`] || NOMI[path] || path
+}
+
+function classiDelleRegole (shapesDs) {
+  const TC = rdf.namedNode(NS.sh + 'targetClass')
+  const cls = new Map()
+  for (const q of shapesDs.match(null, TC)) {
+    const nome = q.object.value.replace(/^.*[#/]/, '')
+    if (!cls.has(q.subject.value)) cls.set(q.subject.value, nome)
+    for (const p of shapesDs.match(q.subject, rdf.namedNode(NS.sh + 'property'))) if (!cls.has(p.object.value)) cls.set(p.object.value, nome)
+  }
+  return cls
+}
+
 export async function validateProfile (dataDs, shapesDs, profile) {
+  const classi = profile.startsWith('edp') ? classiDelleRegole(shapesDs) : new Map()
   const validator = new SHACLValidator(shapesDs, { factory: rdf, allowNamedNodeInList: true, importGraph: () => rdf.dataset(), maxNodeChecks: 0 })
   const report = await validator.validate(dataDs)
   const results = []
@@ -286,12 +331,17 @@ export async function validateProfile (dataDs, shapesDs, profile) {
     const original = messageText(r.message) || comp
     const shape = r.sourceShape && r.sourceShape.termType === 'NamedNode' ? shorten(r.sourceShape.value) : ''
     const catalogOr = comp === 'Or' && CATALOG_OR.test(shape)
+    const pathTxt = pathText(r.path, report.dataset)
+    const classe = classi.get(r.sourceShape && r.sourceShape.value)
     const federato = catalogOr && r.focusNode && dataDs.match(r.focusNode, rdf.namedNode('http://purl.org/dc/terms/hasPart')).size > 0
     results.push({
       profile,
       severity: sev,
-      path: pathText(r.path, report.dataset) || (catalogOr ? 'dcat:dataset / dcat:service' : ''),
-      message: profile.startsWith('edp') ? spiega(original, comp, termText(r.value), sev, shape, federato) : original,
+      path: pathTxt || (catalogOr ? 'dcat:dataset / dcat:service' : ''),
+      message: !profile.startsWith('edp') ? original
+        : conEntita(classe, comp === 'MinCount' && /^Less than 1 value/.test(original) && pathTxt && !pathTxt.includes(' ')
+          ? `Proprietà ${sev === 'Violation' ? 'obbligatoria' : 'raccomandata'} assente (${nomeProprieta(classe, pathTxt)})`
+          : spiega(original, comp, termText(r.value), sev, shape, federato)),
       // avvisi attesi: stato ADMS (regola piveau, issue #124) e catalogo radice federato
       atteso: sev !== 'Warning' ? '' : /StatusRestrictionADMS/.test(original) ? 'stato' : federato ? 'sottocataloghi' : '',
       original,
@@ -303,6 +353,13 @@ export async function validateProfile (dataDs, shapesDs, profile) {
     })
   }
   return results
+}
+
+function conEntita (cls, msg) {
+  const e = ENTITA[cls] || cls
+  // minuscola solo se la seconda lettera e' minuscola (non tocca sigle come URL)
+  const m = /^[A-ZÀ-Ý][a-zà-ÿ]/.test(msg) ? msg.charAt(0).toLowerCase() + msg.slice(1) : msg
+  return e && !msg.startsWith(e) ? `${e}: ${m}` : msg
 }
 
 export function groupResults (results, examples = 3) {

@@ -200,6 +200,38 @@ KIND = {"BlankNodeOrIRI": "un URI (o un nodo strutturato)", "IRI": "un URI", "Li
         "BlankNode": "un nodo strutturato", "BlankNodeOrLiteral": "un nodo o un testo", "IRIOrLiteral": "un URI o un testo"}
 
 
+ENTITA = {"Catalog": "Catalogo", "CatalogRecord": "Record del catalogo", "Dataset": "Dataset", "DatasetSeries": "Serie di dataset",
+          "Distribution": "Distribuzione", "DataService": "Servizio", "Agent": "Soggetto", "Kind": "Punto di contatto",
+          "LicenseDocument": "Licenza", "PeriodOfTime": "Periodo", "Location": "Luogo", "Checksum": "Checksum",
+          "Concept": "Concetto", "ConceptScheme": "Schema di concetti", "Relationship": "Relazione", "Identifier": "Identificativo",
+          "Standard": "Standard"}
+NOMI = {"adms:status": "stato", "dcat:accessURL": "URL di accesso", "dcat:contactPoint": "punto di contatto",
+        "dcat:distribution": "distribuzione", "dcat:endpointURL": "URL dell'endpoint", "dcat:keyword": "parole chiave",
+        "dcat:theme": "tema", "dct:description": "descrizione", "dct:format": "formato", "dct:issued": "data di rilascio",
+        "dct:language": "lingua", "dct:license": "licenza", "dct:modified": "data di ultima modifica", "dct:publisher": "editore",
+        "dct:title": "titolo", "dct:type": "tipo", "foaf:name": "nome", "skos:prefLabel": "etichetta",
+        "spdx:algorithm": "algoritmo", "spdx:checksumValue": "valore del checksum"}
+
+
+def classi_delle_regole(sg):
+    """Shape (nodo o proprieta') -> nome della sh:targetClass: le stesse proprieta' valgono su piu' classi."""
+    out = {}
+    for ns, tc in sg.subject_objects(URIRef(SH + "targetClass")):
+        nome = re.split(r"[#/]", str(tc))[-1]
+        out.setdefault(ns, nome)
+        for ps in sg.objects(ns, URIRef(SH + "property")):
+            out.setdefault(ps, nome)
+    return out
+
+
+def con_entita(cls, msg):
+    e = ENTITA.get(cls, cls)
+    if not e or msg.startswith(e):
+        return msg
+    m = msg[0].lower() + msg[1:] if re.match(r"[A-ZÀ-Ý][a-zà-ÿ]", msg) else msg
+    return f"{e}: {m}"
+
+
 def spiega(msg, comp, value, sev="Violation"):
     m = re.search(r"node kind <[^#>]*#(\w+)>|NodeKind[^#]*#(\w+)", msg)
     if comp == "NodeKind" and m:
@@ -265,6 +297,7 @@ def validate_graph(data, profiles):
     hvd_found = (0, 0, 0)
     for prof in PROFILI:
         sg = profiles[prof]
+        classi = classi_delle_regole(sg) if prof == "edp" else {}
         if prof == "hvd":
             sg, hvd_found = V.hvd_shapes(sg, data)
             if sg is None:
@@ -277,7 +310,13 @@ def validate_graph(data, profiles):
             focus = rg.value(r, URIRef(SH + "focusNode"))
             value = term_text(rg.value(r, URIRef(SH + "value")))
             if prof == "edp":
-                msg_it = spiega(msg, comp, value, sev)
+                path = V.path_text(rg, rg.value(r, URIRef(SH + "resultPath"))).replace("dcat#", "dcat:")
+                cls = classi.get(rg.value(r, URIRef(SH + "sourceShape")))
+                if comp == "MinCount" and msg.startswith("Less than 1 value") and path and " " not in path:
+                    tipo = "obbligatoria" if sev == "Violation" else "raccomandata"
+                    msg_it = con_entita(cls, f"Proprietà {tipo} assente ({NOMI.get(path, path)})")
+                else:
+                    msg_it = con_entita(cls, spiega(msg, comp, value, sev))
             else:
                 msg_it = msg
             counts[(prof, sev)] += 1

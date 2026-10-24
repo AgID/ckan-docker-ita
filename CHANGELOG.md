@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-10-24` — validatore e report: messaggi EDP con l'entità e il nome della proprietà
+- Le regole EDP (piveau) non hanno messaggi propri e molte proprietà sono controllate su più entità (`dct:title` su catalogo, dataset, distribuzione, servizio...; `dct:license` su catalogo e distribuzione). Le righe si fondevano e non dicevano a cosa si riferivano: ora il messaggio comincia con l'entità ricavata dalla `sh:targetClass` della regola («Catalogo:», «Dataset:», «Distribuzione:», «Soggetto:», «Luogo:»...), e righe di entità diverse restano separate.
+- Le proprietà mancanti indicano il nome in italiano: «Catalogo: proprietà raccomandata assente (licenza)», «Soggetto: proprietà raccomandata assente (tipo di soggetto, vocabolario ADMS publisher type, es. LocalAuthority)».
+- Vale per il validatore web (EDP L1 e raccomandate) e per il report settimanale (EDP L1).
+
 ## `2026-10-24` — validatore: avviso sul catalogo federato spiegato
 - La regola raccomandata EDP `:Catalog_Shape2` (un `sh:or` senza proprietà: ogni catalogo deve elencare direttamente almeno un `dcat:dataset` o un `dcat:service`) compariva come «Il valore non rispetta nessuna delle forme ammesse», senza proprietà. Ora indica `dcat:dataset / dcat:service` e spiega il caso.
 - Se il catalogo ha sottocataloghi (`dct:hasPart`), come il catalogo radice di un portale regionale federato, la riga è un «Avviso atteso» («Catalogo federato») con una nota: è la struttura prevista da DCAT-AP_IT e non richiede correzioni.
