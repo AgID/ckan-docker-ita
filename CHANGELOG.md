@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-24` — validatore: descrizioni dei profili EDP raccomandate e DCAT-AP_IT
+- «EDP · raccomandate» riguarda solo le raccomandate di DCAT-AP europeo (livello 2 di data.europa.eu); le raccomandate del profilo italiano (per esempio sottotema e descrizione della distribuzione) sono avvisi del profilo DCAT-AP_IT. Le due descrizioni ora lo dicono, perché con «EDP · raccomandate» spento gli avvisi «raccomandato» di DCAT-AP_IT sembravano un errore.
+
 ## `2026-10-24` — validatore e report: messaggi EDP con l'entità e il nome della proprietà
 - Le regole EDP (piveau) non hanno messaggi propri e molte proprietà sono controllate su più entità (`dct:title` su catalogo, dataset, distribuzione, servizio...; `dct:license` su catalogo e distribuzione). Le righe si fondevano e non dicevano a cosa si riferivano: ora il messaggio comincia con l'entità ricavata dalla `sh:targetClass` della regola («Catalogo:», «Dataset:», «Distribuzione:», «Soggetto:», «Luogo:»...), e righe di entità diverse restano separate.
 - Le proprietà mancanti indicano il nome in italiano: «Catalogo: proprietà raccomandata assente (licenza)», «Soggetto: proprietà raccomandata assente (tipo di soggetto, vocabolario ADMS publisher type, es. LocalAuthority)».
