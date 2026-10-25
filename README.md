@@ -107,13 +107,14 @@ Eseguire i comandi **in ordine**, aspettando il completamento di ciascuno.
    docker compose ps
    ```
 
-6. Eseguire **una sola volta** il setup dei gruppi tematici (idempotente):
+6. Creare i gruppi tematici (idempotente: i gruppi già presenti vengono saltati):
 
    ```sh
    docker compose exec ckan bash /srv/app/setup_groups.sh
    ```
 
-7. Riavviare CKAN per applicare i marker di completamento:
+7. Riavviare CKAN: lo script scrive in `ckan.ini` anche le impostazioni della
+   mappatura tema→gruppo, che diventano attive al riavvio:
 
    ```sh
    docker compose restart ckan
@@ -122,8 +123,10 @@ Eseguire i comandi **in ordine**, aspettando il completamento di ciascuno.
 Il portale è ora raggiungibile all'indirizzo impostato in `CKAN_SITE_URL`.
 
 > [!NOTE]
-> Il passo 6 va ripetuto solo dopo un nuovo `docker compose build` (immagine
-> ricostruita), **non** a ogni `restart`.
+> I gruppi restano nel database. `ckan.ini` invece vive nel container e si
+> rigenera a ogni `docker compose build`: dopo un rebuild rieseguire i passi 6 e 7
+> per rimettere le impostazioni (i gruppi esistenti vengono saltati). Un semplice
+> `restart` non le perde.
 
 ---
 
