@@ -2099,6 +2099,25 @@ class ItalianDCATAPProfile(RDFProfile):
                 self.g.add((agent, FOAF.name, Literal(agent_name)))
         self.g.add((agent, DCT.identifier, Literal(agent_id)))
 
+        # 25.10.26 dct:type del soggetto (raccomandato DCAT-AP 3, shape foaf:Agent,
+        # max 1): tipo ADMS publisher type dedotto dal codice IPA. Per titolare ed
+        # editore un codice non riconosciuto e' comunque una PA (PublicBody); per
+        # l'autore, che puo' non essere una PA, in quel caso non si scrive nulla.
+        _code = str(agent_id or '').strip().lower()
+        _adms = 'http://purl.org/adms/publishertype/'
+        _atype = None
+        if _code and _code != 'n/a':
+            if _code.startswith(('c_', 'p_')):
+                _atype = 'LocalAuthority'
+            elif _code.startswith(('r_', 'cr_')):
+                _atype = 'RegionalAuthority'
+            elif _code.startswith('m_') or _code in ('agid', 'inps', 'inail', 'istat', 'anac', 'ispra', 'pcm', 'aci'):
+                _atype = 'NationalAuthority'
+            elif basekey in ('publisher', 'holder'):
+                _atype = 'PublicBody'
+        if _atype and not any(self.g.objects(agent, DCT.type)):
+            self.g.add((agent, DCT.type, URIRef(_adms + _atype)))
+
         return agent
 
     def _add_uri_node(self, _dict, ref, item, base_uri=''):
