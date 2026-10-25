@@ -108,7 +108,8 @@
                 {% endif %}
             {% elif field.element == 'holder' %}
                 {% set holders = (h.load_json_or_list(pkg_dict[field.name]) or []) %}
-                {% for holder in holders %}
+                {% set org_code = (pkg_dict.get('holder_identifier') or '')|lower|trim if pkg_dict.get('dataset_is_local') else '' %}
+                {% for holder in holders if not (org_code and (holder.holder_identifier or '')|lower|trim == org_code) %}
                     <tr>
                         <th scope="row" class="dataset-label">{{ _(field.label) }}</th>
                         <td class="dataset-details">
@@ -176,7 +177,9 @@
                 {% endif %}
 
           {% elif field.element == 'rights_holder' %}
-                {% if pkg_dict.get('holder_name') and not pkg_dict.get('holder') %}
+                {# dataset inserito a mano: l'organizzazione e' sempre il primo titolare,
+                   seguita dai titolari aggiuntivi (campo holder) #}
+                {% if pkg_dict.get('holder_name') and (not pkg_dict.get('holder') or pkg_dict.get('dataset_is_local')) %}
                 {% set couples = h.couple_to_dict(field.couples, pkg_dict)%}
                 <tr>
                     <th scope="row" class="dataset-label">{{ field.label }}</th>

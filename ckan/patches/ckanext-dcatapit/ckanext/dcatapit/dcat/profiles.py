@@ -1901,6 +1901,20 @@ class ItalianDCATAPProfile(RDFProfile):
             holders = json.loads(holders_data)
         except (TypeError, ValueError):
             holders = []
+        if not isinstance(holders, list):
+            holders = []
+        # Dataset inserito a mano: il primo titolare e' sempre l'organizzazione
+        # (come prima del supporto 1..N); i titolari della lista, inseriti dal
+        # form, si aggiungono. L'organizzazione non si salva nella lista, cosi'
+        # se il dataset cambia organizzazione il titolare la segue. Un titolare
+        # con lo stesso codice dell'organizzazione non viene ripetuto.
+        if holders and dataset_dict.get('dataset_is_local') and org_dict.get('identifier'):
+            org_code = str(org_dict['identifier']).strip().lower()
+            extra = [h for h in holders
+                     if not isinstance(h, dict)
+                     or str(h.get('holder_identifier') or '').strip().lower() != org_code]
+            holders = [{'holder_name': org_dict.get('title') or org_dict.get('name'),
+                        'holder_identifier': org_dict['identifier']}] + extra
         if holders:
             self.g.remove((ref, DCT.rightsHolder, None))
             first_ref = None

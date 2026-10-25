@@ -4,6 +4,7 @@ from datetime import datetime
 
 from ckan.common import _, config
 from ckan.lib.i18n import get_locales
+from ckan.lib.navl.dictization_functions import StopOnError, missing
 from ckan.logic.validators import url_validator
 from ckan.plugins.toolkit import Invalid
 from sqlalchemy import and_
@@ -243,6 +244,113 @@ def dcatapit_alternate_identifier(value, context):
                     raise Invalid(_('alternate_identifier agent {} key should be string').format(k))
 
     return json.dumps(data)
+
+
+def _holder_name_is_blank(name):
+    if isinstance(name, dict):
+        return all(is_blank(v) for v in name.values() if isinstance(v, str)) or not name
+    return not isinstance(name, str) or is_blank(name)
+
+
+def dcatapit_holder_clean(key, data, errors, context):
+    """
+    Normalizza la lista dei titolari (dct:rightsHolder 1..N) inviata dal form:
+    - toglie le righe vuote (nome e codice entrambi assenti);
+    - toglie gli spazi in testa e in coda;
+    - se non resta nessun titolare toglie il campo, cosi' vale il ripiego
+      sull'organizzazione del dataset;
+    - se una riga ha solo il nome o solo il codice IPA/IVA segnala l'errore,
+      ma solo per il form web (il contesto delle viste dataset ha la chiave
+      'save'): harvest e API conservano il titolare incompleto com'e', come prima.
+    """
+    from_form = 'save' in context
+    value = data.get(key, missing)
+    if value is missing or value is None:
+        return
+    if isinstance(value, (list, tuple)):
+        holders = list(value)
+    elif is_blank(value):
+        holders = []
+    else:
+        try:
+            holders = json.loads(value)
+        except (TypeError, ValueError):
+            # formato non valido: lo segnala dcatapit_holder
+            return
+        if not isinstance(holders, list):
+            return
+
+    cleaned = []
+    for holder in holders:
+        if not isinstance(holder, dict):
+            cleaned.append(holder)
+            continue
+        name = holder.get('holder_name')
+        if isinstance(name, dict):
+            name = {lang: v.strip() for lang, v in name.items()
+                    if isinstance(v, str) and v.strip()}
+        elif isinstance(name, str):
+            name = name.strip()
+        ident = holder.get('holder_identifier')
+        ident = ident.strip() if isinstance(ident, str) else ident
+        name_blank = _holder_name_is_blank(name)
+        ident_blank = not ident
+        if name_blank and ident_blank:
+            continue
+        if (name_blank or ident_blank) and from_form:
+            errors[key].append(_('Per ogni titolare servono il nome e il codice IPA/IVA'))
+            continue
+        item = dict(holder)
+        item['holder_name'] = name
+        item['holder_identifier'] = ident
+        cleaned.append(item)
+
+    if errors[key]:
+        raise StopOnError
+    if not cleaned:
+        data.pop(key, None)
+        raise StopOnError
+    data[key] = json.dumps(cleaned)
+
+
+def dcatapit_hvd_category(key, data, errors, context):
+    """
+    Categorie HVD (dcatap:hvdCategory, cardinalita' 1..N).
+    Dal form arrivano come lista (caselle di spunta); dall'harvest come
+    stringa "uri1, uri2" o lista JSON. Si salvano sempre come stringa
+    "uri1, uri2", lo stesso formato prodotto dall'harvest, che il profilo
+    DCAT rilegge come lista. Nessuna categoria: il campo viene tolto.
+    """
+    value = data.get(key, missing)
+    if value is missing or value is None:
+        data.pop(key, None)
+        raise StopOnError
+    if isinstance(value, (list, tuple)):
+        items = list(value)
+    elif isinstance(value, str):
+        stripped = value.strip()
+        items = None
+        if stripped.startswith('['):
+            try:
+                items = json.loads(stripped)
+            except ValueError:
+                items = None
+        if not isinstance(items, list):
+            items = stripped.split(',')
+    else:
+        items = [value]
+
+    out = []
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        item = item.strip().strip('"\'').strip()
+        if item and item not in out:
+            out.append(item)
+    if not out:
+        data.pop(key, None)
+        raise StopOnError
+    data[key] = ', '.join(out)
 
 
 def dcatapit_holder(value, context):

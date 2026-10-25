@@ -161,8 +161,10 @@ def get_custom_package_schema():
         },
         {
             'name': 'hvd_category',
-            'validator': ['ignore_empty'],
-            'element': 'select',
+            # 1..N categorie: caselle di spunta nel form, salvate come
+            # "uri1, uri2" (stesso formato dell'harvest)
+            'validator': ['dcatapit_hvd_category'],
+            'element': 'checkboxes',
             'options': [
                 {   'text': 'Not HVD Category',
                     'name': 'nonhvd',
@@ -434,10 +436,15 @@ def get_custom_package_schema():
             'type': 'text',
             'label': _('Titolare'),
             'placeholder': '-',
-            'validator': ['ignore_missing', 'dcatapit_holder'],
+            # modificabile dal form solo per i dataset inseriti a mano;
+            # sugli harvestati il valore e' riportato com'e' (campo nascosto)
+            'validator': ['dcatapit_holder_clean', 'ignore_missing', 'dcatapit_holder'],
             'is_required': False,
-            'read_only': True,
-            'help': _('package_rights_holder_name_help')
+            '_couples': [
+                {'name': 'holder_name', 'label': _('Name'), 'placeholder': _('rights holder of the dataset')},
+                {'name': 'holder_identifier', 'label': _('IPA/IVA'), 'placeholder': _('IPA/IVA')},
+            ],
+            'help': _('Titolari del dataset (dct:rightsHolder) oltre all\'organizzazione, che e\' sempre il primo titolare.')
         },
         {
             'name': 'frequency',

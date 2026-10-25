@@ -617,3 +617,12 @@ ul.ui-tabs-nav {
 .select2-container-multi .select2-search-choice-close {
   top: 4px!important;
 }
+/* Caselle di spunta a valori multipli (es. categorie HVD): voci in testo
+   normale, senza i due punti che il tema aggiunge alle etichette */
+.checkboxes-wrap .checkbox label.checkbox-option {
+    font-weight: normal;
+}
+.checkboxes-wrap .checkbox label.checkbox-option::after,
+.checkboxes-wrap .checkbox label.checkbox-option:after {
+    content: none !important;
+}

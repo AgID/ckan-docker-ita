@@ -23,9 +23,6 @@
                   {% if field.name == "distribution_format" %}
                       {% set attrs =  {'class': 'form-control', 'style': 'width:50%'} %}
                   {% endif %}
-                  {% if field.name == "hvd_category" %}
-                      {% set attrs =  {'class': 'form-control', 'style': 'width:50%'} %}
-                  {% endif %}
                   {% set attrs = field.attrs or {} %}
                   {# Recupero delle opzioni ordinate #}
                   {% if field.name == "distribution_format" %}
@@ -44,6 +41,24 @@
                                   is_required=field.is_required,
                                   attrs=attrs,
                                   help=field.help) }}
+
+            {% elif field.element == 'checkboxes' %}
+                  {# valori multipli: stringa "uri1, uri2" dal DB, lista se il form torna con errori #}
+                  {% set raw = data[field.name] %}
+                  {% if raw is string %}
+                      {% set selected = raw.split(',') | map('trim') | select | list %}
+                  {% elif raw %}
+                      {% set selected = raw | list %}
+                  {% else %}
+                      {% set selected = [] %}
+                  {% endif %}
+                  {{ dform.checkboxes(field.name,
+                                      label=field.label,
+                                      options=field.options,
+                                      selected=selected,
+                                      error=errors[field.name],
+                                      is_required=field.is_required,
+                                      help=field.help) }}
 
             {% elif field.element == 'multiselect' %}
 
@@ -103,8 +118,13 @@
                   }}
 
             {% elif field.element == 'rights_holder' %}
-                  {% if (not data.get('owner_org') and not data.get(field.name) and 'dataset_is_local' not in data) %}
-                        {{ dform.rights_holder_create(field.name, label=field.label, help=field.help_create) }}
+                  {% set holder_editable = (not data.get('id')) or h.dcatapit_dataset_is_local(data.get('id')) %}
+                  {% if holder_editable %}
+                        {# dataset inserito a mano: titolari modificabili nel campo holder (1..N) #}
+                  {% elif data.get('holder') %}
+                        {# harvestato con piu' titolari: valori originali conservati come campi nascosti #}
+                        <input type="hidden" name="{{ field.couples[0].name }}" value="{{ data[field.couples[0].name] | empty_and_escape }}"/>
+                        <input type="hidden" name="{{ field.couples[1].name }}" value="{{ data[field.couples[1].name] | empty_and_escape }}"/>
                   {% else %}
                         {{
                             dform.couple(
@@ -121,6 +141,41 @@
                               is_required=field.is_required,
                               help=field.help)
                           }}
+                  {% endif %}
+
+            {% elif field.element == 'holder' %}
+                  {% set holder_editable = (not data.get('id')) or h.dcatapit_dataset_is_local(data.get('id')) %}
+                  {% set holder_value = data[field.name] %}
+                  {% if holder_value and holder_value is not string %}
+                      {% set holder_value = h.dump_json(holder_value) %}
+                  {% endif %}
+                  {% if holder_editable %}
+                        {{ dform.holder(name=field.name,
+                                        label=field.label,
+                                        id='field-'+field.name,
+                                        value=holder_value,
+                                        error=errors[field.name],
+                                        couples=field._couples,
+                                        lang=h.lang(),
+                                        help=field.help,
+                                        org=(data.get('holder_name'), data.get('holder_identifier')) if data.get('id') else None) }}
+                  {% elif holder_value %}
+                        {# dataset harvestato: titolari in sola lettura, valore conservato al salvataggio #}
+                        <div class="control-group holder-wrap">
+                            <span class="control-label">{{ field.label }}</span>
+                            <div class="controls" style="font-size: 14px">
+                            {% for holder in (h.load_json_or_list(holder_value) or []) %}
+                                {% if holder.holder_name is mapping %}
+                                    {% set hname = holder.holder_name.get(h.lang()) or (holder.holder_name.values() | first) %}
+                                {% else %}
+                                    {% set hname = holder.holder_name %}
+                                {% endif %}
+                                <div><span class="bold">{{ _('Name') }}</span> {{ hname }} &middot;
+                                     <span class="bold">{{ _('IPA/IVA') }}</span> {{ holder.holder_identifier }}</div>
+                            {% endfor %}
+                            </div>
+                            <input type="hidden" name="{{ field.name }}" value="{{ holder_value }}"/>
+                        </div>
                   {% endif %}
 
             {% elif field.element == 'couple' %}

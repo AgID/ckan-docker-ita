@@ -257,6 +257,115 @@ Old implementation of the couple element (one element with comma separated value
 {% endmacro %}
 
 
+{# Titolare del dataset (dct:rightsHolder, 1..N), stesso schema del campo Autore.
+   Il primo titolare e' sempre l'organizzazione (org = (nome, codice)), mostrata come
+   riga fissa; le righe dell'elenco sono titolari aggiuntivi. #}
+{% macro holder(name, id, label, value, error, couples, lang, help='', org=None) %}
+    {% set labels = (couples[0].label, couples[1].label) %}
+    {% set names = (couples[0].name, couples[1].name) %}
+    {% set placeholders = (couples[0].placeholder, couples[1].placeholder) %}
+    {% set types = ['text', 'text'] %}
+    {% set values = ['', ''] %}
+
+    <div class="holder-wrap">
+        <div class="dcatapit-holder template removable">
+            {% call  couple(name,
+                    labels=labels,
+                    names=names,
+                    id="",
+                    label=label,
+                    values=values,
+                    placeholders=placeholders,
+                    error='',
+                    types=types) %}
+
+                {{ remove_button('remove_holder', parent='.dcatapit-holder') }}
+            {% endcall %}
+        </div>
+
+        <div class="holder-org control-group">
+            <span class="control-label">{{ label }}:</span>
+            <div class="controls" style="font-size: 14px">
+                <span class="bold">{{ _('Organizzazione') }}</span>
+                <strong class="holder-org-name">{{ (org and org[0]) or _('l\'organizzazione selezionata sopra') }}</strong>
+                <span class="holder-org-id">{% if org and org[1] %}({{ org[1] }}){% endif %}</span>
+                <br/><span>{{ _('E\' sempre il primo titolare. Con «Aggiungi titolare» puoi indicarne altri.') }}</span>
+            </div>
+        </div>
+        <script>
+        (function(){
+            document.addEventListener('DOMContentLoaded', function(){
+                var sel = document.querySelector('select[name="owner_org"]');
+                var out = document.querySelector('.holder-org-name');
+                var oid = document.querySelector('.holder-org-id');
+                if (!sel || !out) { return; }
+                var update = function(){
+                    var opt = sel.options[sel.selectedIndex];
+                    if (opt && opt.value) {
+                        out.textContent = opt.text.trim();
+                        if (oid) { oid.textContent = ''; }
+                    }
+                };
+                // select2 notifica il cambio come evento jQuery
+                if (window.jQuery) { window.jQuery(sel).on('change', update); }
+                else { sel.addEventListener('change', update); }
+            });
+        })();
+        </script>
+
+        <div class="dcatapit-holder_container add_new_container" data-add-with=".add_new_holder"
+             data-add-template=".dcatapit-holder.template"></div>
+
+        {% if error and error is iterable %}
+            <div class="errors"><span class="error-block">{{ error|join(', ') }}</span></div>
+        {% endif %}
+
+        {{ add_button(_("Aggiungi titolare"), 'add_new_holder', help) }}
+
+        <input type="hidden" name="{{ name }}" value="{{ value or '[]' }}" data-module="dcatapit-holder"
+               data-module-template=".dcatapit-holder" data-module-container=".dcatapit-holder_container"
+               data-module-lang="{{ lang }}" data-module-input_prefix="" data-module-data_name="holder"/>
+    </div>
+{% endmacro %}
+
+
+{# Elenco di caselle di spunta per un campo a valori multipli (es. categorie HVD).
+   selected: lista dei valori scelti. I valori scelti che non sono tra le opzioni
+   (es. arrivati dall'harvest) restano visibili e selezionati, per non perderli. #}
+{% macro checkboxes(name, id='', label='', options=[], selected=[], error='', is_required=false, help='') %}
+    {% set id = id or ('field-' ~ name) %}
+    {% set known = [] %}
+    <div class="control-group checkboxes-wrap {{ name|replace('_', '-') }}-wrap{{ ' error' if error }}">
+        {# etichetta con lo stile delle altre del form; il gruppo e' accessibile
+           ai lettori di schermo tramite role="group" e aria-labelledby #}
+        <label class="control-label" id="{{ id }}-label">{% if is_required %}<span title="{{ _("This field is required") }}" class="control-required">*</span> {% endif %}{{ label }}</label>
+        {{ help_block(help) }}
+        <div id="{{ id }}" class="controls" role="group" aria-labelledby="{{ id }}-label">
+            {% for option in options if option.value %}
+                {% do known.append(option.value) %}
+                <div class="checkbox">
+                    <label class="checkbox-option" for="{{ id }}-{{ loop.index }}">
+                        <input type="checkbox" id="{{ id }}-{{ loop.index }}" name="{{ name }}"
+                               value="{{ option.value }}"{% if option.value in selected %} checked{% endif %}>
+                        {{ option.text or option.value }}
+                    </label>
+                </div>
+            {% endfor %}
+            {% for value in selected if value and value not in known %}
+                <div class="checkbox">
+                    <label class="checkbox-option" for="{{ id }}-extra-{{ loop.index }}">
+                        <input type="checkbox" id="{{ id }}-extra-{{ loop.index }}" name="{{ name }}"
+                               value="{{ value }}" checked>
+                        {{ value }}
+                    </label>
+                </div>
+            {% endfor %}
+            {% if error and error is iterable %}<span class="error-block">{{ error|join(', ') }}</span>{% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+
 {% macro temporal_coverage(name, id, label, value, error, couples, lang, help='') %}
     {% set labels = (couples[0].label, couples[1].label) %}
     {% set names = (couples[0].name, couples[1].name) %}

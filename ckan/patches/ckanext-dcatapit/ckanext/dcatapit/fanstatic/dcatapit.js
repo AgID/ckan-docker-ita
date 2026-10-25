@@ -397,6 +397,69 @@ ckan.module('dcatapit-creator', function($){
     return $.extend({}, dcatapit.templated_input, creator);
  });
 
+/**
+ Titolari del dataset (dct:rightsHolder 1..N), stesso schema dell'autore.
+ Il nome e' localizzato ({lingua: nome}); un nome salvato come testo semplice
+ o senza la lingua corrente viene comunque mostrato.
+*/
+ckan.module('dcatapit-holder', function($){
+    var holder = {
+
+        sub_initialize: function(){
+            this.add_form_handlers($(this.el.parent()));
+            this.localized = ['holder_name'];
+        },
+
+        add_form_handlers: function(elm){
+            var that = this;
+            elm.parents('form').submit(
+                function(){
+                        var inputs = $('input', elm);
+                        inputs.attr('disabled', true);
+                        $('input[name=holder]', elm).attr('disabled', false);
+                        that.extract_values();
+                   }
+                 )
+        },
+
+        extract_from_each_element: function(idx, elm, out, lang){
+                var elm = $(elm);
+                var _elm_name = elm.attr('name');
+                var elm_name = _elm_name.slice(this.options.input_prefix.length);
+                var elval = elm.val();
+                if ($.inArray(elm_name, this.localized) >-1){
+                    if (!$.isPlainObject(out[elm_name])){
+                        out[elm_name] = {};
+                    }
+                    if (elval !== ""){
+                        out[elm_name][lang] = elval;
+                    } else {
+                        delete out[elm_name][lang];
+                    }
+                } else {
+                    out[elm_name] = elval;
+                }
+        },
+
+        sub_add_values: function(ui, values){
+            for (var k in values){
+                var val = values[k];
+                var local_val = val;
+                if ($.inArray(k, this.localized)>-1 && $.isPlainObject(val)){
+                    local_val = val[this.lang];
+                    if (local_val === undefined){
+                        for (var l in val){ local_val = val[l]; break; }
+                    }
+                }
+                ui.find('input[name=' + k + ']').attr('value', local_val || '');
+                ui.attr('lang', this.lang);
+            }
+        },
+
+    };
+    return $.extend({}, dcatapit.templated_input, holder);
+ });
+
 ckan.module('dcatapit-temporal-coverage', function($){
     var temporal_coverage = {
 
