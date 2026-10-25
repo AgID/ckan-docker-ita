@@ -249,16 +249,21 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                 _datatype=datatype,
             )
 
-        # PATCH MQA: dcatap:applicableLegislation per i dataset che non ne hanno una
-        # (gli HVD hanno gia' il Regolamento di esecuzione 2023/138). Solo in
-        # serializzazione, nulla viene salvato nel DB; non sovrascrive valori esistenti.
-        #   - dataset DGA (accessRights RESTRICTED) -> Data Governance Act, Reg. 2022/868
-        #   - tutti gli altri                     -> Direttiva Open Data 2019/1024
+        # PATCH MQA: dcatap:applicableLegislation per i dataset che non ne hanno una.
+        # Solo in serializzazione, nulla viene salvato nel DB; non sovrascrive valori
+        # esistenti.
+        #   - dataset con dcatap:hvdCategory           -> Reg. di esecuzione 2023/138 (HVD)
+        #   - dataset DGA (accessRights RESTRICTED)  -> Data Governance Act, Reg. 2022/868
+        #   - tutti gli altri                        -> Direttiva Open Data 2019/1024
+        # Un dataset con categoria HVD ma senza ELI non deve uscire con la Direttiva.
+        _is_hvd = any(self.g.objects(dataset_ref, DCATAP.hvdCategory))
         if not any(self.g.objects(dataset_ref, DCATAP.applicableLegislation)):
             _ar = str(self._get_dataset_value(dataset_dict, "access_rights") or "")
             for _obj in self.g.objects(dataset_ref, DCT.accessRights):
                 _ar += " " + str(_obj)
-            if "RESTRICTED" in _ar.upper():
+            if _is_hvd:
+                _leg = HVD_ELI
+            elif "RESTRICTED" in _ar.upper():
                 _leg = "http://data.europa.eu/eli/reg/2022/868/oj"
             else:
                 _leg = "http://data.europa.eu/eli/dir/2019/1024/oj"
@@ -467,6 +472,13 @@ class EuropeanDCATAP2Profile(EuropeanDCATAPProfile):
                     resource_dict["access_services"] = json.dumps(access_service_list)
             except ValueError:
                 pass
+
+        # PATCH HVD: per un dataset HVD l'ELI 2023/138 va anche su ogni distribuzione
+        # (shape HVD). Si aggiunge solo dove manca; solo in serializzazione.
+        if _is_hvd:
+            for _dist in self.g.objects(dataset_ref, DCAT.distribution):
+                if (_dist, DCATAP.applicableLegislation, URIRef(HVD_ELI)) not in self.g:
+                    self.g.add((_dist, DCATAP.applicableLegislation, URIRef(HVD_ELI)))
 
     def graph_from_catalog(self, catalog_dict, catalog_ref):
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-25` — export: `dcatap:applicableLegislation` dei dataset HVD senza ELI
+- La regola di export che aggiunge `dcatap:applicableLegislation` ai dataset che non ne hanno una (indicatore MQA di data.europa.eu) metteva la Direttiva Open Data 2019/1024 anche ai dataset con `dcatap:hvdCategory` arrivati senza ELI: un HVD usciva dichiarato come dataset ordinario. Ora, se il dataset ha una categoria HVD, si aggiunge il Regolamento di esecuzione (UE) 2023/138; DGA (Reg. 2022/868) e Direttiva 2019/1024 restano per gli altri casi.
+- Per i dataset HVD l'ELI 2023/138 viene aggiunto anche alle distribuzioni che non lo hanno, come richiede la shape HVD. Si aggiunge solo dove manca e solo in serializzazione: il database non cambia e i valori dichiarati dalla fonte restano.
+
 ## `2026-10-24` — distribuzioni: `dct:rights` come `dct:RightsStatement`
 - Il campo `rights` della risorsa veniva scritto nel catalogo con `URIRefOrLiteral`: un testo (per esempio arrivato da un harvest, dove si conserva solo l'`rdfs:label` del `dct:RightsStatement` di origine) usciva come letterale, che il profilo EDP L1 segnala come violazione (`dct:rights` deve essere URI o nodo). Ora si usa `_add_statement_to_graph`, come per `dct:accessRights` del dataset e come in ckanext-dcat 2.x: il testo diventa `[ a dct:RightsStatement ; rdfs:label "..." ]`, l'URI resta URI. Caso emerso con il catalogo di Cruscotto Italia; le altre distribuzioni hanno già l'URI `access-right/PUBLIC`.
 
