@@ -1002,6 +1002,10 @@ class EuropeanDCATAPProfile(RDFProfile):
                     # Use dct:format
      #                 mimetype = None
 
+            # 25.10.26 media type non registrati IANA usati dai browser/Windows
+            if mimetype in ('application/x-zip-compressed', 'application/x-zip'):
+                mimetype = 'application/zip'
+
             if mimetype:
                 if 'http' not in mimetype:
                  mimetype = "https://iana.org/assignments/media-types/"+mimetype
