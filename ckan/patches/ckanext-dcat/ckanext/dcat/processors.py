@@ -698,10 +698,14 @@ class RDFSerializer(RDFProcessor):
 
                 #pub_uri = URIRef(pub.get('uri'))
 
+                # 25.10.26 dataset inseriti dal front end Drupal: l'editore del catalogo e' AgID
+                # (Portale nazionale dei dati aperti), quindi codice IPA e tipo sono quelli di AgID,
+                # non del titolare del dataset (che resta in dct:rightsHolder del dataset).
+                editore_agid = 'Portale nazionale dei dati aperti' in (pub.get('name') or '')
                 agent = BNode()
                 g.add((agent, RDF.type, DCATAPIT.Agent))
                 g.add((agent, RDF.type, FOAF.Agent))
-                g.add((agent, DCT.identifier, Literal(identifier)))
+                g.add((agent, DCT.identifier, Literal('agid' if editore_agid else identifier)))
                 g.add((catalog_ref, DCT.publisher, agent))
 
                 for src_key, _type, predicate, required in publisher_sources:
@@ -722,6 +726,8 @@ class RDFSerializer(RDFProcessor):
                            val="http://purl.org/adms/publishertype/NationalAuthority"
                           if 'anac' in dataset_dict.get('holder_identifier') or 'ispra' in dataset_dict.get('holder_identifier') or 'pcm' in dataset_dict.get('holder_identifier'):
                            val="http://purl.org/adms/publishertype/NationalAuthority"                            
+                       if editore_agid:
+                           val="http://purl.org/adms/publishertype/NationalAuthority"
                     if src_key == 'url':
                         homepage=_get_from_extra('source_catalog_homepage')
                         if dataset_dict.get('holder_identifier'):

@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-25` — sottocatalogo: editore AgID con codice e tipo di AgID
+- Per i dataset inseriti dal front end Drupal di dati.gov.it l'editore del sottocatalogo è AgID («Agenzia per l'Italia digitale - Portale nazionale dei dati aperti», da `source_catalog_publisher`), ma `dct:identifier` e `dct:type` venivano dal titolare del dataset (es. `c_d810`, `LocalAuthority`). Ora, quando l'editore è il Portale nazionale dei dati aperti, l'editore del catalogo ha `dct:identifier "agid"` e `dct:type` NationalAuthority. Il titolare del dataset (`dct:rightsHolder`) non cambia.
+
 ## `2026-10-25` — form del dataset: piu' titolari e piu' categorie HVD
 - **Titolare** (`dct:rightsHolder`, 1..N): nel form era in sola lettura e il campo `holder` (lista JSON dei titolari) non veniva mostrato. Per i dataset inseriti a mano l'organizzazione resta sempre il primo titolare e compare come riga fissa (in un dataset nuovo segue la scelta nel menu dell'organizzazione); con «Aggiungi titolare» se ne indicano altri, con nome e codice IPA/IVA per riga. Nel campo `holder` si salvano solo i titolari aggiuntivi: l'organizzazione la aggiunge l'export (`_add_right_holder`), cosi' se il dataset cambia organizzazione il titolare la segue; un titolare con lo stesso codice dell'organizzazione non viene ripetuto. La pagina del dataset mostra l'organizzazione seguita dai titolari aggiuntivi. Dal form ogni riga deve avere nome e codice; harvest e API non sono toccati da questo controllo.
 - Dataset harvestati: titolari in sola lettura (vengono riscritti dall'harvest successivo). La lista `holder` e i campi `holder_name`/`holder_identifier` restano come campi nascosti: prima, salvando dal form un dataset harvestato con piu' titolari, la lista andava persa.
