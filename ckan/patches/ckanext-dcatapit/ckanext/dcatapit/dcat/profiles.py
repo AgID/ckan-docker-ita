@@ -2201,6 +2201,17 @@ class ItalianDCATAPProfile(RDFProfile):
         self.g.add((catalog_ref, DCT.publisher, agent))
         self.g.add((agent, FOAF.name, Literal(pub_agent_name)))
         self.g.add((agent, DCT.identifier, Literal(pub_agent_id)))
+        # 25.10.26 dct:type dell'editore del catalogo (raccomandato DCAT-AP 3)
+        _cid = str(pub_agent_id or '').strip().lower()
+        if _cid.startswith('m_') or _cid in ('agid', 'inps', 'inail', 'istat', 'anac', 'ispra', 'pcm', 'aci'):
+            _ctype = 'NationalAuthority'
+        elif _cid.startswith(('r_', 'cr_')):
+            _ctype = 'RegionalAuthority'
+        elif _cid.startswith(('c_', 'p_')):
+            _ctype = 'LocalAuthority'
+        else:
+            _ctype = 'PublicBody'
+        self.g.add((agent, DCT.type, URIRef('http://purl.org/adms/publishertype/' + _ctype)))
 
         # issued date
         issued = config.get('ckanext.dcatapit_config.catalog_issued', '1900-01-01')
