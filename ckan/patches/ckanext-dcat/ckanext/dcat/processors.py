@@ -673,6 +673,17 @@ class RDFSerializer(RDFProcessor):
                     # vocabolario e la shape chiederebbe bbox/centroid
                     if predicate == DCT.license:
                         g.add((node, RDF.type, DCT.LicenseDocument))
+            # 26.10.26 licenza dei metadati (CC BY 4.0) e copertura (Italia) quando
+            # il catalogo d'origine non le dichiara (raccomandate DCAT-AP sul Catalog)
+            if not any(g.objects(catalog_ref, DCT.license)):
+                _lic = URIRef('https://creativecommons.org/licenses/by/4.0/')
+                g.add((catalog_ref, DCT.license, _lic))
+                g.add((_lic, RDF.type, DCT.LicenseDocument))
+                g.add((_lic, RDF.type, DCATAPIT.LicenseDocument))
+                g.add((_lic, DCT.type, URIRef('http://purl.org/adms/licencetype/Attribution')))
+                g.add((_lic, FOAF.name, Literal('Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)', lang='it')))
+            if not any(g.objects(catalog_ref, DCT.spatial)):
+                g.add((catalog_ref, DCT.spatial, URIRef('http://publications.europa.eu/resource/authority/country/ITA')))
 
             publisher_sources = (
                                  ('identifier', Literal, DCT.identifier, False,),

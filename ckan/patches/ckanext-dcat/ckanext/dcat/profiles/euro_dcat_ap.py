@@ -756,6 +756,10 @@ class EuropeanDCATAPProfile(RDFProfile):
                 resource_dict['rights']="http://publications.europa.eu/resource/authority/access-right/PUBLIC"
             if not resource_dict.get('status') and (resource_dict.get('url') or '').strip():
                 resource_dict['status'] = DISTRIBUTION_STATUS_COMPLETED
+            # 26.10.26 dcatap:availability (raccomandata DCAT-AP 3): se manca, STABLE.
+            # La tripla la scrive euro_dcat_ap_2 dal resource_dict (una sola: max 1).
+            if not resource_dict.get('availability'):
+                resource_dict['availability'] = 'http://publications.europa.eu/resource/authority/planned-availability/STABLE'
                 
             self._add_triples_from_dict(resource_dict, distribution, items)
 

@@ -2231,6 +2231,15 @@ class ItalianDCATAPProfile(RDFProfile):
         self.g.add((taxonomy, RDF.type, SKOS.ConceptScheme))
         self.g.add((taxonomy, DCT.title, Literal('Il Vocabolario Data Theme', lang='it')))
 
+        # 26.10.26 licenza dei metadati (CC BY 4.0) e copertura geografica (Italia) del catalogo
+        _lic = URIRef('https://creativecommons.org/licenses/by/4.0/')
+        self.g.add((catalog_ref, DCT.license, _lic))
+        self.g.add((_lic, RDF.type, DCT.LicenseDocument))
+        self.g.add((_lic, RDF.type, DCATAPIT.LicenseDocument))
+        self.g.add((_lic, DCT.type, URIRef('http://purl.org/adms/licencetype/Attribution')))
+        self.g.add((_lic, FOAF.name, Literal('Creative Commons Attribuzione 4.0 Internazionale (CC BY 4.0)', lang='it')))
+        self.g.add((catalog_ref, DCT.spatial, URIRef('http://publications.europa.eu/resource/authority/country/ITA')))
+
         # language
         langs = config.get('ckan.locales_offered', 'it')
 
