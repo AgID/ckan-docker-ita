@@ -289,7 +289,7 @@ class RDFSerializer(RDFProcessor):
            dataset_ref1=dataset_ref1.replace(PREF_LANDING,"https://dati.regione.basilicata.it/catalog/")
          if 'r_lazio' in dataset_dict.get('holder_identifier'):
            dataset_ref1=dataset_ref1.replace(PREF_LANDING,"http://dati.lazio.it/catalog/")
-         if 'aci' in dataset_dict.get('holder_identifier'):
+         if (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
            dataset_ref1=dataset_ref1.replace(PREF_LANDING,"http://lod.aci.it")
          if 'c_l219' in dataset_dict.get('holder_identifier'):
            dataset_ref1=dataset_ref1.replace(PREF_LANDING,"http://aperto.comune.torino.it/")
@@ -457,6 +457,28 @@ class RDFSerializer(RDFProcessor):
                 if ex['key'] == key:
                     return ex['value']
 
+        def _get_org_identifier_if_site(dataset_dict):
+                """
+                Codice IPA (campo `identifier`) dell'organizzazione, solo se
+                l'organizzazione ha un `site`: in quel caso il sottocatalogo e' il
+                suo e l'editore del sottocatalogo e' lei, non il titolare del primo
+                dataset. Altrimenti None.
+                """
+                org = (dataset_dict or {}).get("organization") or {}
+                org_id = org.get("id") or org.get("name")
+                if not org_id:
+                        return None
+                try:
+                        org_dict = toolkit.get_action("organization_show")(
+                                {"ignore_auth": True},
+                                {"id": org_id, "include_datasets": False, "include_users": False})
+                except Exception as e:
+                        log.warning("organization_show failed for %s: %s", org_id, e)
+                        return None
+                if not org_dict.get("site"):
+                        return None
+                return (org_dict.get("identifier") or "").strip() or None
+
         def _get_org_site_from_dataset_dict(dataset_dict):
                 """
                 dataset_dict: dict CKAN (già parsato dal processor)
@@ -503,7 +525,7 @@ class RDFSerializer(RDFProcessor):
           elif 'r_basili' in dataset_dict.get('holder_identifier'):
             source_uri='https://dati.regione.basilicata.it'
             source_catalog_homepage=source_uri
-          elif 'aci' in dataset_dict.get('holder_identifier'):
+          elif (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
             source_uri='http://lod.aci.it/'
             source_catalog_homepage=source_uri
           elif 'm_lps' in dataset_dict.get('holder_identifier'):
@@ -612,7 +634,7 @@ class RDFSerializer(RDFProcessor):
                  if 'cciaan' in dataset_dict.get('holder_identifier'):
                      if key == 'source_catalog_homepage':
                        value = 'https://opendata.marche.camcom.it'
-                 if 'aci' in dataset_dict.get('holder_identifier'):
+                 if (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
                        dataset_dict['extras'].append({'key': 'source_catalog_modified', 'value': _get_from_extra('dcat_modified')})
                        dataset_dict['extras'].append({'key': 'source_catalog_language', 'value': 'ITA'})
  #                 if key == 'source_catalog_homepage' and not value.endswith("/"):
@@ -701,7 +723,7 @@ class RDFSerializer(RDFProcessor):
               _pub= '{"uri": "", "name": "OpenData Aquila", "email": "", "url": "https://ckan.opendatalaquila.it/", "type": "http://purl.org/adms/publishertype/LocalAuthority"}'
             if 'uds_ca' in identifier:
               _pub= '{"uri": "", "name": "Università di Cagliari - Dataset relativi al progetto TDM", "email": "", "url": "https://data.tdm-project.it/", "type": "http://purl.org/adms/publishertype/RegionalAuthority"}'
-            if 'aci' in identifier:
+            if (identifier or '').strip().lower() == 'aci':
               _pub= '{"uri": "", "name": "OpenData Aci", "email": "", "url": "http://lod.aci.it/", "type": "http://purl.org/adms/publishertype/NationalAuthority"}'
             if 'BDAP' in nameid:
               _pub= '{"uri": "", "name": "OpenData BDAP", "email": "", "url": "https://bdap-opendata.rgs.mef.gov.it/", "type": "http://purl.org/adms/publishertype/NationalAuthority"}'
@@ -721,10 +743,20 @@ class RDFSerializer(RDFProcessor):
                 # (Portale nazionale dei dati aperti), quindi codice IPA e tipo sono quelli di AgID,
                 # non del titolare del dataset (che resta in dct:rightsHolder del dataset).
                 editore_agid = 'Portale nazionale dei dati aperti' in (pub.get('name') or '')
+                # 26.10.26 identificativo dell'editore del SOTTOCATALOGO: con un
+                # catalogo aggregatore (Regione Veneto, Marche, Lombardia...) il
+                # titolare del primo dataset della pagina e' un comune qualsiasi,
+                # e ogni pagina del catalogo dava un identificativo diverso. Se
+                # l'organizzazione ha un site (il sottocatalogo e' il suo) si usa
+                # il suo codice IPA; altrimenti, come prima, il titolare.
+                if editore_agid:
+                    pub_id = 'agid'
+                else:
+                    pub_id = _get_org_identifier_if_site(dataset_dict) or identifier
                 agent = BNode()
                 g.add((agent, RDF.type, DCATAPIT.Agent))
                 g.add((agent, RDF.type, FOAF.Agent))
-                g.add((agent, DCT.identifier, Literal('agid' if editore_agid else identifier)))
+                g.add((agent, DCT.identifier, Literal(pub_id)))
                 g.add((catalog_ref, DCT.publisher, agent))
 
                 for src_key, _type, predicate, required in publisher_sources:
@@ -734,23 +766,23 @@ class RDFSerializer(RDFProcessor):
                         homepage=_get_from_extra('source_catalog_homepage')
                         homepage='https://www.dati.gov.it/'
                     if src_key == 'type':
-                       if dataset_dict.get('holder_identifier'):
-                          if 'r_' in dataset_dict.get('holder_identifier') or 'p_' in dataset_dict.get('holder_identifier') :
+                       if pub_id:
+                          if 'r_' in pub_id or 'p_' in pub_id :
                            val="http://purl.org/adms/publishertype/RegionalAuthority"
-                          if 'm_' in dataset_dict.get('holder_identifier'):
+                          if 'm_' in pub_id:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
-                          if 'c_' in dataset_dict.get('holder_identifier'):
+                          if 'c_' in pub_id:
                            val="http://purl.org/adms/publishertype/LocalAuthority"
-                          if 'inail' in dataset_dict.get('holder_identifier') or 'inps' in dataset_dict.get('holder_identifier') or 'agid' in dataset_dict.get('holder_identifier'):
+                          if 'inail' in pub_id or 'inps' in pub_id or 'agid' in pub_id:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
-                          if 'anac' in dataset_dict.get('holder_identifier') or 'ispra' in dataset_dict.get('holder_identifier') or 'pcm' in dataset_dict.get('holder_identifier'):
+                          if 'anac' in pub_id or 'ispra' in pub_id or 'pcm' in pub_id:
                            val="http://purl.org/adms/publishertype/NationalAuthority"                            
                        if editore_agid:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
                     if src_key == 'url':
                         homepage=_get_from_extra('source_catalog_homepage')
                         if dataset_dict.get('holder_identifier'):
-                         if 'aci' in dataset_dict.get('holder_identifier'):
+                         if (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
                             homepage='http://lod.aci.it/'
                         if homepage is not None:
                          if homepage.endswith("/#"):

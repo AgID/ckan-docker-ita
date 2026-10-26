@@ -1,5 +1,9 @@
 # Changelog
 
+## `2026-10-26` — editore del sottocatalogo dall'organizzazione; regola ACI esatta
+- **Editore del sottocatalogo** (`processors.py`, `_add_source_catalog`): `dct:identifier` e tipo ADMS dell'editore venivano presi dal titolare del primo dataset della pagina. Con un catalogo aggregatore (Regione Veneto, Marche, Lombardia, Toscana...) l'identificativo cambiava da una pagina all'altra ed era quello di un comune qualsiasi, a volte un nome invece del codice IPA (su lod.dati.gov.it il sottocatalogo di dati.veneto.it ne aveva 62 diversi). Ora, se l'organizzazione ha un `site` (il sottocatalogo e' il suo), si usano il suo codice IPA (`identifier` dell'organizzazione) e il tipo ADMS che ne deriva; altrimenti, come prima, il titolare. I dataset inseriti dal front end Drupal restano con editore AgID.
+- **Regola ACI**: `'aci' in holder_identifier` scattava su qualunque titolare che contenesse "aci" (es. "Consiglio di bacino Laguna di Venezia", 24 dataset su dati.gov.it): URI del dataset, catalogo `lod.aci.it` ed editore "OpenData Aci" potevano finire su dataset non di ACI. Ora il confronto e' esatto (`aci`, maiuscole e spazi esclusi), nei 5 punti in cui compariva.
+
 ## `2026-10-26` — copertura e licenza del catalogo d'origine sul sottocatalogo
 - Dall'harvest RDF del catalogo d'origine si salvavano solo titolo, descrizione, homepage, lingua, data di modifica ed editore: `dct:spatial` e `dct:license` si perdevano, e il sottocatalogo esportato ne restava privo (es. CCIAA Marche: il catalogo d'origine dichiara ITA e CC BY 4.0).
 - `profiles/base.py` (`_extract_catalog_dict`): nuovi extra `source_catalog_spatial` e `source_catalog_license` (solo IRI; piu' valori come lista JSON).
