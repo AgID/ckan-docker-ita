@@ -840,7 +840,7 @@ class RDFSerializer(RDFProcessor):
                 # 26.10.26 dct:type dell'editore del sottocatalogo (raccomandato DCAT-AP 3):
                 # se le regole sopra non l'hanno dato, dal codice IPA del titolare
                 if not any(g.objects(agent, DCT.type)):
-                    _cid = str(identifier or '').strip().lower()
+                    _cid = str(pub_id or '').strip().lower()
                     if _cid.startswith('m_') or _cid in ('agid', 'inps', 'inail', 'istat', 'anac', 'ispra', 'pcm', 'aci'):
                         _ctype = 'NationalAuthority'
                     elif _cid.startswith(('r_', 'cr_')):
