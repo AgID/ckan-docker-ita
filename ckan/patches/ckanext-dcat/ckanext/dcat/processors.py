@@ -837,6 +837,19 @@ class RDFSerializer(RDFProcessor):
                         # niente foaf:mbox "", foaf:homepage <> o dct:type <> vuoti
                         continue
                     g.add((agent, predicate, _type(val)))
+                # 26.10.26 dct:type dell'editore del sottocatalogo (raccomandato DCAT-AP 3):
+                # se le regole sopra non l'hanno dato, dal codice IPA del titolare
+                if not any(g.objects(agent, DCT.type)):
+                    _cid = str(identifier or '').strip().lower()
+                    if _cid.startswith('m_') or _cid in ('agid', 'inps', 'inail', 'istat', 'anac', 'ispra', 'pcm', 'aci'):
+                        _ctype = 'NationalAuthority'
+                    elif _cid.startswith(('r_', 'cr_')):
+                        _ctype = 'RegionalAuthority'
+                    elif _cid.startswith(('c_', 'p_')):
+                        _ctype = 'LocalAuthority'
+                    else:
+                        _ctype = 'PublicBody'
+                    g.add((agent, DCT.type, URIRef('http://purl.org/adms/publishertype/' + _ctype)))
 
         return catalog_ref
 
