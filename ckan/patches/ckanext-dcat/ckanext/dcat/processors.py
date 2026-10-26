@@ -457,12 +457,12 @@ class RDFSerializer(RDFProcessor):
                 if ex['key'] == key:
                     return ex['value']
 
-        def _get_org_identifier_if_site(dataset_dict):
+        def _get_org_info_if_site(dataset_dict):
                 """
-                Codice IPA (campo `identifier`) dell'organizzazione, solo se
-                l'organizzazione ha un `site`: in quel caso il sottocatalogo e' il
-                suo e l'editore del sottocatalogo e' lei, non il titolare del primo
-                dataset. Altrimenti None.
+                Codice IPA (campo `identifier`) e titolo dell'organizzazione, solo
+                se l'organizzazione ha un `site`: in quel caso il sottocatalogo e'
+                il suo e l'editore del sottocatalogo e' lei, non il titolare o il
+                catalogo d'origine del primo dataset. Altrimenti None.
                 """
                 org = (dataset_dict or {}).get("organization") or {}
                 org_id = org.get("id") or org.get("name")
@@ -477,9 +477,12 @@ class RDFSerializer(RDFProcessor):
                         return None
                 if not org_dict.get("site"):
                         return None
-                # codici IPA in minuscolo (IndicePA): nel campo dell'organizzazione
-                # possono essere scritti in maiuscolo (es. C_D171)
-                return (org_dict.get("identifier") or "").strip().lower() or None
+                return {
+                        # codici IPA in minuscolo (IndicePA): nel campo
+                        # dell'organizzazione possono essere in maiuscolo (es. C_D171)
+                        "identifier": (org_dict.get("identifier") or "").strip().lower() or None,
+                        "title": (org_dict.get("title") or "").strip() or None,
+                }
 
         def _get_org_site_from_dataset_dict(dataset_dict):
                 """
@@ -751,10 +754,16 @@ class RDFSerializer(RDFProcessor):
                 # e ogni pagina del catalogo dava un identificativo diverso. Se
                 # l'organizzazione ha un site (il sottocatalogo e' il suo) si usa
                 # il suo codice IPA; altrimenti, come prima, il titolare.
+                org_info = None if editore_agid else _get_org_info_if_site(dataset_dict)
                 if editore_agid:
                     pub_id = 'agid'
                 else:
-                    pub_id = _get_org_identifier_if_site(dataset_dict) or identifier
+                    pub_id = (org_info or {}).get('identifier') or identifier
+                # nome dell'editore = titolo dell'organizzazione: quello del
+                # catalogo d'origine del primo dataset cambiava da una pagina
+                # all'altra (es. "ARPAT" sul sottocatalogo di Regione Toscana)
+                if org_info and org_info.get('title'):
+                    pub['name'] = org_info['title']
                 agent = BNode()
                 g.add((agent, RDF.type, DCATAPIT.Agent))
                 g.add((agent, RDF.type, FOAF.Agent))
