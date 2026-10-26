@@ -1,5 +1,8 @@
 # Changelog
 
+## `2026-10-26` — regole sul titolare senza errori se il titolare manca
+- `_add_source_catalog`: le regole `'...' in dataset_dict.get('holder_identifier')` davano TypeError (500 sulla pagina del catalogo) su un dataset senza titolare; ora usano una stringa vuota. Stessa protezione per la regola BDAP su `holder_name`.
+
 ## `2026-10-26` — nome dell'editore del sottocatalogo dall'organizzazione
 - Con l'organizzazione che ha un `site`, anche il nome (`foaf:name`) dell'editore del sottocatalogo e' ora il titolo dell'organizzazione, come gia' identificativo e tipo. Prima veniva dal catalogo d'origine del primo dataset della pagina e cambiava da una pagina all'altra (es. "ARPAT - Agenzia regionale per la protezione ambientale della Toscana" sul sottocatalogo di Regione Toscana, con identificativo `r_toscan`).
 - La funzione `_get_org_identifier_if_site` diventa `_get_org_info_if_site` e restituisce codice IPA e titolo.

@@ -509,52 +509,52 @@ class RDFSerializer(RDFProcessor):
         log.debug('source_uri pre patch %s',source_uri)
         # patch per harvesting per hasPart Catalog
         if dataset_dict.get('holder_identifier'):
-          if 'r_marche' in dataset_dict.get('holder_identifier'):
+          if 'r_marche' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://dati.regione.marche.it/'
             source_catalog_homepage=source_uri
-          elif 'piersoft' in dataset_dict.get('holder_identifier'):
+          elif 'piersoft' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://www.piersoft.it'
             source_catalog_homepage=source_uri
-          elif 'c_e506' in dataset_dict.get('holder_identifier'):
+          elif 'c_e506' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://dati.comune.lecce.it'
             source_catalog_homepage=source_uri
-          elif 'r_emiro' in dataset_dict.get('holder_identifier'):
+          elif 'r_emiro' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://dati.emilia-romagna.it'
             source_catalog_homepage=source_uri
-          elif 'r_toscan' in dataset_dict.get('holder_identifier'):
+          elif 'r_toscan' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://dati.toscana.it'
             source_catalog_homepage=source_uri
-          elif 'r_lazio' in dataset_dict.get('holder_identifier'):
+          elif 'r_lazio' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://dati.regione.lazio.it'
             source_catalog_homepage=source_uri
-          elif 'r_basili' in dataset_dict.get('holder_identifier'):
+          elif 'r_basili' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://dati.regione.basilicata.it'
             source_catalog_homepage=source_uri
           elif (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
             source_uri='http://lod.aci.it/'
             source_catalog_homepage=source_uri
-          elif 'm_lps' in dataset_dict.get('holder_identifier'):
+          elif 'm_lps' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://dati.lavoro.gov.it/'
             source_catalog_homepage=source_uri
-          elif 'c_l219' in dataset_dict.get('holder_identifier'):
+          elif 'c_l219' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://aperto.comune.torino.it/'
             source_catalog_homepage=source_uri
-          elif 'cr_campa' in dataset_dict.get('holder_identifier'):
+          elif 'cr_campa' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://opendata-crc.di.unisa.it/'
             source_catalog_homepage=source_uri
-          elif '00304260409' in dataset_dict.get('holder_identifier'):
+          elif '00304260409' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://opendata.comune.rimini.it/'
             source_catalog_homepage=source_uri
-          elif 'c_a345' in dataset_dict.get('holder_identifier'):
+          elif 'c_a345' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://ckan.opendatalaquila.it/'
             source_catalog_homepage=source_uri
-          elif 'uds_ca' in dataset_dict.get('holder_identifier'):
+          elif 'uds_ca' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://data.tdm-project.it'
             source_catalog_homepage=source_uri
-          elif 'm_it' in dataset_dict.get('holder_identifier'):
+          elif 'm_it' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='https://www.interno.gov.it/'
             source_catalog_homepage=source_uri
-          elif 'uni_ba' in dataset_dict.get('holder_identifier'):
+          elif 'uni_ba' in (dataset_dict.get('holder_identifier') or ''):
             source_uri='http://opendata.uniba.it/'
 
         else:
@@ -633,10 +633,10 @@ class RDFSerializer(RDFProcessor):
                    value = value.replace('/#/#','')
                  if key == 'source_catalog_homepage' and not value.endswith("/#"):
                    value = value + '/#'
-                 if 'uni_ba' in dataset_dict.get('holder_identifier'):
+                 if 'uni_ba' in (dataset_dict.get('holder_identifier') or ''):
                     if key == 'source_catalog_homepage':
                       value = 'http://opendata.uniba.it/#'
-                 if 'cciaan' in dataset_dict.get('holder_identifier'):
+                 if 'cciaan' in (dataset_dict.get('holder_identifier') or ''):
                      if key == 'source_catalog_homepage':
                        value = 'https://opendata.marche.camcom.it'
                  if (dataset_dict.get('holder_identifier') or '').strip().lower() == 'aci':
@@ -734,7 +734,7 @@ class RDFSerializer(RDFProcessor):
               _pub= '{"uri": "", "name": "Università di Cagliari - Dataset relativi al progetto TDM", "email": "", "url": "https://data.tdm-project.it/", "type": "http://purl.org/adms/publishertype/RegionalAuthority"}'
             if (identifier or '').strip().lower() == 'aci':
               _pub= '{"uri": "", "name": "OpenData Aci", "email": "", "url": "http://lod.aci.it/", "type": "http://purl.org/adms/publishertype/NationalAuthority"}'
-            if 'BDAP' in nameid:
+            if 'BDAP' in (dataset_dict.get('holder_name') or nameid or ''):
               _pub= '{"uri": "", "name": "OpenData BDAP", "email": "", "url": "https://bdap-opendata.rgs.mef.gov.it/", "type": "http://purl.org/adms/publishertype/NationalAuthority"}'
 
 
