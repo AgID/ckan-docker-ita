@@ -43,6 +43,46 @@ PREF_LANDING= config.get('ckanext.dcat.base_uri')
 
 log = logging.getLogger(__name__)
 
+# 26.10.26 dcat:bbox e dcat:centroid del luogo (raccomandati DCAT-AP 3).
+# Tabella geo_bbox.json accanto a questo file:
+#   istat    codice ISTAT del comune -> [bbox WKT, centroide WKT]
+#                (da Cruscotto Italia, estensione OSM del comune)
+#   geonames id GeoNames (comune ADM3 o localita') -> codice ISTAT
+#                (codice admin3 del dump GeoNames IT)
+#   place    codice EU place (ITA_MIL...) -> codice ISTAT
+#   aree     id GeoNames di regioni, province e Italia -> [bbox, centroide]
+#                (unione dei riquadri dei comuni; centroide = centro del riquadro)
+_GEO_BBOX = None
+_WKT = URIRef('http://www.opengis.net/ont/geosparql#wktLiteral')
+
+
+def _geo_bbox(value):
+    global _GEO_BBOX
+    if _GEO_BBOX is None:
+        import os
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'geo_bbox.json')) as fp:
+                _GEO_BBOX = json.load(fp)
+        except (IOError, ValueError) as err:
+            log.warning('[DCATAPIT] geo_bbox.json non leggibile: %s', err)
+            _GEO_BBOX = {}
+    if not _GEO_BBOX or not value:
+        return None
+    v = str(value).strip()
+    m = re.search(r'geonames\.org/(\d+)', v) or re.fullmatch(r'(\d+)', v)
+    if m:
+        gid = m.group(1)
+        if gid in _GEO_BBOX['aree']:
+            return _GEO_BBOX['aree'][gid]
+        return _GEO_BBOX['istat'].get(_GEO_BBOX['geonames'].get(gid))
+    m = re.search(r'/(?:place|country)/(ITA(?:_[A-Z]{3})?)/?$', v)
+    if m:
+        if m.group(1) == 'ITA':
+            return _GEO_BBOX['aree'].get('ITA')
+        return _GEO_BBOX['istat'].get(_GEO_BBOX['place'].get(m.group(1)))
+    return None
+
+
 
 
 # 28.09.26 PATCH MQA: composizione di dct:provenance per i dataset harvestati.
@@ -1111,6 +1151,23 @@ class ItalianDCATAPProfile(RDFProfile):
             self.g.add((dataset_ref, DCT.spatial, dct_location))
             self.g.add((dct_location, RDF['type'], DCT.Location))
             self.g.add((dct_location, DCATAPIT.geographicalIdentifier, Literal(value)))
+
+        # 26.10.26 dcat:bbox e dcat:centroid dei luoghi (max 1 ciascuno), dalla
+        # tabella geo_bbox.json: per identificativo GeoNames o EU place
+        for _loc in list(self.g.objects(dataset_ref, DCT.spatial)):
+            if any(self.g.objects(_loc, DCAT.bbox)) and any(self.g.objects(_loc, DCAT.centroid)):
+                continue
+            _cands = list(self.g.objects(_loc, DCATAPIT.geographicalIdentifier))
+            if isinstance(_loc, URIRef):
+                _cands.append(_loc)
+            for _c in _cands:
+                _bc = _geo_bbox(_c)
+                if _bc:
+                    if not any(self.g.objects(_loc, DCAT.bbox)):
+                        self.g.add((_loc, DCAT.bbox, Literal(_bc[0], datatype=_WKT)))
+                    if not any(self.g.objects(_loc, DCAT.centroid)):
+                        self.g.add((_loc, DCAT.centroid, Literal(_bc[1], datatype=_WKT)))
+                    break
 
         # replace periodicity
         self._remove_node(dataset_dict, dataset_ref, ('frequency', DCT.accrualPeriodicity, None, Literal))
