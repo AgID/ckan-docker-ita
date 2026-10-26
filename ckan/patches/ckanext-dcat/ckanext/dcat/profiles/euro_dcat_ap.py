@@ -540,6 +540,11 @@ class EuropeanDCATAPProfile(RDFProfile):
                 value_modifier=self._add_mailto,
              )
 
+            # 26.10.26 il contactPoint lo scrive dcatapit: un nodo anonimo non collegato
+            # a nulla (es. "[] a vcard:Organization .") non va emesso
+            if isinstance(contact_details, BNode) and not any(g.subjects(None, contact_details)):
+                g.remove((contact_details, None, None))
+
         # Publisher
         if any(
             [
