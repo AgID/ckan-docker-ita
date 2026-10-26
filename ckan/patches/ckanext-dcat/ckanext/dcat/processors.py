@@ -477,7 +477,9 @@ class RDFSerializer(RDFProcessor):
                         return None
                 if not org_dict.get("site"):
                         return None
-                return (org_dict.get("identifier") or "").strip() or None
+                # codici IPA in minuscolo (IndicePA): nel campo dell'organizzazione
+                # possono essere scritti in maiuscolo (es. C_D171)
+                return (org_dict.get("identifier") or "").strip().lower() or None
 
         def _get_org_site_from_dataset_dict(dataset_dict):
                 """
@@ -766,16 +768,17 @@ class RDFSerializer(RDFProcessor):
                         homepage=_get_from_extra('source_catalog_homepage')
                         homepage='https://www.dati.gov.it/'
                     if src_key == 'type':
-                       if pub_id:
-                          if 'r_' in pub_id or 'p_' in pub_id :
+                       _pid = (pub_id or '').lower()
+                       if _pid:
+                          if 'r_' in _pid or 'p_' in _pid :
                            val="http://purl.org/adms/publishertype/RegionalAuthority"
-                          if 'm_' in pub_id:
+                          if 'm_' in _pid:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
-                          if 'c_' in pub_id:
+                          if 'c_' in _pid:
                            val="http://purl.org/adms/publishertype/LocalAuthority"
-                          if 'inail' in pub_id or 'inps' in pub_id or 'agid' in pub_id:
+                          if 'inail' in _pid or 'inps' in _pid or 'agid' in _pid:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
-                          if 'anac' in pub_id or 'ispra' in pub_id or 'pcm' in pub_id:
+                          if 'anac' in _pid or 'ispra' in _pid or 'pcm' in _pid:
                            val="http://purl.org/adms/publishertype/NationalAuthority"                            
                        if editore_agid:
                            val="http://purl.org/adms/publishertype/NationalAuthority"
