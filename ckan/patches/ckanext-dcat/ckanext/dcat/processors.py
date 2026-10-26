@@ -681,6 +681,10 @@ class RDFSerializer(RDFProcessor):
                                  ('url', URIRef, FOAF.homepage,False,),
                                  ('type', URIRef, DCT.type, False,))
 
+            # valori di default: senza titolare o senza holder_name le regole
+            # sotto andavano in NameError (500 sulla pagina del catalogo)
+            identifier = ''
+            nameid = ''
             if dataset_dict.get('holder_identifier'):
              identifier=dataset_dict.get('holder_identifier')
 
