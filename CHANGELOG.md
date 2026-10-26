@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-10-26` — copertura e licenza del catalogo d'origine sul sottocatalogo
+- Dall'harvest RDF del catalogo d'origine si salvavano solo titolo, descrizione, homepage, lingua, data di modifica ed editore: `dct:spatial` e `dct:license` si perdevano, e il sottocatalogo esportato ne restava privo (es. CCIAA Marche: il catalogo d'origine dichiara ITA e CC BY 4.0).
+- `profiles/base.py` (`_extract_catalog_dict`): nuovi extra `source_catalog_spatial` e `source_catalog_license` (solo IRI; piu' valori come lista JSON).
+- `processors.py` (`_add_source_catalog`): li scrive sul sottocatalogo (`dct:spatial`, `dct:license` con `dct:LicenseDocument`). La copertura non viene tipizzata `dct:Location`, perche' e' un IRI di vocabolario e la shape chiederebbe bbox/centroid.
+- Valgono dal prossimo harvest delle sorgenti RDF (che rielabora tutti i dataset); le sorgenti CKAN via API non portano il catalogo d'origine.
+
 ## `2026-10-25` — sottocatalogo: editore AgID con codice e tipo di AgID
 - Per i dataset inseriti dal front end Drupal di dati.gov.it l'editore del sottocatalogo è AgID («Agenzia per l'Italia digitale - Portale nazionale dei dati aperti», da `source_catalog_publisher`), ma `dct:identifier` e `dct:type` venivano dal titolare del dataset (es. `c_d810`, `LocalAuthority`). Ora, quando l'editore è il Portale nazionale dei dati aperti, l'editore del catalogo ha `dct:identifier "agid"` e `dct:type` NationalAuthority. Il titolare del dataset (`dct:rightsHolder`) non cambia.
 

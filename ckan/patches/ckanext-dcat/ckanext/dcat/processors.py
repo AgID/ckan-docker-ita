@@ -628,6 +628,25 @@ class RDFSerializer(RDFProcessor):
                  else:
                    g.add((catalog_ref, predicate, _type(value)))
                    log.debug('catalog_ref alla fine %s',_type(value))
+            # copertura e licenza dichiarate dal catalogo d'origine (extra
+            # source_catalog_spatial / _license, salvati dall'harvest)
+            for key, predicate in (('source_catalog_spatial', DCT.spatial),
+                                   ('source_catalog_license', DCT.license)):
+                raw = _get_from_extra(key)
+                if not raw:
+                    continue
+                try:
+                    vals = json.loads(raw) if str(raw).startswith('[') else [raw]
+                except ValueError:
+                    vals = [raw]
+                for v in vals:
+                    node = URIRef(str(v).strip())
+                    g.add((catalog_ref, predicate, node))
+                    # niente dct:Location sulla copertura: e' un IRI di
+                    # vocabolario e la shape chiederebbe bbox/centroid
+                    if predicate == DCT.license:
+                        g.add((node, RDF.type, DCT.LicenseDocument))
+
             publisher_sources = (
                                  ('identifier', Literal, DCT.identifier, False,),
                                  ('name', Literal, FOAF.name, True,),

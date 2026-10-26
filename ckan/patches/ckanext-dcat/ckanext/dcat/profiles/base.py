@@ -1075,6 +1075,17 @@ class RDFProfile(object):
             if val:
                 out.append({"key": key, "value": val})
 
+        # Copertura geografica e licenza del catalogo d'origine (raccomandate da
+        # DCAT-AP sul Catalog): senza questi extra il sottocatalogo esportato le
+        # perdeva. Solo IRI; piu' valori come lista JSON.
+        for key, predicate in (("source_catalog_spatial", DCT.spatial),
+                               ("source_catalog_license", DCT.license)):
+            vals = sorted({str(o) for o in self.g.objects(catalog_ref, predicate)
+                           if isinstance(o, URIRef)})
+            if vals:
+                out.append({"key": key,
+                            "value": vals[0] if len(vals) == 1 else json.dumps(vals)})
+
         out.append(
             {
                 "key": "source_catalog_publisher",
