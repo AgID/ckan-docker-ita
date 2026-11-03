@@ -27,6 +27,11 @@ class CustomSslContextHttpAdapter(HTTPAdapter):
             ctx = create_urllib3_context()
             ctx.load_default_certs()
             ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
+            # 03.11.26: le richieste partono con verify=False; con urllib3 2.x e
+            # Python 3.10 CERT_NONE non e' ammesso se check_hostname e' attivo
+            # (ValueError nel gather consumer, job fermo in Running).
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
             self.poolmanager = urllib3.PoolManager(ssl_context=ctx)
 
 import os
