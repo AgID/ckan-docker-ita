@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-11-03` — harvest: si conserva la `dct:provenance` del catalogo d'origine
+- Il parser di base legge `dct:provenance` solo come letterale: quando il catalogo d'origine la pubblica nella forma DCAT-AP (`[ a dct:ProvenanceStatement ; rdfs:label "..." ]`) il testo si perdeva e l'export usava sempre il testo composto («Dataset pubblicato da {titolare} nel catalogo ...»). Con piu' titolari (`dct:rightsHolder` 1..N) il testo citava uno solo di loro, diverso da un harvest all'altro.
+- `dcatapit/dcat/profiles.py` (`_parse_source_provenance`, in `parse_dataset` prima di `_set_provenance`): si prende il letterale o l'`rdfs:label` del ProvenanceStatement (preferenza: lingua di default del portale, poi senza lingua, poi la prima disponibile). Se il nodo non ha label, si scarta l'id del nodo lasciato dal parser di base e resta il testo composto, come prima.
+- Vale dal prossimo harvest delle sorgenti RDF (che rielabora tutti i dataset).
+
 ## `2026-10-26` — regole sul titolare senza errori se il titolare manca
 - `_add_source_catalog`: le regole `'...' in dataset_dict.get('holder_identifier')` davano TypeError (500 sulla pagina del catalogo) su un dataset senza titolare; ora usano una stringa vuota. Stessa protezione per la regola BDAP su `holder_name`.
 

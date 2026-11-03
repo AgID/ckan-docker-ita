@@ -762,9 +762,42 @@ class ItalianDCATAPProfile(RDFProfile):
         # 28.09.26 PATCH MQA: dct:provenance (indicatore "Origine", Riutilizzabilita', 0,25).
         # Si compone solo da dati certi gia' presenti nel dataset harvestato (ente
         # titolare, catalogo d'origine): se non bastano, il campo resta vuoto.
+        # 03.11.26 PATCH: prima si conserva la provenance del catalogo d'origine
+        # (letterale o dct:ProvenanceStatement con rdfs:label); il testo composto
+        # resta solo come ripiego per i dataset che non ne hanno una.
+        self._parse_source_provenance(dataset_dict, dataset_ref)
         _set_provenance(dataset_dict)
 
         return dataset_dict
+
+    def _parse_source_provenance(self, dataset_dict, dataset_ref):
+        '''dct:provenance del catalogo d'origine. Il parser di base legge solo i
+        letterali: per un nodo (ProvenanceStatement) restituisce l'id del nodo,
+        che va scartato e sostituito con il suo rdfs:label (preferenza: lingua
+        di default, poi senza lingua, poi la prima disponibile).'''
+        default_lang = config.get('ckan.locale_default', 'it')
+        best = {}
+        for o in self.g.objects(dataset_ref, DCT.provenance):
+            labels = [o] if isinstance(o, Literal) else list(self.g.objects(o, RDFS.label))
+            for lab in labels:
+                if not isinstance(lab, Literal) or not str(lab).strip():
+                    continue
+                rank = 0 if lab.language == default_lang else (1 if not lab.language else 2)
+                if rank not in best:
+                    best[rank] = str(lab).strip()
+        if best:
+            _set_provenance_value(dataset_dict, best[min(best)])
+            return
+        # Nessun testo d'origine: si toglie l'eventuale id di nodo lasciato dal
+        # parser di base, cosi' interviene il testo composto.
+        node_ids = {str(o) for o in self.g.objects(dataset_ref, DCT.provenance)
+                    if not isinstance(o, Literal)}
+        if node_ids:
+            if dataset_dict.get('provenance') in node_ids:
+                dataset_dict.pop('provenance', None)
+            dataset_dict['extras'] = [e for e in dataset_dict.get('extras') or []
+                                      if not (e.get('key') == 'provenance'
+                                              and e.get('value') in node_ids)]
 
     def _collect_multilang_strings(self, base_dict, key, subj, pred, loc_dict):
         '''
