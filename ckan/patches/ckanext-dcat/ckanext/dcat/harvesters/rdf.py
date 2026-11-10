@@ -220,7 +220,8 @@ class DCATRDFHarvester(DCATHarvester):
         Se esiste gia' un dataset attivo con lo stesso identifier, posseduto
         (HarvestObject current) da un'altra sorgente:
           - sorgente corrente con priorita' maggiore -> 'takeover': il dataset
-            viene aggiornato da questa sorgente e staccato dalla vecchia
+            della vecchia sorgente viene eliminato (purge) e ricreato da zero
+            da questa sorgente, con i suoi metadati
           - sorgente proprietaria con priorita' maggiore -> 'skip' (nessun errore)
           - altrimenti (nessuna delle due in lista, dataset non harvestato) -> None
         '''
@@ -270,13 +271,22 @@ class DCATRDFHarvester(DCATHarvester):
         cur_rank, own_rank = _rank(cur_slug), _rank(own_slug)
 
         if cur_rank < own_rank:
-            for obj in owner_objs:
+            # Si stacca il dataset da TUTTI i suoi harvest object (FK verso
+            # package) e lo si elimina definitivamente: la sorgente prioritaria
+            # lo ricrea con i propri metadati completi, id e name compresi.
+            all_objs = model.Session.query(HarvestObject) \
+                .filter(HarvestObject.package_id == package_id).all()
+            for obj in all_objs:
                 obj.current = False
+                obj.package_id = None
                 obj.add()
-            log.info('source_priority: %s prende il dataset %s (identifier %s) da %s',
+            model.Session.commit()
+            p.toolkit.get_action('dataset_purge')(
+                {'ignore_auth': True, 'user': self._get_user_name()},
+                {'id': package_id})
+            log.info('source_priority: %s sostituisce il dataset %s (identifier %s) di %s',
                      cur_slug, package_id, identifier, own_slug)
-            return 'takeover', p.toolkit.get_action('package_show')(
-                {'ignore_auth': True}, {'id': package_id})
+            return 'takeover', None
         if own_rank < cur_rank:
             log.info('source_priority: %s salta identifier %s, gia\' di %s',
                      cur_slug, identifier, own_slug)
@@ -487,7 +497,9 @@ class DCATRDFHarvester(DCATHarvester):
         if not existing_dataset:
             decision, owned = self._source_priority_check(dataset, harvest_object)
             if decision == 'takeover':
-                existing_dataset = owned
+                # dataset dell'altra sorgente rimosso: si prosegue con la
+                # creazione da zero, come dopo un DB pulito e un reharvest
+                existing_dataset = None
             elif decision == 'skip':
                 harvest_object.current = False
                 harvest_object.add()
