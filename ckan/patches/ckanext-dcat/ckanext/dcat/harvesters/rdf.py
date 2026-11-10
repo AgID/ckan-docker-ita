@@ -209,6 +209,80 @@ class DCATRDFHarvester(DCATHarvester):
 
         return object_ids
 
+    def _source_priority_list(self):
+        raw = toolkit.config.get('ckan.harvest.source_priority', '') or ''
+        return [x.strip() for x in raw.replace(',', ' ').split() if x.strip()]
+
+    def _source_priority_check(self, dataset, harvest_object):
+        '''
+        ckan.harvest.source_priority = slug-a slug-b ...  (prima = piu' alta)
+
+        Se esiste gia' un dataset attivo con lo stesso identifier, posseduto
+        (HarvestObject current) da un'altra sorgente:
+          - sorgente corrente con priorita' maggiore -> 'takeover': il dataset
+            viene aggiornato da questa sorgente e staccato dalla vecchia
+          - sorgente proprietaria con priorita' maggiore -> 'skip' (nessun errore)
+          - altrimenti (nessuna delle due in lista, dataset non harvestato) -> None
+        '''
+        prio = self._source_priority_list()
+        if not prio:
+            return None, None
+
+        identifier = dataset.get('identifier')
+        if not identifier:
+            for ex in dataset.get('extras') or []:
+                if ex.get('key') == 'identifier':
+                    identifier = ex.get('value')
+                    break
+        if not identifier:
+            return None, None
+
+        row = model.Session.query(model.PackageExtra.package_id) \
+            .join(model.Package, model.PackageExtra.package_id == model.Package.id) \
+            .filter(model.Package.type == 'dataset',
+                    model.Package.state == 'active',
+                    model.PackageExtra.key == 'identifier',
+                    model.PackageExtra.value == identifier) \
+            .first()
+        if not row:
+            return None, None
+        package_id = row[0]
+
+        owner_objs = model.Session.query(HarvestObject) \
+            .filter(HarvestObject.package_id == package_id) \
+            .filter(HarvestObject.current == True) \
+            .all()
+        if not owner_objs:
+            return None, None
+        owner_source_id = owner_objs[0].harvest_source_id
+        current_source_id = harvest_object.source.id if harvest_object.source else harvest_object.harvest_source_id
+        if owner_source_id == current_source_id:
+            return None, None
+
+        def _slug(source_id):
+            pkg = model.Package.get(source_id)
+            return pkg.name if pkg else None
+
+        def _rank(slug):
+            return prio.index(slug) if slug in prio else len(prio)
+
+        cur_slug, own_slug = _slug(current_source_id), _slug(owner_source_id)
+        cur_rank, own_rank = _rank(cur_slug), _rank(own_slug)
+
+        if cur_rank < own_rank:
+            for obj in owner_objs:
+                obj.current = False
+                obj.add()
+            log.info('source_priority: %s prende il dataset %s (identifier %s) da %s',
+                     cur_slug, package_id, identifier, own_slug)
+            return 'takeover', p.toolkit.get_action('package_show')(
+                {'ignore_auth': True}, {'id': package_id})
+        if own_rank < cur_rank:
+            log.info('source_priority: %s salta identifier %s, gia\' di %s',
+                     cur_slug, identifier, own_slug)
+            return 'skip', None
+        return None, None
+
     def validate_config(self, source_config):
         if not source_config:
             return source_config
@@ -406,6 +480,19 @@ class DCATRDFHarvester(DCATHarvester):
 
         # Check if a dataset with the same guid exists
         existing_dataset = self._get_existing_dataset(harvest_object.guid)
+
+        # Priorita' tra sorgenti (ckan.harvest.source_priority): se un dataset
+        # con lo stesso dct:identifier appartiene a un'altra sorgente, decide
+        # la priorita' chi lo tiene. None = comportamento originale.
+        if not existing_dataset:
+            decision, owned = self._source_priority_check(dataset, harvest_object)
+            if decision == 'takeover':
+                existing_dataset = owned
+            elif decision == 'skip':
+                harvest_object.current = False
+                harvest_object.add()
+                model.Session.commit()
+                return 'unchanged'
 
         try:
             package_plugin = lib_plugins.lookup_package_plugin(dataset.get('type', None))

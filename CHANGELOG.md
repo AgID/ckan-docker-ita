@@ -1,5 +1,14 @@
 # Changelog
 
+## `2026-11-10` — harvest RDF: priorita' tra sorgenti con lo stesso identificativo
+- Quando due sorgenti harvestano lo stesso dataset (stesso `dct:identifier`, URI diversi: es. una PA che pubblica sia sul geoportale nazionale sia sul portale regionale) vinceva la sorgente harvestata per prima; l'altra dava a ogni giro `Create validation Error: {'Identifier': 'Another package exists with the same identifier'}` (e spesso anche `'Name': 'That URL is already in use.'`). Per cambiare proprietario bisognava svuotare il database e rifare l'harvest di tutto.
+- Nuova opzione `ckan.harvest.source_priority` (variabile `CKAN__HARVEST__SOURCE_PRIORITY`): slug delle sorgenti separati da spazio o virgola, dalla priorita' piu' alta. Nell'import di `dcat_rdf`, se il dataset non e' gia' della sorgente (guid) ma esiste un dataset attivo con lo stesso identificativo posseduto da un'altra sorgente:
+  - la sorgente corrente ha priorita' piu' alta → **prende il dataset**: lo aggiorna (stesso id e stesso name, quindi URL invariati), riscrive il `guid` e stacca la vecchia sorgente (i suoi harvest object non sono piu' `current`, quindi al suo prossimo giro non lo cancella);
+  - la sorgente proprietaria ha priorita' piu' alta → il dataset viene **saltato senza errore** (`unchanged`, riga INFO nel log);
+  - nessuna delle due in lista, oppure dataset non harvestato (inserito a mano) → comportamento invariato.
+- Senza l'opzione non cambia nulla. Basta un reharvest della sola sorgente prioritaria per riassegnarle i dataset gia' presi dall'altra.
+- Le sorgenti non in lista contano come priorita' piu' bassa di tutte quelle elencate.
+
 ## `2026-11-03` — harvest RDF: errore SSL nel gather con Python 3.10 e urllib3 2.x
 - `ckanext-dcat/harvesters/base.py` (`CustomSslContextHttpAdapter`): le richieste del gather partono con `verify=False`, ma il contesto SSL dell'adattatore lasciava `check_hostname` attivo. Con Python 3.10 e urllib3 2.x questo da' `ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled`: il gather consumer va in errore e il job resta in `Running` senza oggetti. Ora il contesto ha `check_hostname = False` e `verify_mode = CERT_NONE`, coerente con `verify=False`.
 
