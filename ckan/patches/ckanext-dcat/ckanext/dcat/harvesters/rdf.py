@@ -213,6 +213,14 @@ class DCATRDFHarvester(DCATHarvester):
         raw = toolkit.config.get('ckan.harvest.source_priority', '') or ''
         return [x.strip() for x in raw.replace(',', ' ').split() if x.strip()]
 
+    def _is_priority_source(self, harvest_object):
+        prio = self._source_priority_list()
+        if not prio:
+            return False
+        source_id = harvest_object.source.id if harvest_object.source else harvest_object.harvest_source_id
+        pkg = model.Package.get(source_id)
+        return bool(pkg and pkg.name in prio)
+
     def _source_priority_check(self, dataset, harvest_object):
         '''
         ckan.harvest.source_priority = slug-a slug-b ...  (prima = piu' alta)
@@ -285,6 +293,13 @@ class DCATRDFHarvester(DCATHarvester):
             p.toolkit.get_action('dataset_purge')(
                 {'ignore_auth': True, 'user': self._get_user_name()},
                 {'id': package_id})
+            # il purge lascia nei log un NotFound dell'indicizzazione:
+            # si toglie esplicitamente il documento da Solr
+            try:
+                from ckan.lib.search import clear as search_clear
+                search_clear(package_id)
+            except Exception as e:
+                log.warning('source_priority: pulizia indice Solr di %s: %r', package_id, e)
             log.info('source_priority: %s sostituisce il dataset %s (identifier %s) di %s',
                      cur_slug, package_id, identifier, own_slug)
             return 'takeover', None
@@ -824,6 +839,19 @@ class DCATRDFHarvester(DCATHarvester):
                        # --- /FIX ---
 
                         #log.debug('context: %s',context)
+                        # source_priority: name gia' usato da un altro dataset
+                        # attivo (omonimo) -> nome univoco con suffisso numerico
+                        if self._is_priority_source(harvest_object):
+                            taken = model.Session.query(model.Package.id) \
+                                .filter(model.Package.name == dataset['name'],
+                                        model.Package.state != 'deleted',
+                                        model.Package.id != dataset['id']) \
+                                .first()
+                            if taken:
+                                new_name = self._ensure_name_is_unique(dataset['name'])
+                                log.info('source_priority: name %s gia\' usato da %s, uso %s',
+                                         dataset['name'], taken[0], new_name)
+                                dataset['name'] = new_name
                         p.toolkit.get_action('package_create')(context, dataset)
                     else:
                         log.info('Ignoring dataset %s' % name)

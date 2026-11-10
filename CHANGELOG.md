@@ -8,6 +8,8 @@
   - nessuna delle due in lista, oppure dataset non harvestato (inserito a mano) → comportamento invariato.
 - Senza l'opzione non cambia nulla. Basta un reharvest della sola sorgente prioritaria per sostituire i dataset gia' presi dall'altra, senza svuotare il database.
 - Con una sola sorgente in lista (es. `geodati-hvd`) quella vince su tutte le altre.
+- Per le sorgenti in lista, se al momento della creazione il `name` e' gia' usato da un altro dataset attivo (titolo omonimo, identificativo diverso), si usa un name univoco con suffisso numerico invece di dare `'Name': 'That URL is already in use.'`.
+- Dopo il purge il documento viene tolto esplicitamente dall'indice Solr: l'indicizzazione automatica del purge lasciava nei log un `NotFound` di `package_show`.
 - Le sorgenti non in lista contano come priorita' piu' bassa di tutte quelle elencate.
 
 ## `2026-11-03` — harvest RDF: errore SSL nel gather con Python 3.10 e urllib3 2.x
