@@ -222,7 +222,8 @@ class DCATRDFHarvester(DCATHarvester):
           - sorgente corrente con priorita' maggiore -> 'takeover': il dataset
             della vecchia sorgente viene eliminato (purge) e ricreato da zero
             da questa sorgente, con i suoi metadati
-          - sorgente proprietaria con priorita' maggiore -> 'skip' (nessun errore)
+          - sorgente proprietaria con priorita' maggiore -> 'skip': errore
+            nel job report che indica la sorgente prioritaria
           - altrimenti (nessuna delle due in lista, dataset non harvestato) -> None
         '''
         prio = self._source_priority_list()
@@ -290,7 +291,7 @@ class DCATRDFHarvester(DCATHarvester):
         if own_rank < cur_rank:
             log.info('source_priority: %s salta identifier %s, gia\' di %s',
                      cur_slug, identifier, own_slug)
-            return 'skip', None
+            return 'skip', own_slug
         return None, None
 
     def validate_config(self, source_config):
@@ -503,8 +504,11 @@ class DCATRDFHarvester(DCATHarvester):
             elif decision == 'skip':
                 harvest_object.current = False
                 harvest_object.add()
+                self._save_object_error(
+                    'Create validation Error: identifier %s gia\' presente dalla sorgente prioritaria %s'
+                    % (dataset.get('identifier', ''), owned), harvest_object, 'Import')
                 model.Session.commit()
-                return 'unchanged'
+                return True
 
         try:
             package_plugin = lib_plugins.lookup_package_plugin(dataset.get('type', None))
