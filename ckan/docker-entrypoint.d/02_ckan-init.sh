@@ -66,6 +66,10 @@ if [[ $CKAN__PLUGINS == *"dcat"* ]]; then
   ckan config-tool "$CKAN_INI" "ckanext.dcat.normalize_ckan_format=true"
   ckan config-tool "$CKAN_INI" "ckanext.dcat.clean_tags=True"
   ckan config-tool "$CKAN_INI" "ckanext.dcat.resource.inherit.license=True"
+  # Licenze proposte nella select del form risorsa (codici del vocabolario dcatapit).
+  # Variabile vuota nel .env (CKANEXT__DCATAPIT__FORM_LICENSES=) = tutte le licenze.
+  # Harvest, export DCAT e MQA usano sempre il vocabolario completo.
+  ckan config-tool "$CKAN_INI" "ckanext.dcatapit.form_licenses=${CKANEXT__DCATAPIT__FORM_LICENSES-A21_CCBY40 A31_CCBYSA40 A11_CCO10 A310_ODBL A29_IODL20}"
   ckan config-tool "$CKAN_INI" "solr_timeout=500"
 fi
 

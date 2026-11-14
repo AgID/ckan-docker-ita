@@ -1,5 +1,11 @@
 # Changelog
 
+## `2026-11-14` — form risorsa: elenco ristretto di licenze
+- La select «Licenza» del form risorsa proponeva tutte le ~60 voci del vocabolario licenze. Nuova impostazione `ckanext.dcatapit.form_licenses` (dal `.env`: `CKANEXT__DCATAPIT__FORM_LICENSES`, codici separati da spazi): default `A21_CCBY40 A31_CCBYSA40 A11_CCO10 A310_ODBL A29_IODL20` (CC BY 4.0, CC BY-SA 4.0, CC0 1.0, ODbL, IODL 2.0), in elenco piatto.
+- **Se non serve un elenco ristretto, lasciare la variabile vuota** (`CKANEXT__DCATAPIT__FORM_LICENSES=`): il form torna a proporre tutte le licenze.
+- Se la risorsa ha gia' una licenza fuori elenco (harvest, dati precedenti) questa resta in fondo alla select e selezionata: salvando dal form non si perde.
+- Solo il form: vocabolario nel DB, mappatura delle licenze in harvest, export DCAT e MQA restano sull'elenco completo.
+
 ## `2026-11-14` — validatore: shape EDP DCAT-AP 3.0.1
 - data.europa.eu valida dal 07/11/2026 con il profilo piveau `dcatap301level1` (prima `dcatap300level1`). Nelle shape 3.0.1 `dcat:byteSize` deve essere `xsd:nonNegativeInteger`, non piu' `xsd:decimal`.
 - `tools/shapes/edp/shapes.ttl` aggiornato alla 3.0.1 di piveau-metrics-validating-shacl (unica riga cambiata); `shapes_recommended.ttl` e `deprecateduris.ttl` invariati.

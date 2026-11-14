@@ -357,8 +357,37 @@ def get_all_localized_tag_labels(tag_name):
     return TagLocalization.all_by_name(tag_name)
 
 
+def _form_licenses():
+    """Codici del vocabolario (es. A21_CCBY40) proposti nel form risorsa.
+
+    ckan-docker-ita: `ckanext.dcatapit.form_licenses` (codici separati da
+    spazi o virgole). Vuota = tutte le licenze del vocabolario, come prima.
+    Restringe solo la select del form: vocabolario, harvest ed export DCAT
+    continuano a usare l'elenco completo.
+    """
+    raw = config.get('ckanext.dcatapit.form_licenses') or ''
+    return [c for c in raw.replace(',', ' ').split() if c]
+
+
 def get_resource_licenses_tree(value, lang):
     options = License.for_select(lang)
+
+    codes = _form_licenses()
+    if codes:
+        by_code = {lic.uri.rstrip('/').rsplit('/', 1)[-1]: (lic, label)
+                   for lic, label in options}
+        selected = [by_code[c] for c in codes if c in by_code]
+        # la licenza gia' assegnata alla risorsa resta selezionabile anche se
+        # fuori elenco (risorse harvestate o precedenti alla restrizione)
+        if value and value not in {lic.uri for lic, _ in selected}:
+            selected += [(lic, label) for lic, label in options if lic.uri == value]
+        # elenco piatto, senza i nodi di categoria del vocabolario
+        return [{'selected': lic.uri == value,
+                 'value': lic.uri,
+                 'text': label,
+                 'depth': 0,
+                 'depth_str': '',
+                 'level': lic.rank_order} for lic, label in selected]
 
     out = []
     for license, label in options:
