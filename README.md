@@ -240,8 +240,8 @@ python3 tools/validate_edp_shacl.py --file catalog.ttl
 python3 tools/validate_edp_shacl.py https://dati.gov.it/opendata --level 2
 ```
 
-Altre opzioni: `--dcatap` per la versione delle shape (default `3.0.0`, quella
-indicata nei report DQV di EDP),
+Altre opzioni: `--dcatap` per la versione delle shape (default `3.0.1`, quella
+indicata nei report DQV di EDP dal 07/11/2026: `dcatap301level1`),
 `--examples` per quanti esempi mostrare di ogni segnalazione, `--json FILE` per
 salvare il riepilogo. Codice di uscita: `0` se non ci sono Violation, `1` se ce
 ne sono, `2` in caso di errore — quindi si puo' usare in una pipeline.

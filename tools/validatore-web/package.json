@@ -2,7 +2,7 @@
   "name": "validatore-dcatapit",
   "version": "1.0.0",
   "private": true,
-  "description": "Validatore SHACL nel browser: profilo EDP (DCAT-AP 3.0.0), DCAT-AP_IT, vocabolari controllati e HVD",
+  "description": "Validatore SHACL nel browser: profilo EDP (DCAT-AP 3.0.1), DCAT-AP_IT, vocabolari controllati e HVD",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",

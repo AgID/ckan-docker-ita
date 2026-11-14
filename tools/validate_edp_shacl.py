@@ -4,7 +4,8 @@ Validazione SHACL del catalog.ttl con lo stesso profilo usato da data.europa.eu,
 e, a richiesta, con i profili italiani (DCAT-AP_IT, vocabolari controllati, HVD).
 
 data.europa.eu (piveau) valida i metadati harvestati con il profilo
-"DCAT-AP 3.0.0 Level 1" (dct:isVersionOf "dcatap300level1" nel DQV) = shapes.ttl + deprecateduris.ttl del progetto
+"DCAT-AP 3.0.1 Level 1" (dct:isVersionOf "dcatap301level1" nel DQV, dal 07/11/2026;
+prima "dcatap300level1") = shapes.ttl + deprecateduris.ttl del progetto
 piveau-metrics-validating-shacl. Non sono le shape SEMIC "pure": piveau aggiunge
 regole proprie (es. StatusRestrictionADMS) e nel Level 1 non controlla i
 vocabolari. Questo script riproduce quella validazione su un campione del
@@ -40,8 +41,9 @@ Opzioni:
                                   linea dei codici IPA dei titolari su IndicePA
   --no-ipa          con il profilo agid, non interroga IndicePA
                       it          = dcatapit,vocabolari,hvd    tutti = edp,it,agid
-  --dcatap 3.0.0    versione delle shape (default 3.0.0: il DQV di EDP riporta
-                    "dcatap300level1", anche se la pagina violazioni dice 3.0.1)
+  --dcatap 3.0.1    versione delle shape (default 3.0.1: dal 07/11/2026 il DQV di EDP
+                    riporta "dcatap301level1"; con 3.0.0 dcat:byteSize va in xsd:decimal,
+                    con 3.0.1 in xsd:nonNegativeInteger)
   --examples N      esempi per ogni tipo di segnalazione (default 2)
   --json FILE       salva il riepilogo anche in JSON
 
@@ -330,7 +332,7 @@ def main():
     ap.add_argument("--fq", action="append", default=[])
     ap.add_argument("--pages", default="1")
     ap.add_argument("--level", type=int, default=1, choices=(1, 2))
-    ap.add_argument("--dcatap", default="3.0.0")
+    ap.add_argument("--dcatap", default="3.0.1")
     ap.add_argument("--examples", type=int, default=2)
     ap.add_argument("--profile", default="edp")
     ap.add_argument("--json")

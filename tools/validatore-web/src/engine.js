@@ -435,7 +435,7 @@ export function agidChecks (dataDs) {
 }
 
 export const PROFILE_LABELS = {
-  edp: 'EDP · DCAT-AP 3.0.0 L1',
+  edp: 'EDP · DCAT-AP 3.0.1 L1',
   edpRecommended: 'EDP · raccomandate',
   dcatapit: 'DCAT-AP_IT',
   vocabolari: 'Vocabolari',

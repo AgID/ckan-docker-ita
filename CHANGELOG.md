@@ -1,5 +1,10 @@
 # Changelog
 
+## `2026-11-14` — validatore: shape EDP DCAT-AP 3.0.1
+- data.europa.eu valida dal 07/11/2026 con il profilo piveau `dcatap301level1` (prima `dcatap300level1`). Nelle shape 3.0.1 `dcat:byteSize` deve essere `xsd:nonNegativeInteger`, non piu' `xsd:decimal`.
+- `tools/shapes/edp/shapes.ttl` aggiornato alla 3.0.1 di piveau-metrics-validating-shacl (unica riga cambiata); `shapes_recommended.ttl` e `deprecateduris.ttl` invariati.
+- `validate_edp_shacl.py`: default `--dcatap 3.0.1`; validatore web: etichette DCAT-AP 3.0.1.
+
 ## `2026-11-10` — harvest RDF: priorita' tra sorgenti con lo stesso identificativo
 - Quando due sorgenti harvestano lo stesso dataset (stesso `dct:identifier`, URI diversi: es. una PA che pubblica sia sul geoportale nazionale sia sul portale regionale) vinceva la sorgente harvestata per prima; l'altra dava a ogni giro `Create validation Error: {'Identifier': 'Another package exists with the same identifier'}` (e spesso anche `'Name': 'That URL is already in use.'`). Per cambiare proprietario bisognava svuotare il database e rifare l'harvest di tutto.
 - Nuova opzione `ckan.harvest.source_priority` (variabile `CKAN__HARVEST__SOURCE_PRIORITY`): slug delle sorgenti separati da spazio o virgola, dalla priorita' piu' alta. Nell'import di `dcat_rdf`, se il dataset non e' gia' della sorgente (guid) ma esiste un dataset attivo con lo stesso identificativo posseduto da un'altra sorgente:

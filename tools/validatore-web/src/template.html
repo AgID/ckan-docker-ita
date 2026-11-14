@@ -188,7 +188,7 @@ details.row summary:hover { background: var(--bg); }
       <h1>Validatore DCAT-AP_IT</h1>
       <p>Controlla un catalogo RDF con le stesse regole SHACL di data.europa.eu, il profilo italiano DCAT-AP_IT, i vocabolari controllati e i requisiti dei dati di elevato valore. Tutto avviene nel browser: il file non viene inviato a nessun server.</p>
     </div>
-    <div class="badge-row"><span class="badge">DCAT-AP 3.0.0</span><span class="badge">DCAT-AP_IT</span><span class="badge">HVD · Reg. UE 2023/138</span></div>
+    <div class="badge-row"><span class="badge">DCAT-AP 3.0.1</span><span class="badge">DCAT-AP_IT</span><span class="badge">HVD · Reg. UE 2023/138</span></div>
   </header>
 
   <!-- errori (es. CORS, file troppo grande): in cima, perche' «Scarica e valida» sta in fondo al pannello -->
@@ -242,7 +242,7 @@ details.row summary:hover { background: var(--bg); }
       <section class="panel" aria-labelledby="h-prof">
         <h2 id="h-prof">Profili</h2>
         <div class="prof">
-          <label><input type="checkbox" id="p-edp" checked><span class="t">EDP · DCAT-AP 3.0.0 L1</span><span class="d">Le shape piveau usate da data.europa.eu: violazioni e avvisi come nel report DQV</span></label>
+          <label><input type="checkbox" id="p-edp" checked><span class="t">EDP · DCAT-AP 3.0.1 L1</span><span class="d">Le shape piveau usate da data.europa.eu: violazioni e avvisi come nel report DQV</span></label>
           <label><input type="checkbox" id="p-edpRecommended"><span class="t">EDP · raccomandate</span><span class="d">Proprietà raccomandate da DCAT-AP europeo (livello 2 di data.europa.eu). Le raccomandate del profilo italiano sono già nel profilo DCAT-AP_IT</span></label>
           <label><input type="checkbox" id="p-dcatapit" checked><span class="t">DCAT-AP_IT</span><span class="d">Profilo italiano: proprietà obbligatorie (violazioni) e raccomandate (avvisi). Titolare, frequenza, identificativo, soggetti, punto di contatto, licenza, sottotema, classi dcatapit</span></label>
           <label><input type="checkbox" id="p-vocabolari" checked><span class="t">Vocabolari</span><span class="d">Temi, frequenze, lingue, formati, IANA, ELI, categorie HVD</span></label>
@@ -278,7 +278,7 @@ details.row summary:hover { background: var(--bg); }
       <div class="about">
         <h2>Da dove vengono le regole</h2>
         <ul>
-          <li><b>EDP</b>: shape <code>shapes.ttl</code> e <code>deprecateduris.ttl</code> di piveau-metrics-validating-shacl, DCAT-AP 3.0.0. Stesso esito di <code>tools/validate_edp_shacl.py</code>.</li>
+          <li><b>EDP</b>: shape <code>shapes.ttl</code> e <code>deprecateduris.ttl</code> di piveau-metrics-validating-shacl, DCAT-AP 3.0.1. Stesso esito di <code>tools/validate_edp_shacl.py</code>.</li>
           <li><b>DCAT-AP_IT</b>: Linee guida per i cataloghi dati (AgID). Obbligatorio → violazione, raccomandato → avviso.</li>
           <li><b>HVD</b>: Guida operativa AgID sulle serie di dati di elevato valore v1.0 (azione #hvd14) e DCAT-AP HVD 2.2.0.</li>
           <li><b>Vocabolari</b>: authority table EU. Temi, formati (<code>file-type</code>) e media type (registro IANA) sono controllati sugli elenchi chiusi, gli ultimi due copiati dalle API di data.europa.eu usate dall'MQA; gli altri valori sul namespace.</li>
