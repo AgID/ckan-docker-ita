@@ -1045,12 +1045,11 @@ class EuropeanDCATAPProfile(RDFProfile):
             self._add_date_triples_from_dict(resource_dict, distribution, items)
 
             # Numbers
-            # 13.10.26 Tornato a xsd:decimal (come ckanext-dcat upstream): il
-            # validatore di data.europa.eu valida i dataset con il profilo
-            # piveau "dcatap300level1", le cui shape DCAT-AP 3.0.0 impongono
-            # sh:datatype xsd:decimal su dcat:byteSize. Con nonNegativeInteger
-            # (richiesto solo dalle shape 3.0.1) ogni distribuzione dava una
-            # Violation "Expected xsd:decimal". Il valore resta intero ("1024.0").
+            # 19.11.26 xsd:nonNegativeInteger: dal 07.11.26 data.europa.eu valida
+            # con il profilo piveau "dcatap301level1" (shape DCAT-AP 3.0.1), che
+            # impone sh:datatype xsd:nonNegativeInteger su dcat:byteSize.
+            # Nota storica del 13.10.26: con il profilo "dcatap300level1" (3.0.0)
+            # EDP chiedeva xsd:decimal, per cui si era tornati a decimal.
             # Nota storica del 09.10.26: La shape dcat:DistributionShape di DCAT-AP 3.0 impone
             # su dcat:byteSize sh:datatype xsd:nonNegativeInteger e
             # sh:maxCount 1. Qui si emetteva float(...)^^xsd:decimal, cioe'
@@ -1071,7 +1070,7 @@ class EuropeanDCATAPProfile(RDFProfile):
                     (
                         distribution,
                         DCAT.byteSize,
-                        Literal(Decimal(_bytes), datatype=XSD.decimal),
+                        Literal(_bytes, datatype=XSD.nonNegativeInteger),
                     )
                 )
 

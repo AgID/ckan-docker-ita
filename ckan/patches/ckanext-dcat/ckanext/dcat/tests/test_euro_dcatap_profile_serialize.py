@@ -695,7 +695,7 @@ class TestEuroDCATAPProfileSerializeDataset(BaseSerializeTest):
         assert self._triple(g, distribution, DCT.modified, resource['modified'], XSD.dateTime)
 
         # Numbers
-        assert self._triple(g, distribution, DCAT.byteSize, float(resource['size']), XSD.decimal)
+        assert self._triple(g, distribution, DCAT.byteSize, int(resource['size']), XSD.nonNegativeInteger)
 
         # Checksum
         checksum = self._triple(g, distribution, SPDX.checksum, None)[2]
