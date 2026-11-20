@@ -1,5 +1,12 @@
 # Changelog
 
+## `2026-11-20` — immagine nginx: versione fissa 1.30.7 (aggiornamento di sicurezza)
+- `nginx/Dockerfile`: l'immagine di base passa da `nginx:stable-alpine` a `nginx:1.30.7-alpine`. nginx 1.30.7 (18/11/2026) corregge le vulnerabilita' note come NGINX2Root (CVE-2026-123007, CVE-2026-123633, CVE-2026-123634, CVE-2026-121810, CVE-2026-113425); sono affette tutte le versioni fino alla 1.30.6.
+- La configurazione fornita non attiva le funzioni coinvolte (HTTP/2, HTTP/3, proxy mail, `resolver` con sottorichieste), ma l'aggiornamento va fatto comunque. Chi ha aggiunto `http2` alle direttive `listen` e' esposto a CVE-2026-123007 finche' non ricostruisce l'immagine.
+- Con il tag fisso la versione non dipende piu' da quando e' stata scaricata l'immagine di base: i prossimi aggiornamenti di nginx arriveranno come modifica di questa riga.
+- Aggiornamento: `docker compose build --pull nginx` e poi `docker compose up -d --no-deps nginx` (pochi secondi di fermo del solo proxy). Verifica: `docker compose exec nginx nginx -v` deve rispondere `nginx/1.30.7`.
+- Attenzione: se certificati o `default.conf` sono stati copiati a mano dentro il container (senza volume), vanno salvati prima con `docker cp` e rimessi dopo, perche' la ricostruzione ricrea il container.
+
 ## `2026-11-14` — form risorsa: elenco ristretto di licenze
 - La select «Licenza» del form risorsa proponeva tutte le ~60 voci del vocabolario licenze. Nuova impostazione `ckanext.dcatapit.form_licenses` (dal `.env`: `CKANEXT__DCATAPIT__FORM_LICENSES`, codici separati da spazi): default `A21_CCBY40 A31_CCBYSA40 A11_CCO10 A310_ODBL A29_IODL20` (CC BY 4.0, CC BY-SA 4.0, CC0 1.0, ODbL, IODL 2.0), in elenco piatto.
 - **Se non serve un elenco ristretto, lasciare la variabile vuota** (`CKANEXT__DCATAPIT__FORM_LICENSES=`): il form torna a proporre tutte le licenze.
